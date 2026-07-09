@@ -669,3 +669,18 @@ section { padding: 90px 0; }
   section { padding: 60px 0; }
   .specialty-banner, .quote-block, .cta-band { padding: 32px; }
 }
+
+@media (max-width: 560px) {
+  .header-inner { padding: 14px 16px; }
+  .logo { font-size: 1.05rem; gap: 8px; }
+  .logo-mark { width: 34px; height: 34px; }
+  .logo small { display: none; }
+  .header-actions { gap: 8px; }
+  .header-actions .btn-primary { display: none; }
+  .hero { padding: 50px 0 70px; }
+  .hero-actions { flex-direction: column; align-items: stretch; }
+  .hero-actions .btn { justify-content: center; }
+  .hero-stats { flex-wrap: wrap; gap: 20px; }
+  .container { padding: 0 18px; }
+  .contact-info-card, .contact-form, .card, .service-detail { padding: 26px 22px; }
+}
