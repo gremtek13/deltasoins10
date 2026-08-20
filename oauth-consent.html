@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autoriser l'accès — JD Factu</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2248%22 fill=%22%234f9d94%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!--
+  Page de connexion + consentement pour le serveur OAuth 2.1 de Supabase (Authentication > OAuth Server).
+  Elle doit être servie à l'URL "Authorization Path" configurée dans le tableau de bord Supabase,
+  combinée au Site URL (ex : https://www.deltasoins10.fr/oauth-consent.html).
+
+  Flux : un client OAuth tiers (ex. le connecteur MCP de Claude) redirige l'utilisateur ici avec un
+  paramètre ?authorization_id=... . On vérifie que l'utilisateur est connecté à son compte JD Factu
+  (même login/mot de passe que l'application), on affiche ce que l'application demande (nom du client,
+  permissions), puis on appelle approveAuthorization()/denyAuthorization() qui renvoie une redirect_url
+  vers laquelle on renvoie le navigateur.
+-->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
+  :root{
+    --bg:#fbf9f6; --panel:#ffffff; --border:#e3ede9; --text:#3a4747;
+    --muted:#6c7a7a; --accent:#4f9d94; --accent-dark:#397a72; --accent-light:#eaf5f3;
+    --bad:#dc2626;
+    --font-heading:'Quicksand','Nunito',sans-serif; --font-body:'Nunito',-apple-system,Segoe UI,sans-serif;
+    --shadow-lg:0 18px 44px rgba(63,110,105,.16);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;font-family:var(--font-body);background:var(--bg);color:var(--text);
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;overflow:hidden;position:relative;
+  }
+  body::before,body::after{content:'';position:absolute;border-radius:50%;z-index:0;}
+  body::before{width:420px;height:420px;background:var(--accent-light);top:-140px;right:-100px;opacity:.7;}
+  body::after{width:280px;height:280px;background:#fdece4;bottom:-100px;left:-90px;opacity:.7;}
+  h1,h2,h3{font-family:var(--font-heading);}
+  .card{position:relative;z-index:1;background:var(--panel);border:1px solid var(--border);border-radius:28px;padding:36px 32px;max-width:420px;width:100%;box-shadow:var(--shadow-lg);}
+  .logo-mark{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));display:inline-flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;vertical-align:middle;}
+  h1{font-size:19px;margin:0 0 4px;color:var(--accent-dark);display:flex;align-items:center;justify-content:center;gap:8px;}
+  .sub{color:var(--muted);font-size:12.5px;margin-bottom:22px;text-align:center;}
+  label{display:block;font-size:12px;font-weight:700;margin-bottom:4px;margin-top:12px;color:var(--text);}
+  input{width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:12px;font-size:14px;background:var(--bg);color:var(--text);font-family:inherit;}
+  input:focus{outline:none;border-color:var(--accent);}
+  .btn{display:block;width:100%;background:var(--accent);color:#fff;border:none;padding:11px 16px;border-radius:999px;cursor:pointer;font-size:14px;font-weight:700;font-family:var(--font-heading);margin-top:18px;transition:background .15s ease,transform .15s ease;}
+  .btn:hover{background:var(--accent-dark);transform:translateY(-1px);}
+  .btn:disabled{opacity:.6;cursor:default;transform:none;}
+  .btn.outline{background:#fff;color:var(--accent-dark);border:2px solid var(--accent);}
+  .btn.outline:hover{background:var(--accent-light);}
+  .btn-row{display:flex;gap:10px;margin-top:18px;}
+  .btn-row .btn{margin-top:0;}
+  .msg{font-size:12.5px;margin-top:12px;min-height:14px;text-align:center;}
+  .msg.err{color:var(--bad);}
+  .consent-client{background:var(--accent-light);border:1px solid var(--accent);border-radius:16px;padding:14px 16px;margin:18px 0;}
+  .consent-client .name{font-weight:800;font-family:var(--font-heading);color:var(--accent-dark);font-size:15px;}
+  .consent-client .scopes{margin-top:8px;font-size:12.5px;color:var(--text);}
+  .consent-client .scopes li{margin-bottom:3px;}
+  .step{display:none;}
+  .step.visible{display:block;}
+  .spinner-text{text-align:center;color:var(--muted);font-size:13px;}
+  .switch-account{margin-top:14px;font-size:12px;text-align:center;color:var(--muted);}
+  .switch-account a{color:var(--accent);cursor:pointer;text-decoration:underline;}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1><span class="logo-mark">🩺</span> JD Factu</h1>
+
+  <!-- Étape 1 : connexion (si pas déjà connecté) -->
+  <div id="stepLogin" class="step">
+    <div class="sub">Connectez-vous à votre compte pour autoriser l'accès</div>
+    <label>Adresse email</label>
+    <input type="email" id="loginEmail" autocomplete="username" placeholder="vous@exemple.fr">
+    <label>Mot de passe</label>
+    <input type="password" id="loginPassword" autocomplete="current-password" placeholder="••••••••">
+    <button class="btn" id="btnLogin">Se connecter</button>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <!-- Étape 2 : chargement -->
+  <div id="stepLoading" class="step visible">
+    <div class="spinner-text">Chargement…</div>
+  </div>
+
+  <!-- Étape 3 : consentement -->
+  <div id="stepConsent" class="step">
+    <div class="sub">Une application demande à accéder à votre compte JD Factu</div>
+    <div class="consent-client">
+      <div class="name" id="clientName">—</div>
+      <ul class="scopes" id="clientScopes"></ul>
+    </div>
+    <p style="font-size:12.5px;color:var(--muted);margin:0;">En autorisant l'accès, cette application pourra consulter et modifier vos patients, votre planning et vos ordonnances, en votre nom, via votre compte.</p>
+    <div class="btn-row">
+      <button class="btn outline" id="btnDeny">Refuser</button>
+      <button class="btn" id="btnApprove">Autoriser</button>
+    </div>
+    <div class="msg" id="consentMsg"></div>
+    <div class="switch-account"><a id="btnSwitchAccount">Se connecter avec un autre compte</a></div>
+  </div>
+
+  <!-- Étape erreur -->
+  <div id="stepError" class="step">
+    <div class="msg err" id="errorMsg" style="font-size:14px;"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://lkhjobnmrvzstpfmvfma.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxraGpvYm5tcnZ6c3RwZm12Zm1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMTkxNjgsImV4cCI6MjEwMjc5NTE2OH0.JrN3dWGjeuv8VSHPsLdAg9Wm9EJZZPuTKNXOR2O9kzs';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const steps = ['stepLogin','stepLoading','stepConsent','stepError'];
+function showStep(id){
+  steps.forEach(s => document.getElementById(s).classList.toggle('visible', s === id));
+}
+
+const params = new URLSearchParams(window.location.search);
+const authorizationId = params.get('authorization_id');
+
+function showError(text){
+  document.getElementById('errorMsg').textContent = text;
+  showStep('stepError');
+}
+
+async function init(){
+  if(!authorizationId){
+    showError("Lien invalide : paramètre authorization_id manquant. Relancez la demande de connexion depuis l'application qui vous a envoyé ici.");
+    return;
+  }
+  const { data: { user } } = await sb.auth.getUser();
+  if(!user){
+    showStep('stepLogin');
+    document.getElementById('loginEmail').focus();
+    return;
+  }
+  await loadAuthorizationDetails();
+}
+
+async function loadAuthorizationDetails(){
+  showStep('stepLoading');
+  try{
+    const { data, error } = await sb.auth.oauth.getAuthorizationDetails(authorizationId);
+    if(error) throw error;
+    // Si l'API ne renvoie pas de détails d'autorisation, l'utilisateur a déjà consenti : elle fournit
+    // directement une redirect_url vers laquelle on doit renvoyer le navigateur.
+    if(!data || !('client' in data)){
+      if(data && data.redirect_url){ window.location.href = data.redirect_url; return; }
+      throw new Error("Réponse inattendue du serveur d'autorisation.");
+    }
+    document.getElementById('clientName').textContent = data.client && data.client.name ? data.client.name : 'Application tierce';
+    const scopesEl = document.getElementById('clientScopes');
+    scopesEl.innerHTML = '';
+    const scopeStr = (data.scope || '').trim();
+    if(scopeStr){
+      scopeStr.split(' ').forEach(sc => {
+        const li = document.createElement('li');
+        li.textContent = sc;
+        scopesEl.appendChild(li);
+      });
+    } else {
+      scopesEl.innerHTML = '<li>Accès à vos données JD Factu</li>';
+    }
+    showStep('stepConsent');
+  }catch(err){
+    showError("Impossible de charger la demande d'autorisation : " + (err.message || err));
+  }
+}
+
+document.getElementById('btnLogin').addEventListener('click', async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const msgEl = document.getElementById('loginMsg');
+  if(!email || !password){ msgEl.textContent = 'Merci de renseigner un email et un mot de passe.'; msgEl.className='msg err'; return; }
+  const btn = document.getElementById('btnLogin');
+  btn.disabled = true;
+  msgEl.textContent = '';
+  try{
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if(error){
+      msgEl.textContent = /Invalid login credentials/i.test(error.message) ? 'Email ou mot de passe incorrect.' : error.message;
+      msgEl.className = 'msg err';
+      return;
+    }
+    await loadAuthorizationDetails();
+  } finally {
+    btn.disabled = false;
+  }
+});
+document.getElementById('loginPassword').addEventListener('keydown', (e) => { if(e.key === 'Enter') document.getElementById('btnLogin').click(); });
+
+document.getElementById('btnApprove').addEventListener('click', async () => {
+  const msgEl = document.getElementById('consentMsg');
+  const btn = document.getElementById('btnApprove');
+  btn.disabled = true;
+  msgEl.textContent = '';
+  try{
+    const { data, error } = await sb.auth.oauth.approveAuthorization(authorizationId);
+    if(error) throw error;
+    window.location.href = data.redirect_url;
+  }catch(err){
+    msgEl.textContent = "Erreur lors de l'autorisation : " + (err.message || err);
+    msgEl.className = 'msg err';
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('btnDeny').addEventListener('click', async () => {
+  const msgEl = document.getElementById('consentMsg');
+  try{
+    const { data, error } = await sb.auth.oauth.denyAuthorization(authorizationId);
+    if(error) throw error;
+    window.location.href = data.redirect_url;
+  }catch(err){
+    msgEl.textContent = "Erreur : " + (err.message || err);
+    msgEl.className = 'msg err';
+  }
+});
+
+document.getElementById('btnSwitchAccount').addEventListener('click', async () => {
+  await sb.auth.signOut();
+  showStep('stepLogin');
+});
+
+init();
+</script>
+
+</body>
+</html>
