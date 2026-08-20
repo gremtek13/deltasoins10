@@ -11,20 +11,24 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="JD Factu">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#2563eb">
+<meta name="theme-color" content="#4f9d94">
 <meta name="format-detection" content="telephone=no">
 <!-- Cette version MOBILE est un fichier autonome et indépendant, optimisée pour l'usage tactile sur
      iPhone (vue « jour » par défaut, boutons agrandis, pas de zoom automatique sur les champs). Elle
      partage le même format de fichier .json (Exporter/Importer) que la version bureau
      JD_Consult_Planning.html : vous pouvez donc alterner entre les deux librement sur les mêmes données. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
   :root{
-    --bg:#f4f6f8; --panel:#ffffff; --border:#d9dfe4; --text:#1f2933;
-    --muted:#6b7785; --accent:#2563eb; --accent-dark:#1d4ed8; --accent-light:#e8f0fe;
-    --ok:#16a34a; --warn:#d97706; --bad:#dc2626; --sunday:#fde8e8; --today:#fff7cc;
+    --bg:#fbf9f6; --panel:#ffffff; --border:#e3ede9; --text:#3a4747;
+    --muted:#6c7a7a; --accent:#4f9d94; --accent-dark:#397a72; --accent-light:#eaf5f3;
+    --ok:#16a34a; --warn:#d97706; --bad:#dc2626; --sunday:#fdece4; --today:#fff7cc;
+    --font-heading:'Quicksand','Nunito',sans-serif; --font-body:'Nunito',-apple-system,Segoe UI,sans-serif;
   }
   *{box-sizing:border-box;}
-  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
+  body{margin:0;font-family:var(--font-body);background:var(--bg);color:var(--text);font-size:14px;}
+  h1,h2,h3{font-family:var(--font-heading);}
   header{background:var(--panel);border-bottom:1px solid var(--border);padding:10px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:50;}
   header h1{font-size:16px;margin:0;white-space:nowrap;}
   header .sub{color:var(--muted);font-size:12px;}
@@ -34,18 +38,18 @@
   nav.tabs button.active{color:var(--accent-dark);border-bottom-color:var(--accent);font-weight:600;}
   nav.tabs button:hover{color:var(--accent-dark);}
   main{padding:16px 18px 60px;max-width:1500px;margin:0 auto;}
-  .panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:16px;}
   .panel h2{margin-top:0;font-size:15px;}
   .panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin:18px 0 8px;}
   table{border-collapse:collapse;width:100%;font-size:13px;}
   th,td{border:1px solid var(--border);padding:5px 7px;text-align:left;vertical-align:top;}
   th{background:#f8fafc;font-weight:600;}
   input[type=text],input[type=number],input[type=date],select,textarea{
-    font:inherit;padding:5px 7px;border:1px solid var(--border);border-radius:5px;background:#fff;color:var(--text);width:100%;
+    font:inherit;padding:5px 7px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--text);width:100%;
   }
   textarea{resize:vertical;}
-  button.btn{background:var(--accent);color:#fff;border:none;padding:7px 13px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;}
-  button.btn:hover{background:var(--accent-dark);}
+  button.btn{background:var(--accent);color:#fff;border:none;padding:7px 15px;border-radius:999px;cursor:pointer;font-size:13px;font-weight:700;font-family:var(--font-heading);transition:transform .15s ease,background .15s ease;}
+  button.btn:hover{background:var(--accent-dark);transform:translateY(-1px);}
   button.btn.secondary{background:#fff;color:var(--accent-dark);border:1px solid var(--accent);}
   button.btn.secondary:hover{background:var(--accent-light);}
   button.btn.danger{background:#fff;color:var(--bad);border:1px solid var(--bad);}
@@ -59,7 +63,7 @@
   .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
   label{font-size:12px;color:var(--muted);display:block;margin-bottom:2px;}
   .field{margin-bottom:10px;}
-  .tag{display:inline-block;background:var(--accent-light);color:var(--accent-dark);border-radius:10px;padding:2px 8px;font-size:11px;margin:1px 3px 1px 0;}
+  .tag{display:inline-block;background:var(--accent-light);color:var(--accent-dark);border-radius:999px;padding:2px 9px;font-size:11px;margin:1px 3px 1px 0;}
   .muted{color:var(--muted);}
   .small{font-size:11px;}
   .badge-ok{color:var(--ok);font-weight:600;}
@@ -70,7 +74,7 @@
   table.plan th, table.plan td{padding:3px 4px;text-align:center;min-width:30px;}
   table.plan th.patient-col, table.plan td.patient-col{text-align:left;min-width:150px;position:sticky;left:0;background:#fff;z-index:5;}
   table.plan th.patient-col{background:#f8fafc;z-index:6;}
-  .validate-btn{border:1px solid var(--border);background:#fff;border-radius:3px;font-size:10px;padding:0 4px;cursor:pointer;color:var(--ok);margin-left:4px;vertical-align:middle;}
+  .validate-btn{border:1px solid var(--border);background:#fff;border-radius:8px;font-size:10px;padding:0 4px;cursor:pointer;color:var(--ok);margin-left:4px;vertical-align:middle;}
   .validate-btn:hover{background:#f0fdf4;border-color:var(--ok);}
   table.plan td.sunday, table.plan th.sunday{background:var(--sunday);}
   table.plan td.today, table.plan th.today{background:var(--today);}
@@ -78,15 +82,15 @@
   .cell-detail{display:flex;flex-direction:column;gap:1px;align-items:center;}
   .cell-amount{font-size:9.5px;color:var(--muted);}
   .day-flags{display:flex;gap:2px;justify-content:center;margin-top:1px;}
-  .day-flags button{border:1px solid var(--border);background:#fff;border-radius:3px;font-size:9px;padding:0 3px;cursor:pointer;color:var(--muted);}
+  .day-flags button{border:1px solid var(--border);background:#fff;border-radius:6px;font-size:9px;padding:0 3px;cursor:pointer;color:var(--muted);}
   .day-flags button.on{background:var(--accent);color:#fff;border-color:var(--accent);}
   .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
-  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:160px;}
+  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:12px 16px;flex:1;min-width:160px;}
   .kpi .val{font-size:22px;font-weight:700;}
   .kpi .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
   .kpis{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
-  .note-box{background:#fffaf0;border:1px solid #f0d9a8;border-radius:6px;padding:10px 12px;font-size:12.5px;color:#7a5c1e;margin-bottom:14px;}
-  .warn-box{background:#fdeaea;border:1px solid #f3b8b8;border-radius:6px;padding:10px 12px;font-size:12.5px;color:#8a1f1f;margin-bottom:14px;}
+  .note-box{background:#fffaf0;border:1px solid #f0d9a8;border-radius:14px;padding:10px 12px;font-size:12.5px;color:#7a5c1e;margin-bottom:14px;}
+  .warn-box{background:#fdeaea;border:1px solid #f3b8b8;border-radius:14px;padding:10px 12px;font-size:12.5px;color:#8a1f1f;margin-bottom:14px;}
   .act-line{display:flex;gap:6px;align-items:center;margin-bottom:4px;}
   .act-line > *{flex:none;}
   .act-line input[type=text]{flex:2;}
@@ -98,11 +102,11 @@
   .pill{border-radius:20px;padding:1px 9px;font-size:11px;background:#eef2f6;color:var(--muted);}
   hr{border:none;border-top:1px solid var(--border);margin:14px 0;}
   .modal-overlay{position:fixed;inset:0;background:rgba(20,30,40,.5);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:30px 14px;overflow-y:auto;}
-  .modal-box{background:#fff;border-radius:10px;max-width:720px;width:100%;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.3);}
+  .modal-box{background:#fff;border-radius:22px;max-width:720px;width:100%;padding:24px 26px;box-shadow:0 10px 40px rgba(0,0,0,.3);}
   .modal-box h2{margin-top:0;}
-  .passage-block{border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:12px;background:#fafcff;}
+  .passage-block{border:1px solid var(--border);border-radius:16px;padding:10px 12px;margin-bottom:12px;background:#fafcff;}
   .passage-block .row{margin-bottom:6px;}
-  .detail-btn{border:1px solid var(--border);background:#fff;border-radius:3px;font-size:9px;padding:0 4px;cursor:pointer;color:var(--accent-dark);margin-left:2px;}
+  .detail-btn{border:1px solid var(--border);background:#fff;border-radius:6px;font-size:9px;padding:0 4px;cursor:pointer;color:var(--accent-dark);margin-left:2px;}
   .detail-btn.has-detail{background:var(--accent-light);border-color:var(--accent);}
 
   /* =================== AJUSTEMENTS MOBILE / TACTILE (iPhone) =================== */
@@ -155,11 +159,12 @@
   .presence-toggle{ display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); flex:0 0 auto; }
   /* ---- Authentification ---- */
   #authOverlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;}
-  .auth-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:32px 24px;max-width:380px;width:100%;box-shadow:0 10px 30px rgba(20,30,40,.08);}
-  .auth-card h1{font-size:18px;margin:0 0 4px;}
+  .auth-card{background:var(--panel);border:1px solid var(--border);border-radius:28px;padding:36px 28px;max-width:380px;width:100%;box-shadow:0 12px 32px rgba(63,110,105,.12);}
+  .auth-card h1{font-size:19px;margin:0 0 4px;color:var(--accent-dark);}
   .auth-card .sub{color:var(--muted);font-size:12px;margin-bottom:20px;}
   .auth-card label{display:block;font-size:12px;font-weight:600;margin-bottom:4px;margin-top:12px;}
-  .auth-card input{width:100%;padding:12px;border:1px solid var(--border);border-radius:6px;font-size:16px;}
+  .auth-card input{width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:16px;background:var(--bg);}
+  .auth-card input:focus{outline:none;border-color:var(--accent);}
   .auth-card .btn{width:100%;margin-top:18px;}
   .auth-switch{margin-top:14px;font-size:12px;text-align:center;color:var(--muted);}
   .auth-switch a{color:var(--accent);cursor:pointer;text-decoration:underline;}
@@ -560,7 +565,7 @@ function xlRow(cellsXml, height){ return `<Row${height?` ss:Height="${height}"`:
 // Éclaircit une couleur hex vers un pastel (mélange avec du blanc) — utilisé pour les fonds de cellule
 // par infirmier(ère) dans le planning Excel, à partir de la couleur choisie dans l'onglet Personnel.
 function lightenHex(hex, factor){
-  hex = String(hex||'#2563eb').replace('#','');
+  hex = String(hex||'#4f9d94').replace('#','');
   if(hex.length===3) hex = hex.split('').map(c=>c+c).join('');
   if(!/^[0-9a-fA-F]{6}$/.test(hex)) hex = '2563eb';
   const r = parseInt(hex.substr(0,2),16), g = parseInt(hex.substr(2,2),16), b = parseInt(hex.substr(4,2),16);
@@ -570,10 +575,10 @@ function lightenHex(hex, factor){
 }
 const XL_BASE_STYLES = `
   <Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/><Font ss:FontName="Calibri" ss:Size="10"/></Style>
-  <Style ss:ID="title"><Font ss:Bold="1" ss:Size="14" ss:Color="#1D4ED8"/><Alignment ss:Horizontal="Left" ss:Vertical="Center"/></Style>
+  <Style ss:ID="title"><Font ss:Bold="1" ss:Size="14" ss:Color="#397a72"/><Alignment ss:Horizontal="Left" ss:Vertical="Center"/></Style>
   <Style ss:ID="bold"><Font ss:Bold="1"/></Style>
-  <Style ss:ID="head"><Font ss:Bold="1" ss:Color="#1F2933"/><Interior ss:Color="#DCE6F1" ss:Pattern="Solid"/><Alignment ss:Vertical="Center" ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#9AA5B1"/></Borders></Style>`;
-const XL_BORDER = `<Borders><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D9DFE4"/><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D9DFE4"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D9DFE4"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D9DFE4"/></Borders>`;
+  <Style ss:ID="head"><Font ss:Bold="1" ss:Color="#1F2933"/><Interior ss:Color="#EAF5F3" ss:Pattern="Solid"/><Alignment ss:Vertical="Center" ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#9AA5B1"/></Borders></Style>`;
+const XL_BORDER = `<Borders><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E3EDE9"/><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E3EDE9"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E3EDE9"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E3EDE9"/></Borders>`;
 
 // Construit un classeur "Planning" visuel et coloré : qui travaille, quel jour, pour quel patient.
 function buildPlanningWorkbookXML(month){
@@ -585,16 +590,16 @@ function buildPlanningWorkbookXML(month){
   const nurseStyleId = {};
   const nurseStylesXml = state.nurses.map((n,i)=>{
     nurseStyleId[n.id] = 'nurse'+i;
-    const bg = lightenHex(n.color||'#2563eb', 0.78);
+    const bg = lightenHex(n.color||'#4f9d94', 0.78);
     return `<Style ss:ID="nurse${i}"><Font ss:Size="9"/><Interior ss:Color="${bg}" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>${XL_BORDER}</Style>`;
   }).join('');
 
   const styles = XL_BASE_STYLES + `
   <Style ss:ID="headPatientCol"><Font ss:Bold="1"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/>${XL_BORDER}</Style>
-  <Style ss:ID="headDay"><Font ss:Bold="1" ss:Size="9"/><Interior ss:Color="#E8F0FE" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>${XL_BORDER}</Style>
-  <Style ss:ID="headDaySunday"><Font ss:Bold="1" ss:Size="9"/><Interior ss:Color="#FDE8E8" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>${XL_BORDER}</Style>
-  <Style ss:ID="tourneeLabel"><Font ss:Bold="1" ss:Italic="1" ss:Size="9"/><Interior ss:Color="#F1F5F9" ss:Pattern="Solid"/>${XL_BORDER}</Style>
-  <Style ss:ID="patientName"><Font ss:Bold="1" ss:Size="10"/><Interior ss:Color="#FAFCFF" ss:Pattern="Solid"/><Alignment ss:Horizontal="Left" ss:Vertical="Center" ss:WrapText="1"/>${XL_BORDER}</Style>
+  <Style ss:ID="headDay"><Font ss:Bold="1" ss:Size="9"/><Interior ss:Color="#EAF5F3" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>${XL_BORDER}</Style>
+  <Style ss:ID="headDaySunday"><Font ss:Bold="1" ss:Size="9"/><Interior ss:Color="#FDECE4" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>${XL_BORDER}</Style>
+  <Style ss:ID="tourneeLabel"><Font ss:Bold="1" ss:Italic="1" ss:Size="9"/><Interior ss:Color="#F1F7F5" ss:Pattern="Solid"/>${XL_BORDER}</Style>
+  <Style ss:ID="patientName"><Font ss:Bold="1" ss:Size="10"/><Interior ss:Color="#FAFCFB" ss:Pattern="Solid"/><Alignment ss:Horizontal="Left" ss:Vertical="Center" ss:WrapText="1"/>${XL_BORDER}</Style>
   <Style ss:ID="emptyCell"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/>${XL_BORDER}</Style>
   ${nurseStylesXml}`;
 
@@ -623,7 +628,7 @@ function buildPlanningWorkbookXML(month){
       const calc = computeDayAmount(d,p);
       if(calc.hasNurse){
         const nurse = state.nurses.find(n=>n.id===calc.nurseId);
-        const label = (nurse?nurse.name:'?') + '\n' + calc.amount.toFixed(2) + '€';
+        const label = nurse ? nurse.name : '?';
         cells += xlCell(label, {styleId: nurse ? (nurseStyleId[nurse.id]||'emptyCell') : 'emptyCell'});
       } else {
         cells += xlCell('', {styleId:'emptyCell'});
@@ -768,14 +773,14 @@ function renderStaff(){
     state.nurses.map(n=>`
       <tr>
         <td><input type="text" value="${escAttr(n.name)}" onchange="updateNurse('${n.id}','name',this.value)"></td>
-        <td><input type="text" value="${escAttr(n.color||'#2563eb')}" onchange="updateNurse('${n.id}','color',this.value)" placeholder="#hex"></td>
+        <td><input type="text" value="${escAttr(n.color||'#4f9d94')}" onchange="updateNurse('${n.id}','color',this.value)" placeholder="#hex"></td>
         <td><button class="icon-btn" onclick="removeNurse('${n.id}')">🗑️</button></td>
       </tr>`).join('') + '</table>';
 }
 function updateNurse(id, field, val){ const n = state.nurses.find(x=>x.id===id); if(n){ n[field]=val; refreshPlanningViews(); } }
 function removeNurse(id){ if(!confirm('Supprimer cet infirmier(ère) ?')) return; state.nurses = state.nurses.filter(n=>n.id!==id); renderStaff(); refreshPlanningViews(); }
 document.getElementById('btnAddNurse').addEventListener('click', ()=>{
-  state.nurses.push({id:uid('n'), name:'Nouvel infirmier(ère)', color:'#2563eb'});
+  state.nurses.push({id:uid('n'), name:'Nouvel infirmier(ère)', color:'#4f9d94'});
   renderStaff();
 });
 
