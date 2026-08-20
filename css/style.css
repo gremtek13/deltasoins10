@@ -641,7 +641,7 @@ section { padding: 90px 0; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1050px) {
   .header-actions .phone-link span.label { display: none; }
   .main-nav { display: none; }
   .nav-toggle { display: flex; }
