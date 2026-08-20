@@ -8,15 +8,14 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2248%22 fill=%22%234f9d94%22/></svg>">
 <link rel="stylesheet" href="css/style.css">
 <!--
-  Cette page est un simple portail d'accès à usage interne : elle demande un code avant d'ouvrir l'outil
-  de planning/facturation. CE N'EST PAS UNE VRAIE SÉCURITÉ — le code est visible par quiconque regarde le
-  code source de la page (comme n'importe quel code côté navigateur). Son seul but est d'éviter qu'un
-  visiteur du site tombe dessus par hasard en naviguant. La vraie protection des données se fait en aval :
-  - Version bureau (JD_Consult_Planning.html) : compte email/mot de passe (Supabase), données patients et
-    ordonnances synchronisées en ligne sur ce compte. Vérifier que la sécurité entre comptes (Row Level
-    Security) est bien activée côté Supabase avant d'y saisir de vraies données patients.
-  - Version mobile (JD_Consult_Planning_Mobile.html) : pas encore de compte, données uniquement dans ce
-    navigateur (export/import + sauvegarde locale), rien n'est envoyé en ligne.
+  Portail d'accès à usage interne : propose simplement le choix entre la version bureau et la version
+  mobile de l'outil de planning/facturation. Pas de code d'accès ici — inutile depuis que l'outil lui-même
+  demande un compte (email/mot de passe via Supabase) pour accéder aux données. La vraie protection des
+  données se fait donc en aval, sur chaque outil :
+  - Version bureau (JD_Consult_Planning.html) et version mobile (JD_Consult_Planning_Mobile.html) :
+    compte email/mot de passe (Supabase), données patients et ordonnances synchronisées en ligne sur ce
+    compte + copie locale hors connexion. Vérifier que la sécurité entre comptes (Row Level Security) est
+    bien activée côté Supabase avant d'y saisir de vraies données patients.
 
   Cette page n'est volontairement liée depuis aucun menu du site (ni .main-nav ni footer), n'apparaît pas
   dans sitemap.xml, et est exclue de l'indexation via robots.txt + la balise meta robots ci-dessus.
@@ -35,15 +34,6 @@
   }
   .gate-card h1{font-size:1.35rem;margin-bottom:6px;}
   .gate-sub{color:var(--color-text-light);font-size:0.9rem;margin-bottom:26px;}
-  .gate-card input[type=password]{
-    width:100%;font-family:var(--font-body);font-size:1.3rem;letter-spacing:.2em;text-align:center;
-    padding:14px;border-radius:var(--radius-md);border:2px solid var(--color-bg-alt);
-    background:var(--color-bg);color:var(--color-text);margin-bottom:14px;transition:border-color .2s ease;
-  }
-  .gate-card input[type=password]:focus{outline:none;border-color:var(--color-primary);}
-  .gate-error{color:#c0472e;font-size:0.85rem;margin-top:12px;min-height:16px;font-weight:600;}
-  .gate-step{display:block;}
-  .gate-step.hide{display:none;}
   .gate-choice-links{margin-top:4px;}
   .gate-choice-links a.btn{
     display:flex;width:100%;justify-content:center;margin-bottom:12px;
@@ -57,76 +47,27 @@
 <body class="gate-body">
 
 <div class="gate-card">
-  <div id="stepCode" class="gate-step">
-    <div class="gate-icon">🔒</div>
-    <h1>Espace professionnel</h1>
-    <div class="gate-sub">Deltasoins 13010 — accès réservé à l'équipe</div>
-    <input type="password" id="codeInput" inputmode="numeric" placeholder="Code d'accès" autocomplete="off" maxlength="12">
-    <button class="btn btn-primary btn-block" id="btnValidate">Entrer</button>
-    <div class="gate-error" id="errorMsg"></div>
+  <div class="gate-icon">🩺</div>
+  <h1>Planning &amp; facturation</h1>
+  <div class="gate-sub">Choisissez votre version — connexion à votre compte requise ensuite</div>
+  <div class="gate-choice-links">
+    <a class="btn btn-outline" href="JD_Consult_Planning.html" id="linkDesktop">💻 Version bureau (grille du mois)</a>
+    <a class="btn btn-outline" href="JD_Consult_Planning_Mobile.html" id="linkMobile">📱 Version mobile (vue jour)</a>
   </div>
-
-  <div id="stepChoice" class="gate-step hide">
-    <div class="gate-icon">🩺</div>
-    <h1>Planning &amp; facturation</h1>
-    <div class="gate-sub">Choisissez votre version, ou laissez-vous guider automatiquement</div>
-    <div class="gate-choice-links">
-      <a class="btn btn-outline" href="JD_Consult_Planning.html" id="linkDesktop">💻 Version bureau (grille du mois)</a>
-      <a class="btn btn-outline" href="JD_Consult_Planning_Mobile.html" id="linkMobile">📱 Version mobile (vue jour)</a>
-    </div>
-    <div class="gate-hint" id="autoHint"></div>
-  </div>
-
+  <div class="gate-hint" id="autoHint"></div>
   <div class="gate-footer-note">Outil interne — usage professionnel uniquement.</div>
 </div>
 
 <script>
-  // ⚠️ Code d'accès — modifiable ici. Ce n'est PAS une sécurité réelle (visible dans le code source),
-  // juste un filtre simple pour éviter qu'un visiteur du site tombe dessus par hasard.
-  const ACCESS_CODE = '2026';
-  const SESSION_KEY = 'deltasoins_espace_pro_ok';
-
-  const stepCode = document.getElementById('stepCode');
-  const stepChoice = document.getElementById('stepChoice');
-  const codeInput = document.getElementById('codeInput');
-  const errorMsg = document.getElementById('errorMsg');
-
-  function showChoice(){
-    stepCode.classList.add('hide');
-    stepChoice.classList.remove('hide');
-    // Suggestion automatique selon la taille d'écran (téléphone -> mobile, sinon bureau), tout en
-    // laissant les deux liens cliquables pour changer d'avis à tout moment.
-    const isPhone = window.matchMedia('(max-width: 600px)').matches;
-    const hint = document.getElementById('autoHint');
-    hint.textContent = isPhone
-      ? 'Sur téléphone, la version mobile est recommandée.'
-      : 'Sur ordinateur, la version bureau est recommandée.';
-    const preferred = isPhone ? 'linkMobile' : 'linkDesktop';
-    document.getElementById(preferred).classList.add('outline-pref');
-    document.getElementById(preferred).style.outline = '2px solid var(--color-primary)';
-  }
-
-  function tryUnlock(){
-    const val = (codeInput.value || '').trim();
-    if(val === ACCESS_CODE){
-      try{ sessionStorage.setItem(SESSION_KEY, '1'); }catch(err){}
-      errorMsg.textContent = '';
-      showChoice();
-    } else {
-      errorMsg.textContent = 'Code incorrect.';
-      codeInput.value = '';
-      codeInput.focus();
-    }
-  }
-
-  document.getElementById('btnValidate').addEventListener('click', tryUnlock);
-  codeInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') tryUnlock(); });
-
-  // Si déjà validé plus tôt dans cette session de navigation, on saute directement à l'écran de choix.
-  try{
-    if(sessionStorage.getItem(SESSION_KEY) === '1'){ showChoice(); }
-    else { codeInput.focus(); }
-  }catch(err){ codeInput.focus(); }
+  // Suggestion automatique selon la taille d'écran (téléphone -> mobile, sinon bureau), tout en
+  // laissant les deux liens cliquables pour changer d'avis à tout moment.
+  const isPhone = window.matchMedia('(max-width: 600px)').matches;
+  document.getElementById('autoHint').textContent = isPhone
+    ? 'Sur téléphone, la version mobile est recommandée.'
+    : 'Sur ordinateur, la version bureau est recommandée.';
+  const preferred = document.getElementById(isPhone ? 'linkMobile' : 'linkDesktop');
+  preferred.classList.add('outline-pref');
+  preferred.style.outline = '2px solid var(--color-primary)';
 </script>
 
 </body>
