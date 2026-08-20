@@ -1,0 +1,1800 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>JD Consult — Planning (mobile)</title>
+<!-- Balises pour un rendu type "app" sur iPhone (Safari) : plein écran si ajouté à l'écran d'accueil,
+     barre d'état sombre, pas de détection automatique de numéro de téléphone dans le texte. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JD Consult">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2563eb">
+<meta name="format-detection" content="telephone=no">
+<!-- Cette version MOBILE est un fichier autonome et indépendant, optimisée pour l'usage tactile sur
+     iPhone (vue « jour » par défaut, boutons agrandis, pas de zoom automatique sur les champs). Elle
+     partage le même format de fichier .json (Exporter/Importer) que la version bureau
+     JD_Consult_Planning.html : vous pouvez donc alterner entre les deux librement sur les mêmes données. -->
+<style>
+  :root{
+    --bg:#f4f6f8; --panel:#ffffff; --border:#d9dfe4; --text:#1f2933;
+    --muted:#6b7785; --accent:#2563eb; --accent-dark:#1d4ed8; --accent-light:#e8f0fe;
+    --ok:#16a34a; --warn:#d97706; --bad:#dc2626; --sunday:#fde8e8; --today:#fff7cc;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
+  header{background:var(--panel);border-bottom:1px solid var(--border);padding:10px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:50;}
+  header h1{font-size:16px;margin:0;white-space:nowrap;}
+  header .sub{color:var(--muted);font-size:12px;}
+  .spacer{flex:1;}
+  nav.tabs{display:flex;gap:2px;background:var(--panel);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;}
+  nav.tabs button{background:none;border:none;padding:10px 14px;cursor:pointer;font-size:13px;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap;}
+  nav.tabs button.active{color:var(--accent-dark);border-bottom-color:var(--accent);font-weight:600;}
+  nav.tabs button:hover{color:var(--accent-dark);}
+  main{padding:16px 18px 60px;max-width:1500px;margin:0 auto;}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;}
+  .panel h2{margin-top:0;font-size:15px;}
+  .panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin:18px 0 8px;}
+  table{border-collapse:collapse;width:100%;font-size:13px;}
+  th,td{border:1px solid var(--border);padding:5px 7px;text-align:left;vertical-align:top;}
+  th{background:#f8fafc;font-weight:600;}
+  input[type=text],input[type=number],input[type=date],select,textarea{
+    font:inherit;padding:5px 7px;border:1px solid var(--border);border-radius:5px;background:#fff;color:var(--text);width:100%;
+  }
+  textarea{resize:vertical;}
+  button.btn{background:var(--accent);color:#fff;border:none;padding:7px 13px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;}
+  button.btn:hover{background:var(--accent-dark);}
+  button.btn.secondary{background:#fff;color:var(--accent-dark);border:1px solid var(--accent);}
+  button.btn.secondary:hover{background:var(--accent-light);}
+  button.btn.danger{background:#fff;color:var(--bad);border:1px solid var(--bad);}
+  button.btn.danger:hover{background:#fdeaea;}
+  button.icon-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:2px 6px;}
+  button.icon-btn:hover{color:var(--bad);}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .row > *{flex:1;min-width:120px;}
+  .row.tight > *{flex:none;min-width:0;}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:2px;}
+  .field{margin-bottom:10px;}
+  .tag{display:inline-block;background:var(--accent-light);color:var(--accent-dark);border-radius:10px;padding:2px 8px;font-size:11px;margin:1px 3px 1px 0;}
+  .muted{color:var(--muted);}
+  .small{font-size:11px;}
+  .badge-ok{color:var(--ok);font-weight:600;}
+  .badge-bad{color:var(--bad);font-weight:600;}
+  .badge-warn{color:var(--warn);font-weight:600;}
+  .planning-wrap{overflow-x:auto;}
+  table.plan{font-size:11.5px;}
+  table.plan th, table.plan td{padding:3px 4px;text-align:center;min-width:30px;}
+  table.plan th.patient-col, table.plan td.patient-col{text-align:left;min-width:150px;position:sticky;left:0;background:#fff;z-index:5;}
+  table.plan th.patient-col{background:#f8fafc;z-index:6;}
+  table.plan td.sunday, table.plan th.sunday{background:var(--sunday);}
+  table.plan td.today, table.plan th.today{background:var(--today);}
+  table.plan select{padding:2px;font-size:11px;width:100%;}
+  .cell-detail{display:flex;flex-direction:column;gap:1px;align-items:center;}
+  .cell-amount{font-size:9.5px;color:var(--muted);}
+  .day-flags{display:flex;gap:2px;justify-content:center;margin-top:1px;}
+  .day-flags button{border:1px solid var(--border);background:#fff;border-radius:3px;font-size:9px;padding:0 3px;cursor:pointer;color:var(--muted);}
+  .day-flags button.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:160px;}
+  .kpi .val{font-size:22px;font-weight:700;}
+  .kpi .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
+  .kpis{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+  .note-box{background:#fffaf0;border:1px solid #f0d9a8;border-radius:6px;padding:10px 12px;font-size:12.5px;color:#7a5c1e;margin-bottom:14px;}
+  .warn-box{background:#fdeaea;border:1px solid #f3b8b8;border-radius:6px;padding:10px 12px;font-size:12.5px;color:#8a1f1f;margin-bottom:14px;}
+  .act-line{display:flex;gap:6px;align-items:center;margin-bottom:4px;}
+  .act-line > *{flex:none;}
+  .act-line input[type=text]{flex:2;}
+  .act-line select{flex:1;}
+  .act-line input[type=number]{flex:0 0 60px;}
+  select.lettre-DI, .lc-DI{color:#7c3aed;}
+  footer{text-align:center;color:var(--muted);font-size:11px;padding:20px;}
+  .file-input-hidden{display:none;}
+  .pill{border-radius:20px;padding:1px 9px;font-size:11px;background:#eef2f6;color:var(--muted);}
+  hr{border:none;border-top:1px solid var(--border);margin:14px 0;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(20,30,40,.5);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:30px 14px;overflow-y:auto;}
+  .modal-box{background:#fff;border-radius:10px;max-width:720px;width:100%;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.3);}
+  .modal-box h2{margin-top:0;}
+  .passage-block{border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:12px;background:#fafcff;}
+  .passage-block .row{margin-bottom:6px;}
+  .detail-btn{border:1px solid var(--border);background:#fff;border-radius:3px;font-size:9px;padding:0 4px;cursor:pointer;color:var(--accent-dark);margin-left:2px;}
+  .detail-btn.has-detail{background:var(--accent-light);border-color:var(--accent);}
+
+  /* =================== AJUSTEMENTS MOBILE / TACTILE (iPhone) =================== */
+  html{ -webkit-text-size-adjust:100%; }
+  body{ padding-bottom:env(safe-area-inset-bottom); }
+  /* Empêche Safari iOS de zoomer automatiquement à la mise au point d'un champ (nécessite 16px min). */
+  input[type=text],input[type=number],input[type=date],input[type=month],select,textarea{ font-size:16px; }
+  /* Cibles tactiles confortables (recommandation Apple : 44x44pt minimum). */
+  button.btn,button.icon-btn,.detail-btn,.day-flags button{ min-height:40px; }
+  button.btn{ font-size:14.5px; padding:9px 14px; }
+  header{ padding-top:calc(10px + env(safe-area-inset-top)); gap:6px; position:sticky; top:0; z-index:60; }
+  header h1{ font-size:15px; white-space:nowrap; }
+  header button.btn{ padding:8px 11px; font-size:15px; }
+  main{ padding:10px 10px 70px; }
+  nav.tabs{ -webkit-overflow-scrolling:touch; }
+  nav.tabs button{ padding:9px 10px; font-size:12px; }
+  .panel{ padding:12px; }
+  /* Sur mobile, tous les formulaires passent en une seule colonne pour rester lisibles au doigt. */
+  .grid-2,.grid-3{ grid-template-columns:1fr; }
+  .row > *{ min-width:100%; }
+  .row.tight > *{ min-width:0; }
+  .kpis{ gap:8px; }
+  .kpi{ min-width:130px; padding:10px 12px; }
+  .kpi .val{ font-size:18px; }
+  table.plan{ font-size:11px; }
+  .planning-wrap{ -webkit-overflow-scrolling:touch; }
+  .modal-box{ padding:16px; max-height:calc(100vh - 40px); overflow-y:auto; }
+  .modal-overlay{ padding:14px 8px; }
+
+  /* --- Vue "jour" du planning : liste de cartes verticale, pensée pour le pouce --- */
+  .view-toggle{ display:flex; gap:6px; margin-bottom:10px; }
+  .view-toggle button{ flex:1; padding:9px; border:1px solid var(--border); background:#fff; border-radius:7px; font-size:13px; color:var(--muted); cursor:pointer; }
+  .view-toggle button.active{ background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
+  .day-nav{ display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .day-nav button{ flex:0 0 auto; min-width:42px; min-height:42px; font-size:18px; border:1px solid var(--border); background:#fff; border-radius:8px; cursor:pointer; }
+  .day-nav input[type=date]{ flex:1; text-align:center; }
+  .day-title{ font-weight:700; font-size:14px; margin:2px 0 12px; text-align:center; }
+  .day-title.sunday{ color:var(--bad); }
+  .tournee-card{ background:var(--accent-light); border:1px solid var(--accent); border-radius:10px; padding:10px 12px; margin-bottom:12px; }
+  .tournee-card label{ color:var(--accent-dark); font-weight:600; margin-bottom:4px; }
+  .day-card{ background:#fff; border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px; }
+  .day-card.excluded{ opacity:.5; }
+  .day-card-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+  .day-card-top .name{ font-weight:700; font-size:14.5px; }
+  .day-card-amount{ font-weight:700; color:var(--accent-dark); font-size:15px; }
+  .day-card-row{ display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+  .day-card-row > *{ flex:1; }
+  .day-card .day-flags{ justify-content:flex-start; gap:6px; }
+  .day-card .day-flags button{ font-size:12px; padding:4px 9px; min-width:38px; }
+  .presence-toggle{ display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); flex:0 0 auto; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🩺 JD Consult</h1>
+  <div class="spacer"></div>
+  <button class="btn secondary" id="btnClearAutosave" title="Effacer la sauvegarde automatique locale">🗑️</button>
+  <button class="btn secondary" id="btnExport" title="Exporter (.json)">⬇️</button>
+  <button class="btn secondary" id="btnImportTrigger" title="Importer (.json)">⬆️</button>
+  <input type="file" id="fileImport" class="file-input-hidden" accept="application/json">
+</header>
+<div id="autosaveStatus" class="small muted" style="text-align:center;padding:4px 10px;background:var(--panel);border-bottom:1px solid var(--border);"></div>
+
+<nav class="tabs">
+  <button data-tab="planning" class="active">📅 Planning mensuel</button>
+  <button data-tab="billing">💶 Contrôle facturation</button>
+  <button data-tab="patients">🧑‍🤝‍🧑 Patients</button>
+  <button data-tab="staff">👩‍⚕️ Personnel</button>
+  <button data-tab="caretypes">🗂️ Types de prise en charge</button>
+  <button data-tab="tariffs">⚙️ Tarifs</button>
+  <button data-tab="help">ℹ️ Aide</button>
+</nav>
+
+<main>
+
+  <!-- PLANNING TAB -->
+  <div class="tab-content" id="tab-planning">
+    <div class="view-toggle">
+      <button id="viewToggleDay" class="active">📅 Vue jour</button>
+      <button id="viewToggleMonth">🗓️ Vue mois</button>
+    </div>
+
+    <!-- Vue JOUR : liste de cartes verticale, pensée pour l'usage au doigt sur iPhone (vue par défaut). -->
+    <div id="dayView">
+      <div class="day-nav">
+        <button id="dayPrev" aria-label="Jour précédent">‹</button>
+        <input type="date" id="dayViewDate">
+        <button id="dayNext" aria-label="Jour suivant">›</button>
+      </div>
+      <div class="day-title" id="dayViewTitle"></div>
+      <div id="dayViewList"></div>
+      <p class="muted small" style="margin-top:6px;">N/C/U/E = majorations exceptionnelles (nuit / coordination / acte unique / enfant &lt;7 ans). Le bouton 🕐 Détail ouvre le détail des soins de ce jour précis.</p>
+    </div>
+
+    <!-- Vue MOIS : la grille complète (identique à la version bureau), pour une vision d'ensemble. -->
+    <div id="monthView" style="display:none;">
+      <div class="toolbar">
+        <label style="margin:0;">Mois :</label>
+        <input type="month" id="planMonth" style="max-width:160px;">
+      </div>
+      <div class="panel">
+        <div class="planning-wrap"><table class="plan" id="planningTable"></table></div>
+      </div>
+    </div>
+
+    <button class="btn secondary" id="btnExportExcel" style="width:100%;margin-top:12px;">📊 Exporter en Excel</button>
+  </div>
+
+  <!-- BILLING TAB -->
+  <div class="tab-content" id="tab-billing" style="display:none;">
+    <div class="toolbar">
+      <label style="margin:0;">Mois :</label>
+      <input type="month" id="billMonth" style="max-width:160px;">
+      <button class="btn secondary" id="btnExportExcelBilling">📊 Exporter le détail facturation (Excel)</button>
+    </div>
+    <div class="kpis" id="billKpis"></div>
+    <div class="panel">
+      <h2>Détail théorique par patient</h2>
+      <div id="billByPatient"></div>
+    </div>
+    <div class="panel">
+      <h2>Détail théorique par infirmier(ère)</h2>
+      <div id="billByNurse"></div>
+    </div>
+    <div class="panel">
+      <h2>Détail théorique par infirmier(ère), patient par patient</h2>
+      <p class="muted small">Pour chaque infirmier(ère), la répartition théorique de son activité entre ses patients ce mois-ci — utile pour retrouver rapidement d'où vient un écart avec la facturière.</p>
+      <div id="billByNursePatient"></div>
+    </div>
+    <div class="panel">
+      <h2>Comparaison avec la facturière</h2>
+      <p class="muted small">Renseignez ici le montant réellement facturé/remonté par votre facturière pour ce mois, afin d'obtenir l'écart approximatif à investiguer.</p>
+      <div class="row">
+        <div class="field"><label>Montant théorique JD Consult (calculé)</label><input type="text" id="billTheoretical" readonly></div>
+        <div class="field"><label>Montant déclaré par la facturière (€)</label><input type="number" step="0.01" id="billDeclared"></div>
+        <div class="field"><label>Écart</label><input type="text" id="billDiff" readonly></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PATIENTS TAB -->
+  <div class="tab-content" id="tab-patients" style="display:none;">
+    <div class="panel">
+      <div class="row"><h2 style="margin:0;">Patients</h2><span class="spacer"></span><button class="btn" id="btnAddPatient">+ Ajouter un patient</button></div>
+      <div id="patientsList"></div>
+    </div>
+  </div>
+
+  <!-- STAFF TAB -->
+  <div class="tab-content" id="tab-staff" style="display:none;">
+    <div class="panel">
+      <div class="row"><h2 style="margin:0;">Personnel infirmier</h2><span class="spacer"></span><button class="btn" id="btnAddNurse">+ Ajouter</button></div>
+      <div id="staffList"></div>
+    </div>
+  </div>
+
+  <!-- CARE TYPES TAB -->
+  <div class="tab-content" id="tab-caretypes" style="display:none;">
+    <div class="panel">
+      <h2>Assignation aux patients</h2>
+      <p class="muted small">Choisissez ici, pour chaque patient, le type de prise en charge à appliquer (même chose que dans l'onglet Patients, mais regroupé sur une seule page pour aller plus vite).</p>
+      <div id="patientAssignList"></div>
+    </div>
+    <div class="panel">
+      <div class="row"><h2 style="margin:0;">Types de prise en charge (modèles réutilisables)</h2><span class="spacer"></span>
+        <button class="btn secondary" id="btnLoadPresets">📥 Charger les modèles NGAP courants</button>
+        <button class="btn" id="btnAddCareType">+ Nouveau type</button>
+      </div>
+      <p class="muted small">Un type de prise en charge peut être un forfait de dépendance (BSA/BSB/BSC) ou une liste d'actes à la cotation (AMI/AMX/SFI/DI…). Le bouton « Charger les modèles NGAP courants » ajoute une bibliothèque de types pré-cotés (BSI A/B/C, pansements, injections, perfusions…) que vous pouvez ensuite dupliquer, renommer ou ajuster.</p>
+      <div id="careTypesList"></div>
+    </div>
+  </div>
+
+  <!-- TARIFFS TAB -->
+  <div class="tab-content" id="tab-tariffs" style="display:none;">
+    <div class="warn-box">
+      Les valeurs ci-dessous sont des <b>estimations</b> des tarifs en vigueur (nomenclature NGAP mise à jour au 21/06/2026 + avenant conventionnel 11, recoupées avec le Livret NGAP 2026 de Convergence Infirmière), à vérifier et ajuster selon la version officielle en cours sur ameli.fr avant de vous y fier pour un contrôle précis. La lettre clé <b>AMI</b> doit notamment passer à 3,35&nbsp;€ en novembre 2026 puis 3,45&nbsp;€ en novembre 2027 — pensez à mettre à jour. Notez que <b>DI</b> (lettre-clé du Bilan de Soins Infirmiers) vaut 10,00&nbsp;€ et non 3,15&nbsp;€ : c'est ce qui donne 25&nbsp;€ pour un bilan initial (coef. 2,5) et 12&nbsp;€ pour un renouvellement (coef. 1,2).
+    </div>
+    <div class="panel">
+      <h2>Valeurs monétaires des lettres clés et forfaits</h2>
+      <div class="grid-3" id="tariffsGrid"></div>
+    </div>
+    <div class="panel">
+      <h2>Jours fériés (France, éditables)</h2>
+      <div id="holidaysList"></div>
+      <button class="btn secondary" id="btnAddHoliday" style="margin-top:8px;">+ Ajouter un jour férié</button>
+    </div>
+  </div>
+
+  <!-- HELP TAB -->
+  <div class="tab-content" id="tab-help" style="display:none;">
+    <div class="panel">
+      <h2>Comment utiliser cet outil</h2>
+      <ol>
+        <li><b>Personnel</b> : ajoutez vos 4 à 6 infirmier(ère)s.</li>
+        <li><b>Types de prise en charge</b> : créez des modèles (ex. « Pansement simple quotidien », « Toilette – dépendance légère (BSA) », « Bilan de soins infirmiers »).</li>
+        <li><b>Patients</b> : ajoutez vos patients, associez un type de prise en charge par défaut, les jours de la semaine où ils sont suivis, et leurs infos de déplacement (distance en km, zone montagne).</li>
+        <li><b>Planning mensuel</b> : réglez l'affectation « 🌐 Tous les patients » pour chaque jour (qui fait la tournée), puis décochez juste les patients absents ce jour-là. Le bouton 🕐 sur une cellule permet de détailler un jour particulier (plusieurs passages, heures, actes différents).</li>
+        <li><b>Contrôle facturation</b> : consultez les totaux théoriques par patient/infirmier/mois, comparez avec le montant transmis par votre facturière.</li>
+        <li><b>Tarifs</b> : ajustez les valeurs € dès qu'elles changent (revalorisations conventionnelles).</li>
+      </ol>
+      <h2>Plusieurs soins le même jour (perfusions, pansements…)</h2>
+      <p>Par défaut, un patient reçoit chaque jour suivi les actes de son/ses type(s) de prise en charge, répétés selon le champ « nombre de passages/jour » de sa fiche. Pour un jour où le contenu réel diffère (ex. 2 perfusions à des heures différentes, un pansement en plus, une visite annulée), cliquez sur le bouton <b>🕐</b> de la cellule concernée : vous pouvez y ajouter autant de passages que nécessaire, chacun avec son heure, ses actes propres et son déplacement facturé ou non. « Réinitialiser » efface ce détail ponctuel et revient au calcul automatique.</p>
+      <h2>Règles de cotation appliquées automatiquement</h2>
+      <p>Le calcul applique les règles de cumul des Dispositions générales de la NGAP : au sein d'une même séance, sans forfait, seul l'acte le mieux coté est facturé à taux plein, le second à 50 %, les suivants ne sont pas facturés (article 11B) — sauf pour le Bilan de Soins Infirmiers (DI) et l'IFI, toujours à taux plein. Lorsqu'un patient a un forfait BSA/BSB/BSC, celui-ci est facturé une seule fois par jour à taux plein, et chaque acte réalisé en plus est facturé au taux indiqué dans sa fiche (100 % pour les dérogations comme la perfusion, le pansement lourd et complexe, le prélèvement veineux ; 50 % pour les autres actes, notamment les injections), conformément à l'article 12 du Titre XVI. Ce taux est modifiable acte par acte dans l'onglet Types de prise en charge.</p>
+      <h2>Perfusions — cotations détaillées (circulaire Convergence Infirmière CIR-9/2025)</h2>
+      <p>Les actes de perfusion sont disponibles en détail dans la bibliothèque d'actes/types de prise en charge : <b>AMI 9/10</b> (perfusion courte ≤1h, en présence continue), <b>AMI 14/15</b> (perfusion &gt;1h avec organisation d'une surveillance, max 1×/jour/patient), <b>AMI 4</b> (forfait journalier d'organisation de la surveillance d'une perfusion au long cours, max 1×/jour), <b>AMI 4,1</b> (changement de flacon, branchement en Y, déplacement/changement de site de perfusion), <b>AMI 5</b> (arrêt/retrait définitif d'un dispositif, &gt;24h d'arrêt) et <b>AMI 6</b> (supplément de surveillance au-delà de la 1ère heure, taux plein, max 5h/jour).</p>
+      <p><b>Règle appliquée automatiquement :</b> le forfait perfusion longue (AMI 14 ou AMI 15) n'étant facturable qu'<b>une seule fois par jour et par patient</b>, si vous saisissez plusieurs passages « perfusion longue » le même jour pour le même patient, l'outil ne facture le taux plein que sur le <b>premier</b> passage (par ordre d'heure) et <b>requalifie automatiquement les suivants en AMI 4,1</b> (changement de flacon / prise en charge d'une perfusion déjà en cours) — la mention « requalifié en AMI 4,1 » apparaît alors dans le détail du calcul. Cet outil ne bloque en revanche pas automatiquement les autres combinaisons interdites par la circulaire — pensez à vérifier que, pour un même patient et une même journée : AMI 14/15 ne se cumule jamais avec AMI 4 (organisation de surveillance) ni, sur la même séance, avec AMI 5 ; en revanche plusieurs AMI 4,1 réalisés au cours d'une même séance (ex. deux flacons changés simultanément) restent cumulables entre eux dans la limite de l'article 11B (le 2e à 50 %).</p>
+      <h2>Patients cancéreux / immunodéprimés</h2>
+      <p>La case <b>🎗️ « Patient atteint de cancer / immunodéprimé »</b> de la fiche patient (onglet Patients) applique automatiquement la cotation spécifique de l'article 4 chapitre II de la NGAP, quels que soient les actes saisis (types de prise en charge, passages par défaut ou exceptions ponctuelles) : toute perfusion courte facturée en <b>AMI 9</b> est calculée en <b>AMI 10</b>, et toute perfusion longue facturée en <b>AMI 14</b> est calculée en <b>AMI 15</b> — cotation qui s'applique quelle que soit la nature des produits perfusés, pas uniquement en cas de chimiothérapie (vous verrez la mention « requalifié en AMI 10/15 » dans le détail du calcul). Cette bascule reste purement théorique/calculatoire : elle ne modifie pas les actes que vous avez saisis, seulement leur cotation. L'injection intraveineuse spécifique <b>AMI 7</b> (au lieu d'AMI 2) reste en revanche à choisir manuellement dans le catalogue d'actes, son usage dépendant davantage de la prescription (chimiothérapie IV) que du seul statut du patient.</p>
+      <h2>Sauvegarde de vos données</h2>
+      <p>Toutes vos données (personnel, patients, planning, tarifs) restent uniquement dans cette page tant que vous ne les exportez pas. Utilisez <b>« Exporter »</b> régulièrement pour sauvegarder un fichier .json sur votre ordinateur, et <b>« Importer »</b> pour le recharger la prochaine fois que vous ouvrez l'outil.</p>
+      <h2>Important — évolution de la nomenclature</h2>
+      <p>Depuis la décision UNCAM du 02/06/2026, l'ancien système <b>AIS</b> (soins de base à la séance) a été abrogé au profit du <b>Bilan de Soins Infirmiers (BSI)</b> et des forfaits de dépendance <b>BSA / BSB / BSC</b>. Ce programme reflète cette évolution : privilégiez les forfaits BSA/BSB/BSC pour vos patients dépendants plutôt que l'AIS, qui n'est conservé ici qu'à titre indicatif/historique.</p>
+      <p class="muted small">Cet outil fournit une estimation théorique à des fins de contrôle approximatif, basée sur la nomenclature NGAP en vigueur au 21/06/2026 et des recoupements avec des guides professionnels en ligne (voir sources fournies dans la conversation). Les règles de cumul réelles comportent des cas particuliers (lésions traumatiques multiples, dérogations spécifiques...) non tous modélisés ici. Il ne remplace pas un contrôle professionnel de facturation et ne constitue pas un conseil juridique ou comptable — vérifiez les cas litigieux avec votre facturière ou la caisse.</p>
+    </div>
+  </div>
+
+</main>
+<footer>JD Consult — outil interne de planning et de contrôle de facturation. Données stockées localement dans le fichier exporté uniquement.</footer>
+
+<div class="modal-overlay" id="passageModalOverlay" style="display:none;">
+  <div class="modal-box">
+    <h2>Détail des soins du jour — <span id="pmPatientName"></span> — <span id="pmDate"></span></h2>
+    <p class="muted small">Précisez ici, pour cette journée uniquement, chaque passage (séance) réalisé — utile s'il y a plusieurs interventions différentes dans la journée (ex. une perfusion le matin, un pansement le soir), ou pour indiquer l'heure de chaque passage. Le calcul applique automatiquement les règles de cumul NGAP (2e acte d'une même séance à 50%, ou taux forfait/hors-forfait selon le patient).</p>
+    <div id="pmPassages"></div>
+    <button class="btn secondary" id="pmAddPassage">+ Ajouter un passage</button>
+    <hr>
+    <div class="row tight" style="justify-content:flex-end;">
+      <button class="btn danger" id="pmReset">Réinitialiser (revenir au calcul par défaut)</button>
+      <button class="btn secondary" id="pmCancel">Annuler</button>
+      <button class="btn" id="pmSave">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================= STATE ============================= */
+// forfaitRate = taux (%) appliqué à cet acte lorsqu'il est facturé EN SUS d'un forfait de dépendance
+// BSA/BSB/BSC (article 12 du Titre XVI, Chapitre I des Dispositions générales de la NGAP) :
+// 100 = dérogation taux plein (perfusion, pansement lourd et complexe, prélèvement veineux, DI...),
+// 50 = taux général (injections, actes courants). Sans forfait, la règle de cumul classique
+// (article 11B : acte le + coté à 100%, le 2e à 50%, les suivants non facturés) s'applique à la place.
+const COMMON_ACTS = [
+  {label:"Injection IM/SC/ID (isolée)", lc:"AMI", coef:1, forfaitRate:50},
+  {label:"Injection IV directe isolée", lc:"AMI", coef:2, forfaitRate:50},
+  {label:"Vaccination avec prescription", lc:"AMI", coef:2.4, forfaitRate:50},
+  {label:"Vaccination sans prescription", lc:"AMI", coef:3.05, forfaitRate:50},
+  {label:"Prélèvement veineux", lc:"AMI", coef:1.5, forfaitRate:100},
+  {label:"Pansement non chirurgical (ulcère, escarre)", lc:"AMI", coef:2.02, forfaitRate:50},
+  {label:"Pansement chirurgical simple", lc:"AMI", coef:2.02, forfaitRate:50},
+  {label:"Pansement de stomie", lc:"AMI", coef:3, forfaitRate:50},
+  {label:"Ablation de fils/agrafes (≤10)", lc:"AMI", coef:2, forfaitRate:50},
+  {label:"Bilan pansement lourd et complexe (1ère PEC)", lc:"AMI", coef:11, forfaitRate:100},
+  {label:"Séance pansement lourd et complexe", lc:"AMI", coef:4, forfaitRate:100},
+  {label:"Perfusion courte ≤1h sous surveillance continue", lc:"AMI", coef:9, forfaitRate:100},
+  {label:"Perfusion courte ≤1h — immunodéprimé/mucoviscidose", lc:"AMI", coef:10, forfaitRate:100},
+  {label:"Perfusion >1h avec organisation de surveillance", lc:"AMI", coef:14, forfaitRate:100},
+  {label:"Perfusion IV antibiotiques — mucoviscidose (>1h avec surveillance)", lc:"AMI", coef:15, forfaitRate:100},
+  {label:"Forfait organisation surveillance perfusion au long cours (1x/jour max)", lc:"AMI", coef:4, forfaitRate:100},
+  {label:"Changement de flacon / branchement en Y / déplacement de perfusion (AMI 4,1)", lc:"AMI", coef:4.1, forfaitRate:100},
+  {label:"Arrêt / retrait définitif d'un dispositif de perfusion (AMI 5)", lc:"AMI", coef:5, forfaitRate:100},
+  {label:"Supplément surveillance perfusion courte au-delà de la 1ère heure (par heure, max 5h)", lc:"AMI", coef:6, forfaitRate:100},
+  {label:"Séance d'aérosol", lc:"AMI", coef:1.5, forfaitRate:50},
+  {label:"Surveillance/observation patient (fiche)", lc:"AMI", coef:1, forfaitRate:100},
+  {label:"Séance surveillance postopératoire (RAAC)", lc:"AMI", coef:3.9, forfaitRate:100},
+  {label:"Retrait de sonde urinaire", lc:"AMI", coef:2, forfaitRate:50},
+  {label:"Changement sonde urinaire à demeure", lc:"AMI", coef:3, forfaitRate:50},
+  {label:"Injection insuline", lc:"AMI", coef:1, forfaitRate:50},
+  {label:"Surveillance patient diabétique insulino-traité (hebdo, >75 ans)", lc:"AMI", coef:4, forfaitRate:50},
+  {label:"Bilan de Soins Infirmiers — initial", lc:"DI", coef:2.5, forfaitRate:100},
+  {label:"Bilan de Soins Infirmiers — renouvellement", lc:"DI", coef:1.2, forfaitRate:100},
+];
+
+const LETTRES_CLES = ["AMI","AMX","SFI","DI","IFI","AIS(obsolète)"];
+// Lettres clés toujours facturées à taux plein, jamais soumises au cumul dégressif de l'article 11B.
+const LETTRES_HORS_CUMUL = ["DI","IFI"];
+
+function uid(prefix){ return prefix + "_" + Math.random().toString(36).slice(2,10); }
+
+function defaultTariffs(){
+  return {
+    AMI: 3.15, AMX: 3.15, SFI: 3.15, DI: 10.00, IFI: 2.75, AIS: 2.65,
+    BSA: 13.00, BSB: 18.20, BSC: 28.70,
+    IFD: 2.75, IK: 0.35, IKM: 0.50, IKS: 3.40,
+    MCI: 5.00, MAU: 1.35, MIE: 3.15,
+    majNuit: 9.15, majNuitProfonde: 18.30, majDimancheFerie: 8.50
+  };
+}
+
+function default2026Holidays(){
+  return [
+    {date:"2026-01-01", label:"Jour de l'an"},
+    {date:"2026-04-06", label:"Lundi de Pâques"},
+    {date:"2026-05-01", label:"Fête du travail"},
+    {date:"2026-05-08", label:"Victoire 1945"},
+    {date:"2026-05-14", label:"Ascension"},
+    {date:"2026-05-25", label:"Lundi de Pentecôte"},
+    {date:"2026-07-14", label:"Fête nationale"},
+    {date:"2026-08-15", label:"Assomption"},
+    {date:"2026-11-01", label:"Toussaint"},
+    {date:"2026-11-11", label:"Armistice"},
+    {date:"2026-12-25", label:"Noël"}
+  ];
+}
+
+let state = {
+  version: 1,
+  nurses: [],
+  patients: [],
+  careTypes: [],
+  planning: {},        // key "YYYY-MM-DD|patientId" -> {nurseId, excluded, overrideActs:null|[...], flags:{nuit,mci,mau}, deplacement:{type,km,montagne} or null=use patient default}
+  dayNurse: {},        // key "YYYY-MM-DD" -> nurseId, affectation par défaut de la tournée entière ce jour-là
+  holidays: default2026Holidays(),
+  tariffs: defaultTariffs(),
+  monthlyDeclared: {}  // "YYYY-MM" -> number
+};
+
+function todayISO(){ const d=new Date(); return d.toISOString().slice(0,10); }
+function currentMonthStr(){ const d=new Date(); return d.toISOString().slice(0,7); }
+
+/* ============================= TAB SWITCHING ============================= */
+function switchTab(tabName){
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tabName));
+  document.querySelectorAll('.tab-content').forEach(t=>t.style.display='none');
+  document.getElementById('tab-'+tabName).style.display='block';
+  if(tabName==='planning') refreshPlanningViews();
+  if(tabName==='billing') renderBilling();
+  if(tabName==='patients') renderPatients();
+  if(tabName==='caretypes') renderPatientAssignList();
+}
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
+});
+// Depuis le planning, clic sur le nom d'un patient : bascule sur l'onglet Patients et défile jusqu'à sa fiche.
+function goToPatient(patientId){
+  switchTab('patients');
+  setTimeout(()=>{
+    const el = document.getElementById('patient-'+patientId);
+    if(!el) return;
+    el.scrollIntoView({behavior:'smooth', block:'start'});
+    const prevOutline = el.style.outline;
+    el.style.outline = '2px solid var(--accent)';
+    setTimeout(()=>{ el.style.outline = prevOutline; }, 1600);
+  }, 30);
+}
+
+/* ============================= EXPORT / IMPORT ============================= */
+document.getElementById('btnExport').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url; a.download = `jd-consult-planning_${stamp}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+document.getElementById('btnImportTrigger').addEventListener('click', ()=> document.getElementById('fileImport').click());
+document.getElementById('fileImport').addEventListener('change', (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    try{
+      const data = JSON.parse(ev.target.result);
+      if(!data || typeof data !== 'object') throw new Error('format invalide');
+      state = Object.assign({
+        version:1,nurses:[],patients:[],careTypes:[],planning:{},dayNurse:{},
+        holidays:default2026Holidays(),tariffs:defaultTariffs(),monthlyDeclared:{}
+      }, data);
+      renderAll();
+      alert('Import réussi.');
+    }catch(err){ alert('Erreur lors de l\'import : '+err.message); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+/* ============================= EXPORT EXCEL ============================= */
+// Génère des classeurs Excel (format SpreadsheetML / "Excel XML") sans aucune dépendance externe :
+// entièrement autonomes, ils s'ouvrent directement dans Excel (ou LibreOffice/Google Sheets).
+// - buildPlanningWorkbookXML : un planning visuel coloré (qui travaille, quel jour), comme à l'écran.
+// - buildBillingWorkbookXML  : le détail complet de la facturation théorique (qui / quoi / à qui).
+function xmlEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function xmlEscNL(s){ return xmlEsc(s).replace(/\n/g,'&#10;'); }
+function xlCell(value, opts){
+  opts = opts || {};
+  const style = opts.styleId ? ` ss:StyleID="${opts.styleId}"` : '';
+  const merge = opts.mergeAcross ? ` ss:MergeAcross="${opts.mergeAcross}"` : '';
+  if(opts.type==='Number'){
+    const n = (typeof value==='number' && isFinite(value)) ? value : 0;
+    return `<Cell${style}${merge}><Data ss:Type="Number">${n}</Data></Cell>`;
+  }
+  return `<Cell${style}${merge}><Data ss:Type="String">${xmlEscNL(value)}</Data></Cell>`;
+}
+function xlRow(cellsXml, height){ return `<Row${height?` ss:Height="${height}"`:''}>${cellsXml}</Row>`; }
+// Éclaircit une couleur hex vers un pastel (mélange avec du blanc) — utilisé pour les fonds de cellule
+// par infirmier(ère) dans le planning Excel, à partir de la couleur choisie dans l'onglet Personnel.
+function lightenHex(hex, factor){
+  hex = String(hex||'#2563eb').replace('#','');
+  if(hex.length===3) hex = hex.split('').map(c=>c+c).join('');
+  if(!/^[0-9a-fA-F]{6}$/.test(hex)) hex = '2563eb';
+  const r = parseInt(hex.substr(0,2),16), g = parseInt(hex.substr(2,2),16), b = parseInt(hex.substr(4,2),16);
+  const mix = c => Math.max(0,Math.min(255,Math.round(c + (255-c)*factor)));
+  const toHex = c => c.toString(16).padStart(2,'0');
+  return '#' + toHex(mix(r)) + toHex(mix(g)) + toHex(mix(b));
+}
+const XL_BASE_STYLES = `
+  <Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/><Font ss:FontName="Calibri" ss:Size="10"/></Style>
+  <Style ss:ID="title"><Font ss:Bold="1" ss:Size="14" ss:Color="#1D4ED8"/><Alignment ss:Horizontal="Left" ss:Vertical="Center"/></Style>
+  <Style ss:ID="bold"><Font ss:Bold="1"/></Style>
+  <Style ss:ID="head"><Font ss:Bold="1" ss:Color="#1F2933"/><Interior ss:Color="#DCE6F1" ss:Pattern="Solid"/><Alignment ss:Vertical="Center" ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#9AA5B1"/></Borders></Style>`;
+const XL_BORDER = `<Borders><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D9DFE4"/><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D9DFE4"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D9DFE4"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D9DFE4"/></Borders>`;
+
+// Construit un classeur "Planning" visuel et coloré : qui travaille, quel jour, pour quel patient.
+function buildPlanningWorkbookXML(month){
+  const days = daysInMonth(month);
+  const monthLabel = new Date(month+'-01T00:00:00').toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+  const nCols = days.length + 1;
+
+  // Un style de fond pastel par infirmier(ère), dérivé de sa couleur (onglet Personnel).
+  const nurseStyleId = {};
+  const nurseStylesXml = state.nurses.map((n,i)=>{
+    nurseStyleId[n.id] = 'nurse'+i;
+    const bg = lightenHex(n.color||'#2563eb', 0.78);
+    return `<Style ss:ID="nurse${i}"><Font ss:Size="9"/><Interior ss:Color="${bg}" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>${XL_BORDER}</Style>`;
+  }).join('');
+
+  const styles = XL_BASE_STYLES + `
+  <Style ss:ID="headPatientCol"><Font ss:Bold="1"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/>${XL_BORDER}</Style>
+  <Style ss:ID="headDay"><Font ss:Bold="1" ss:Size="9"/><Interior ss:Color="#E8F0FE" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>${XL_BORDER}</Style>
+  <Style ss:ID="headDaySunday"><Font ss:Bold="1" ss:Size="9"/><Interior ss:Color="#FDE8E8" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>${XL_BORDER}</Style>
+  <Style ss:ID="tourneeLabel"><Font ss:Bold="1" ss:Italic="1" ss:Size="9"/><Interior ss:Color="#F1F5F9" ss:Pattern="Solid"/>${XL_BORDER}</Style>
+  <Style ss:ID="patientName"><Font ss:Bold="1" ss:Size="10"/><Interior ss:Color="#FAFCFF" ss:Pattern="Solid"/><Alignment ss:Horizontal="Left" ss:Vertical="Center" ss:WrapText="1"/>${XL_BORDER}</Style>
+  <Style ss:ID="emptyCell"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/>${XL_BORDER}</Style>
+  ${nurseStylesXml}`;
+
+  const titleRow = xlRow(`<Cell ss:StyleID="title" ss:MergeAcross="${nCols-1}"><Data ss:Type="String">🩺 JD Consult — Planning ${xmlEsc(monthLabel)}</Data></Cell>`, 22);
+
+  let dayHeadCells = xlCell('Patient', {styleId:'headPatientCol'});
+  days.forEach(d=>{
+    const sunday = isSunday(d), ferie = isHoliday(d);
+    const wd = WEEKDAYS[(new Date(d+'T00:00:00').getDay()+6)%7];
+    const label = d.slice(8,10) + '\n' + wd + (ferie?' 🔴':'');
+    dayHeadCells += xlCell(label, {styleId: (sunday||ferie) ? 'headDaySunday' : 'headDay'});
+  });
+  const dayHeadRow = xlRow(dayHeadCells, 28);
+
+  let tourneeCells = `<Cell ss:StyleID="tourneeLabel"><Data ss:Type="String">🌐 Tournée du jour</Data></Cell>`;
+  days.forEach(d=>{
+    const nurseId = state.dayNurse && state.dayNurse[d];
+    const nurse = nurseId ? state.nurses.find(n=>n.id===nurseId) : null;
+    tourneeCells += nurse ? xlCell(nurse.name, {styleId:nurseStyleId[nurse.id]||'emptyCell'}) : xlCell('', {styleId:'emptyCell'});
+  });
+  const tourneeRow = xlRow(tourneeCells, 18);
+
+  const patientRows = state.patients.map(p=>{
+    let cells = xlCell(p.name + (p.hasCancer?' 🎗️':''), {styleId:'patientName'});
+    days.forEach(d=>{
+      const calc = computeDayAmount(d,p);
+      if(calc.hasNurse){
+        const nurse = state.nurses.find(n=>n.id===calc.nurseId);
+        const label = (nurse?nurse.name:'?') + '\n' + calc.amount.toFixed(2) + '€';
+        cells += xlCell(label, {styleId: nurse ? (nurseStyleId[nurse.id]||'emptyCell') : 'emptyCell'});
+      } else {
+        cells += xlCell('', {styleId:'emptyCell'});
+      }
+    });
+    return xlRow(cells, 26);
+  });
+
+  const legendRows = [xlRow(''), xlRow(`<Cell ss:StyleID="bold"><Data ss:Type="String">Légende infirmier(ère)s</Data></Cell>`)]
+    .concat(state.nurses.map((n,i)=> xlRow(xlCell(n.name, {styleId:nurseStyleId[n.id]}))));
+
+  const colDefs = `<Column ss:Width="150"/>` + days.map(()=>'<Column ss:Width="46"/>').join('');
+
+  return `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Styles>${styles}
+ </Styles>
+ <Worksheet ss:Name="${xmlEsc('Planning ' + month)}">
+  <Table>
+   ${colDefs}
+${titleRow}
+${dayHeadRow}
+${tourneeRow}
+${patientRows.join('\n')}
+${legendRows.join('\n')}
+  </Table>
+  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+   <FreezePanes/>
+   <FrozenNoSplit/>
+   <SplitHorizontal>3</SplitHorizontal>
+   <TopRowBottomPane>3</TopRowBottomPane>
+   <SplitVertical>1</SplitVertical>
+   <LeftColumnRightPane>1</LeftColumnRightPane>
+   <ActivePane>0</ActivePane>
+  </WorksheetOptions>
+ </Worksheet>
+</Workbook>`;
+}
+function downloadPlanningExcel(month){
+  const xml = buildPlanningWorkbookXML(month);
+  const blob = new Blob([xml], {type:'application/vnd.ms-excel'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `jd-consult-planning_${month}.xls`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+document.getElementById('btnExportExcel').addEventListener('click', ()=> downloadPlanningExcel(getPlanMonth()));
+
+// Construit un classeur "Facturation" détaillé : qui (infirmier) / quoi (chaque acte) / à qui (patient),
+// plus les récapitulatifs par patient, par infirmier(ère), et infirmier(ère)×patient (mêmes chiffres
+// que l'onglet Contrôle facturation, pour rester toujours cohérent avec ce qui est affiché à l'écran).
+function buildBillingWorkbookXML(month){
+  const bd = computeBillingData(month);
+  const monthLabel = new Date(month+'-01T00:00:00').toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+  const declared = state.monthlyDeclared[month];
+
+  // --- Feuille 1 : résumé ---
+  const summaryRows = [
+    xlRow(`<Cell ss:StyleID="title" ss:MergeAcross="1"><Data ss:Type="String">💶 Contrôle facturation — ${xmlEsc(monthLabel)}</Data></Cell>`, 22),
+    xlRow(''),
+    xlRow(xlCell('Total théorique du mois (€)', {styleId:'bold'}) + xlCell(bd.grandTotal, {type:'Number'})),
+    xlRow(xlCell('Moyenne journalière de la tournée (€)', {styleId:'bold'}) + xlCell(bd.dailyAverage, {type:'Number'})),
+    xlRow(xlCell('Jours facturés dans le mois', {styleId:'bold'}) + xlCell(bd.nbActiveDays, {type:'Number'})),
+    xlRow(xlCell('Patients actifs', {styleId:'bold'}) + xlCell(state.patients.length, {type:'Number'})),
+    xlRow(xlCell('Infirmier(ère)s', {styleId:'bold'}) + xlCell(state.nurses.length, {type:'Number'}))
+  ];
+  if(declared !== undefined){
+    const diff = declared - bd.grandTotal;
+    summaryRows.push(xlRow(''));
+    summaryRows.push(xlRow(xlCell('Montant déclaré par la facturière (€)', {styleId:'bold'}) + xlCell(declared, {type:'Number'})));
+    summaryRows.push(xlRow(xlCell('Écart (déclaré − théorique) (€)', {styleId:'bold'}) + xlCell(diff, {type:'Number'})));
+  }
+
+  // --- Feuille 2 : détail complet — qui (infirmier) / quoi (acte) / à qui (patient) ---
+  const detailRows = [xlRow(['Date','Jour','Patient (à qui)','Infirmier(ère) (qui)','Acte / ligne de facturation (quoi)','Montant (€)'].map(h=>xlCell(h,{styleId:'head'})).join(''))];
+  bd.detailRows.forEach(r=>{
+    const wd = WEEKDAYS[(new Date(r.date+'T00:00:00').getDay()+6)%7];
+    detailRows.push(xlRow(xlCell(r.date) + xlCell(wd) + xlCell(r.patientName) + xlCell(r.nurseName) + xlCell(r.label) + xlCell(r.amount, {type:'Number'})));
+  });
+  detailRows.push(xlRow(xlCell('Total',{styleId:'bold'}) + xlCell('') + xlCell('') + xlCell('') + xlCell('') + xlCell(bd.grandTotal, {type:'Number', styleId:'bold'})));
+
+  // --- Feuille 3 : récap par patient ---
+  const byPatientArr = Object.values(bd.byPatient).filter(x=>x.count>0).sort((a,b)=>b.total-a.total);
+  const patientRows = [xlRow(['Patient','Passages','Total théorique (€)'].map(h=>xlCell(h,{styleId:'head'})).join(''))]
+    .concat(byPatientArr.map(x=> xlRow(xlCell(x.name) + xlCell(x.count,{type:'Number'}) + xlCell(x.total,{type:'Number'}))))
+    .concat([xlRow(xlCell('Total',{styleId:'bold'}) + xlCell('') + xlCell(bd.grandTotal,{type:'Number',styleId:'bold'}))]);
+
+  // --- Feuille 4 : récap par infirmier(ère) ---
+  const byNurseArr = Object.values(bd.byNurse).filter(x=>x.count>0).sort((a,b)=>b.total-a.total);
+  const nurseRows = [xlRow(['Infirmier(ère)','Passages','Total théorique (€)'].map(h=>xlCell(h,{styleId:'head'})).join(''))]
+    .concat(byNurseArr.map(x=> xlRow(xlCell(x.name) + xlCell(x.count,{type:'Number'}) + xlCell(x.total,{type:'Number'}))))
+    .concat([xlRow(xlCell('Total',{styleId:'bold'}) + xlCell('') + xlCell(bd.grandTotal,{type:'Number',styleId:'bold'}))]);
+
+  // --- Feuille 5 : infirmier(ère) × patient (qui a fait quoi, pour qui) ---
+  const crossRows = [xlRow(['Infirmier(ère) (qui)','Patient (à qui)','Passages','Total théorique (€)'].map(h=>xlCell(h,{styleId:'head'})).join(''))];
+  state.nurses.forEach(n=>{
+    const npArr = Object.values(bd.byNursePatient[n.id]||{}).filter(x=>x.count>0).sort((a,b)=>b.total-a.total);
+    npArr.forEach(x=> crossRows.push(xlRow(xlCell(n.name) + xlCell(x.name) + xlCell(x.count,{type:'Number'}) + xlCell(x.total,{type:'Number'}))));
+  });
+
+  const sheet = (name, rows, colWidths) => `<Worksheet ss:Name="${xmlEsc(name)}"><Table>${colWidths||''}
+${rows.join('\n')}
+  </Table></Worksheet>`;
+
+  return `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Styles>${XL_BASE_STYLES}
+ </Styles>
+ ${sheet('Résumé', summaryRows, `<Column ss:Width="240"/><Column ss:Width="110"/>`)}
+ ${sheet('Détail qui-quoi-à qui', detailRows, `<Column ss:Width="75"/><Column ss:Width="45"/><Column ss:Width="140"/><Column ss:Width="140"/><Column ss:Width="320"/><Column ss:Width="90"/>`)}
+ ${sheet('Par patient', patientRows, `<Column ss:Width="160"/><Column ss:Width="70"/><Column ss:Width="110"/>`)}
+ ${sheet('Par infirmier', nurseRows, `<Column ss:Width="160"/><Column ss:Width="70"/><Column ss:Width="110"/>`)}
+ ${sheet('Infirmier x Patient', crossRows, `<Column ss:Width="160"/><Column ss:Width="160"/><Column ss:Width="70"/><Column ss:Width="110"/>`)}
+</Workbook>`;
+}
+function downloadBillingExcel(month){
+  const xml = buildBillingWorkbookXML(month);
+  const blob = new Blob([xml], {type:'application/vnd.ms-excel'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `jd-consult-facturation_${month}.xls`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+document.getElementById('btnExportExcelBilling').addEventListener('click', ()=> downloadBillingExcel(getBillMonth()));
+
+/* ============================= STAFF ============================= */
+function renderStaff(){
+  scheduleAutosave();
+  const el = document.getElementById('staffList');
+  if(state.nurses.length===0){ el.innerHTML = '<p class="muted">Aucun infirmier(ère) enregistré(e).</p>'; return; }
+  el.innerHTML = '<table><tr><th>Nom</th><th style="width:120px;">Couleur</th><th style="width:40px;"></th></tr>' +
+    state.nurses.map(n=>`
+      <tr>
+        <td><input type="text" value="${escAttr(n.name)}" onchange="updateNurse('${n.id}','name',this.value)"></td>
+        <td><input type="text" value="${escAttr(n.color||'#2563eb')}" onchange="updateNurse('${n.id}','color',this.value)" placeholder="#hex"></td>
+        <td><button class="icon-btn" onclick="removeNurse('${n.id}')">🗑️</button></td>
+      </tr>`).join('') + '</table>';
+}
+function updateNurse(id, field, val){ const n = state.nurses.find(x=>x.id===id); if(n){ n[field]=val; refreshPlanningViews(); } }
+function removeNurse(id){ if(!confirm('Supprimer cet infirmier(ère) ?')) return; state.nurses = state.nurses.filter(n=>n.id!==id); renderStaff(); refreshPlanningViews(); }
+document.getElementById('btnAddNurse').addEventListener('click', ()=>{
+  state.nurses.push({id:uid('n'), name:'Nouvel infirmier(ère)', color:'#2563eb'});
+  renderStaff();
+});
+
+/* ============================= CARE TYPES ============================= */
+function renderCareTypes(){
+  scheduleAutosave();
+  const el = document.getElementById('careTypesList');
+  if(state.careTypes.length===0){ el.innerHTML = '<p class="muted">Aucun type de prise en charge défini.</p>'; return; }
+  el.innerHTML = state.careTypes.map(ct=>renderCareTypeCard(ct)).join('');
+  renderPatientAssignList();
+}
+function renderPatientAssignList(){
+  const el = document.getElementById('patientAssignList');
+  if(!el) return;
+  if(state.patients.length===0){ el.innerHTML = '<p class="muted">Aucun patient enregistré pour l\'instant (onglet Patients).</p>'; return; }
+  el.innerHTML = `<table><tr><th>Patient</th><th>Types de prise en charge assignés</th><th style="width:260px;">Ajouter un type</th></tr>` +
+    state.patients.map(p=>{
+      const assigned = patientCareTypeIds(p);
+      const tags = assigned.length ? assigned.map(id=>{
+          const ct = state.careTypes.find(c=>c.id===id);
+          if(!ct) return '';
+          return `<span class="tag">${escHtml(ct.name)} <button class="icon-btn" style="padding:0 0 0 4px;font-size:11px;" onclick="toggleCareType('${p.id}','${ct.id}',false)" title="Retirer">✕</button></span>`;
+        }).join('') : '<span class="muted small">— aucun / à définir —</span>';
+      const addable = state.careTypes.filter(c=>!assigned.includes(c.id));
+      const addSelect = addable.length ? `<select onchange="if(this.value){toggleCareType('${p.id}',this.value,true); this.value='';}">
+          <option value="">+ ajouter…</option>
+          ${addable.map(c=>`<option value="${c.id}">${escAttr(c.name)}${c.mode==='forfait'?' (forfait '+c.forfaitLevel+')':''}</option>`).join('')}
+        </select>` : '<span class="muted small">tous assignés</span>';
+      return `<tr><td>${escHtml(p.name)}</td><td>${tags}</td><td>${addSelect}</td></tr>`;
+    }).join('') + `</table>`;
+}
+function renderCareTypeCard(ct){
+  const isForfait = ct.mode === 'forfait';
+  return `
+  <div class="panel" style="background:#fafcff;">
+    <div class="row">
+      <div class="field" style="max-width:280px;"><label>Nom du type de prise en charge</label>
+        <input type="text" value="${escAttr(ct.name)}" onchange="updateCareType('${ct.id}','name',this.value)"></div>
+      <div class="field" style="max-width:220px;"><label>Mode</label>
+        <select onchange="updateCareType('${ct.id}','mode',this.value)">
+          <option value="acts" ${!isForfait?'selected':''}>Liste d'actes à la cotation</option>
+          <option value="forfait" ${isForfait?'selected':''}>Forfait dépendance (BSA/BSB/BSC)</option>
+        </select>
+      </div>
+      <button class="icon-btn" style="align-self:end;" onclick="removeCareType('${ct.id}')">🗑️ Supprimer</button>
+    </div>
+    ${isForfait ? `
+      <div class="field" style="max-width:220px;"><label>Niveau de forfait</label>
+        <select onchange="updateCareType('${ct.id}','forfaitLevel',this.value)">
+          <option value="BSA" ${ct.forfaitLevel==='BSA'?'selected':''}>BSA — léger</option>
+          <option value="BSB" ${ct.forfaitLevel==='BSB'?'selected':''}>BSB — intermédiaire</option>
+          <option value="BSC" ${ct.forfaitLevel==='BSC'?'selected':''}>BSC — lourd</option>
+        </select>
+      </div>
+    ` : `
+      <h3>Actes inclus</h3>
+      <div id="acts-${ct.id}">
+        ${ct.acts.map((a,i)=>renderActLine(ct.id,a,i)).join('')}
+      </div>
+      <div class="row tight" style="margin-top:6px;">
+        <select id="quickadd-${ct.id}">
+          <option value="">— ajouter depuis le catalogue courant —</option>
+          ${COMMON_ACTS.map((a,i)=>`<option value="${i}">${escAttr(a.label)} (${a.lc} ${a.coef})</option>`).join('')}
+        </select>
+        <button class="btn secondary" onclick="quickAddAct('${ct.id}')">+ Ajouter</button>
+        <button class="btn secondary" onclick="addBlankAct('${ct.id}')">+ Acte libre</button>
+      </div>
+    `}
+  </div>`;
+}
+function renderActLine(ctId, a, i){
+  return `<div class="act-line">
+    <input type="text" value="${escAttr(a.label)}" onchange="updateAct('${ctId}',${i},'label',this.value)" placeholder="Désignation de l'acte">
+    <select onchange="updateAct('${ctId}',${i},'lc',this.value)">
+      ${LETTRES_CLES.map(lc=>`<option value="${lc.replace('(obsolète)','')}" ${a.lc===lc.replace('(obsolète)','')?'selected':''}>${lc}</option>`).join('')}
+    </select>
+    <input type="number" step="0.01" value="${a.coef}" onchange="updateAct('${ctId}',${i},'coef',parseFloat(this.value)||0)" title="Coefficient">
+    <input type="number" step="1" min="1" value="${a.qty||1}" onchange="updateAct('${ctId}',${i},'qty',parseInt(this.value)||1)" title="Quantité / séances par jour">
+    <select onchange="updateAct('${ctId}',${i},'forfaitRate',parseInt(this.value))" title="Taux si facturé en plus d'un forfait BSI">
+      <option value="100" ${(a.forfaitRate??100)===100?'selected':''}>100% avec forfait</option>
+      <option value="50" ${a.forfaitRate===50?'selected':''}>50% avec forfait</option>
+    </select>
+    <button class="icon-btn" onclick="removeAct('${ctId}',${i})">🗑️</button>
+  </div>`;
+}
+function updateCareType(id, field, val){
+  const ct = state.careTypes.find(c=>c.id===id); if(!ct) return;
+  ct[field] = val;
+  if(field==='mode' && val==='forfait' && !ct.forfaitLevel) ct.forfaitLevel='BSA';
+  renderCareTypes(); refreshPlanningViews();
+}
+function removeCareType(id){ if(!confirm('Supprimer ce type de prise en charge ? Les patients qui l\'utilisent devront être réassignés.')) return; state.careTypes = state.careTypes.filter(c=>c.id!==id); renderCareTypes(); renderPatients(); }
+function quickAddAct(ctId){
+  const sel = document.getElementById('quickadd-'+ctId);
+  if(sel.value===''){ return; }
+  const src = COMMON_ACTS[parseInt(sel.value)];
+  const ct = state.careTypes.find(c=>c.id===ctId);
+  ct.acts.push({label:src.label, lc:src.lc, coef:src.coef, qty:1, forfaitRate:src.forfaitRate??100});
+  sel.value='';
+  renderCareTypes();
+}
+function addBlankAct(ctId){
+  const ct = state.careTypes.find(c=>c.id===ctId);
+  ct.acts.push({label:'Nouvel acte', lc:'AMI', coef:1, qty:1, forfaitRate:100});
+  renderCareTypes();
+}
+function updateAct(ctId, i, field, val){
+  const ct = state.careTypes.find(c=>c.id===ctId);
+  ct.acts[i][field] = val;
+  renderCareTypes(); refreshPlanningViews();
+}
+function removeAct(ctId, i){
+  const ct = state.careTypes.find(c=>c.id===ctId);
+  ct.acts.splice(i,1);
+  renderCareTypes(); refreshPlanningViews();
+}
+const PRESET_CARE_TYPES = [
+  {name:"BSI A — Dépendance légère (forfait BSA)", mode:"forfait", forfaitLevel:"BSA", acts:[]},
+  {name:"BSI B — Dépendance intermédiaire (forfait BSB)", mode:"forfait", forfaitLevel:"BSB", acts:[]},
+  {name:"BSI C — Dépendance lourde (forfait BSC)", mode:"forfait", forfaitLevel:"BSC", acts:[]},
+  {name:"Bilan de Soins Infirmiers — initial", mode:"acts", acts:[{label:"Bilan de Soins Infirmiers, bilan initial", lc:"DI", coef:2.5, qty:1, forfaitRate:100}]},
+  {name:"Bilan de Soins Infirmiers — renouvellement", mode:"acts", acts:[{label:"Bilan de Soins Infirmiers, renouvellement", lc:"DI", coef:1.2, qty:1, forfaitRate:100}]},
+  {name:"Pansement simple (non chirurgical ou chirurgical simple)", mode:"acts", acts:[{label:"Pansement simple", lc:"AMI", coef:2.02, qty:1, forfaitRate:50}]},
+  {name:"Pansement lourd et complexe — bilan initial (1ère PEC)", mode:"acts", acts:[{label:"Bilan pansement lourd et complexe", lc:"AMI", coef:11, qty:1, forfaitRate:100}]},
+  {name:"Pansement lourd et complexe — séance", mode:"acts", acts:[{label:"Séance pansement lourd et complexe", lc:"AMI", coef:4, qty:1, forfaitRate:100}]},
+  {name:"Ablation de fils/agrafes (≤10)", mode:"acts", acts:[{label:"Ablation de fils ou d'agrafes, dix ou moins", lc:"AMI", coef:2, qty:1, forfaitRate:50}]},
+  {name:"Injection IM / SC / ID isolée", mode:"acts", acts:[{label:"Injection intramusculaire, sous-cutanée ou intradermique", lc:"AMI", coef:1, qty:1, forfaitRate:50}]},
+  {name:"Injection intraveineuse directe isolée", mode:"acts", acts:[{label:"Injection intraveineuse directe isolée", lc:"AMI", coef:2, qty:1, forfaitRate:50}]},
+  {name:"Vaccination (avec prescription)", mode:"acts", acts:[{label:"Vaccination avec prescription médicale", lc:"AMI", coef:2.4, qty:1, forfaitRate:50}]},
+  {name:"Prélèvement sanguin (ponction veineuse)", mode:"acts", acts:[{label:"Prélèvement par ponction veineuse directe", lc:"AMI", coef:1.5, qty:1, forfaitRate:100}]},
+  {name:"Perfusion courte ≤1h sous surveillance continue", mode:"acts", acts:[{label:"Forfait séance de perfusion courte ≤1h", lc:"AMI", coef:9, qty:1, forfaitRate:100}]},
+  {name:"Perfusion courte ≤1h — immunodéprimé/mucoviscidose", mode:"acts", acts:[{label:"Forfait séance de perfusion courte ≤1h (immunodéprimé/mucoviscidose)", lc:"AMI", coef:10, qty:1, forfaitRate:100}]},
+  {name:"Perfusion >1h avec organisation de surveillance", mode:"acts", acts:[{label:"Forfait séance de perfusion >1h", lc:"AMI", coef:14, qty:1, forfaitRate:100}]},
+  {name:"Perfusion IV antibiotiques — mucoviscidose (>1h)", mode:"acts", acts:[{label:"Forfait perfusion IV antibiotiques mucoviscidose >1h", lc:"AMI", coef:15, qty:1, forfaitRate:100}]},
+  {name:"Perfusion — forfait organisation surveillance au long cours (AMI 4)", mode:"acts", acts:[{label:"Forfait organisation surveillance perfusion au long cours (1x/jour max)", lc:"AMI", coef:4, qty:1, forfaitRate:100}]},
+  {name:"Perfusion — changement de flacon / branchement en Y (AMI 4,1)", mode:"acts", acts:[{label:"Changement de flacon / branchement en Y / déplacement de perfusion", lc:"AMI", coef:4.1, qty:1, forfaitRate:100}]},
+  {name:"Perfusion — arrêt / retrait définitif du dispositif (AMI 5)", mode:"acts", acts:[{label:"Arrêt / retrait définitif d'un dispositif de perfusion", lc:"AMI", coef:5, qty:1, forfaitRate:100}]},
+  {name:"Perfusion — supplément surveillance au-delà de la 1ère heure (AMI 6)", mode:"acts", acts:[{label:"Supplément surveillance perfusion courte, par heure au-delà de la 1ère (max 5h)", lc:"AMI", coef:6, qty:1, forfaitRate:100}]},
+  {name:"Séance d'aérosol", mode:"acts", acts:[{label:"Séance d'aérosol", lc:"AMI", coef:1.5, qty:1, forfaitRate:50}]},
+  {name:"Surveillance / observation à domicile (fiche de surveillance)", mode:"acts", acts:[{label:"Surveillance et observation d'un patient à domicile", lc:"AMI", coef:1, qty:1, forfaitRate:100}]},
+  {name:"Sondage urinaire — retrait de sonde", mode:"acts", acts:[{label:"Retrait de sonde urinaire", lc:"AMI", coef:2, qty:1, forfaitRate:50}]},
+  {name:"Sondage urinaire — changement de sonde à demeure", mode:"acts", acts:[{label:"Changement de sonde urinaire à demeure", lc:"AMI", coef:3, qty:1, forfaitRate:50}]},
+  {name:"Patient diabétique insulino-traité — surveillance + injection", mode:"acts", acts:[
+    {label:"Surveillance patient diabétique insulino-traité (par séance)", lc:"AMI", coef:1, qty:1, forfaitRate:50},
+    {label:"Injection sous-cutanée d'insuline", lc:"AMI", coef:1, qty:1, forfaitRate:50}
+  ]}
+];
+document.getElementById('btnLoadPresets').addEventListener('click', ()=>{
+  const existingNames = new Set(state.careTypes.map(c=>c.name));
+  let added = 0;
+  PRESET_CARE_TYPES.forEach(preset=>{
+    if(!existingNames.has(preset.name)){
+      state.careTypes.push({
+        id: uid('ct'), name: preset.name, mode: preset.mode,
+        forfaitLevel: preset.forfaitLevel || 'BSA',
+        acts: (preset.acts||[]).map(a=>({label:a.label, lc:a.lc, coef:a.coef, qty:a.qty, forfaitRate:a.forfaitRate??100}))
+      });
+      added++;
+    }
+  });
+  renderCareTypes();
+  alert(added>0 ? `${added} modèle(s) ajouté(s).` : 'Tous les modèles NGAP courants sont déjà présents.');
+});
+document.getElementById('btnAddCareType').addEventListener('click', ()=>{
+  state.careTypes.push({id:uid('ct'), name:'Nouveau type', mode:'acts', acts:[], forfaitLevel:'BSA'});
+  renderCareTypes();
+});
+
+/* ============================= PATIENTS ============================= */
+const WEEKDAYS = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+function renderPatients(){
+  scheduleAutosave();
+  const el = document.getElementById('patientsList');
+  if(state.patients.length===0){ el.innerHTML = '<p class="muted">Aucun patient enregistré.</p>'; return; }
+  el.innerHTML = state.patients.map(p=>renderPatientCard(p)).join('');
+}
+function renderPatientCard(p){
+  const cotation = computePatientTypicalDayAmount(p);
+  return `
+  <div class="panel" id="patient-${p.id}" style="background:#fafcff;">
+    <div class="row">
+      <div class="field"><label>Nom du patient</label>
+        <input type="text" value="${escAttr(p.name)}" onchange="updatePatient('${p.id}','name',this.value)"></div>
+      <button class="icon-btn" style="align-self:end;" onclick="removePatient('${p.id}')">🗑️ Supprimer</button>
+    </div>
+    <div class="note-box" style="margin-bottom:12px;">
+      <b>Détail de la cotation théorique (jour type)&nbsp;: ${cotation.amount.toFixed(2)} €</b>
+      <span class="muted small"> — d'après le(s) type(s) de prise en charge, le(s) passage(s) et les majorations par défaut de ce patient, hors majoration dimanche/férié (dépend du jour réel).</span>
+      ${cotation.breakdown.length ? `<ul style="margin:6px 0 0;padding-left:18px;font-size:12px;">${cotation.breakdown.map(b=>`<li>${escHtml(b.label)}${b.amount!==0?` — <b>${b.amount.toFixed(2)} €</b>`:''}</li>`).join('')}</ul>`
+        : `<p class="small muted" style="margin:4px 0 0;">Aucun type de prise en charge/passage défini pour ce patient pour l'instant.</p>`}
+    </div>
+    <div class="field">
+      <label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text);">
+        <input type="checkbox" style="width:auto;" ${p.hasCancer?'checked':''} onchange="updatePatient('${p.id}','hasCancer',this.checked)">
+        🎗️ Patient atteint de cancer / immunodéprimé (article 4 chapitre II de la NGAP)
+      </label>
+      <p class="muted small" style="margin:2px 0 0;">Cochez pour les patients relevant de la cotation spécifique « immunodéprimé/cancéreux » (s'applique quelle que soit la nature des produits perfusés, pas seulement en chimiothérapie). Une fois cochée, toute perfusion courte (AMI 9) est <b>automatiquement calculée en AMI 10</b> et toute perfusion longue (AMI 14) en <b>AMI 15</b>, sans avoir à changer les actes saisis. Pour une injection intraveineuse spécifique (AMI 7), choisissez-la manuellement dans le catalogue d'actes.</p>
+    </div>
+    <div class="field">
+      <label>Types de prise en charge (plusieurs possibles — ex. forfait BSI + un acte en sus)</label>
+      <div style="max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;padding:6px 8px;background:#fff;">
+        ${state.careTypes.length===0 ? '<span class="muted small">Aucun type de prise en charge créé — onglet « Types de prise en charge ».</span>' :
+          state.careTypes.map(ct=>`<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;padding:2px 0;">
+            <input type="checkbox" style="width:auto;" ${patientCareTypeIds(p).includes(ct.id)?'checked':''} onchange="toggleCareType('${p.id}','${ct.id}',this.checked)">
+            ${escHtml(ct.name)}${ct.mode==='forfait'?` <span class="pill">forfait ${ct.forfaitLevel}</span>`:''}
+          </label>`).join('')}
+      </div>
+    </div>
+    <div class="row">
+      <div class="field" style="max-width:220px;"><label>Distance domicile (km, aller simple)</label>
+        <input type="number" step="0.1" value="${p.km||0}" onchange="updatePatient('${p.id}','km',parseFloat(this.value)||0)"></div>
+      <div class="field" style="max-width:160px;"><label>Zone montagne</label>
+        <select onchange="updatePatient('${p.id}','montagne',this.value==='1')">
+          <option value="0" ${!p.montagne?'selected':''}>Non</option>
+          <option value="1" ${p.montagne?'selected':''}>Oui</option>
+        </select>
+      </div>
+      <div class="field" style="max-width:220px;"><label>Déplacement facturé</label>
+        <select onchange="updatePatient('${p.id}','deplacementType',this.value)">
+          <option value="ifd" ${(p.deplacementType!=='ik'&&p.deplacementType!=='iks')?'selected':''}>Forfait (IFD)</option>
+          <option value="ik" ${p.deplacementType==='ik'?'selected':''}>Kilométrique (IK/IKM)</option>
+          <option value="iks" ${p.deplacementType==='iks'?'selected':''}>À pied / ski, zone difficile d'accès (IKS)</option>
+        </select>
+      </div>
+      <div class="field" style="max-width:200px;"><label>Nombre de passages / jour</label>
+        <input type="number" step="1" min="1" value="${p.passagesParJour||1}" onchange="updatePatient('${p.id}','passagesParJour',Math.max(1,parseInt(this.value)||1))"></div>
+    </div>
+    <p class="muted small" style="margin-top:-4px;">Le nombre de passages multiplie les actes cotés et le déplacement (IFD/IK) de chaque jour. Le forfait BSA/BSB/BSC reste facturé une seule fois par jour quel que soit le nombre de passages (conformément à la NGAP).</p>
+    <div class="field">
+      <button class="btn secondary" onclick="openPatientPassageModal('${p.id}')">🕐 Détail des passages (heures, actes différents…)</button>
+      ${p.defaultPassages && p.defaultPassages.length ? ` <span class="tag">personnalisé — ${p.defaultPassages.length} passage(s)</span>` : ''}
+      <p class="muted small" style="margin:4px 0 0;">Définissez ici, une fois pour toutes, le détail exact des passages de ce patient (ex. perfusion le matin à 8h + pansement le soir à 18h) : il s'appliquera automatiquement à tous les jours suivis, sans avoir à le ressaisir chaque jour dans le planning. Vous pourrez toujours faire une exception ponctuelle un jour précis depuis le planning.</p>
+    </div>
+    <div class="field">
+      <label>Majorations facturées par défaut, tous les jours suivis</label>
+      <div class="row tight">
+        <label style="display:inline-flex;align-items:center;gap:4px;width:auto;font-size:12px;">
+          <input type="checkbox" style="width:auto;" ${p.defaultFlags&&p.defaultFlags.nuit?'checked':''} onchange="updatePatientFlag('${p.id}','nuit',this.checked)"> Majoration de nuit
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:4px;width:auto;font-size:12px;">
+          <input type="checkbox" style="width:auto;" ${p.defaultFlags&&p.defaultFlags.mci?'checked':''} onchange="updatePatientFlag('${p.id}','mci',this.checked)"> MCI (coordination)
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:4px;width:auto;font-size:12px;">
+          <input type="checkbox" style="width:auto;" ${p.defaultFlags&&p.defaultFlags.mau?'checked':''} onchange="updatePatientFlag('${p.id}','mau',this.checked)"> MAU (acte unique)
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:4px;width:auto;font-size:12px;">
+          <input type="checkbox" style="width:auto;" ${p.defaultFlags&&p.defaultFlags.mie?'checked':''} onchange="updatePatientFlag('${p.id}','mie',this.checked)"> MIE (enfant &lt; 7 ans)
+        </label>
+      </div>
+      <p class="muted small" style="margin:4px 0 0;">Une exception ponctuelle reste possible jour par jour via les boutons N/C/U du planning (ils prévalent sur ce réglage par défaut ce jour-là).</p>
+    </div>
+    <div class="field">
+      <label>Jours de la semaine suivis par défaut</label>
+      <div class="row tight">
+        ${WEEKDAYS.map((d,i)=>`<label style="display:inline-flex;align-items:center;gap:4px;width:auto;font-size:12px;">
+            <input type="checkbox" style="width:auto;" ${((p.defaultDays||[]).includes(i))?'checked':''} onchange="toggleDefaultDay('${p.id}',${i},this.checked)"> ${d}
+          </label>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label>Note</label><textarea rows="2" onchange="updatePatient('${p.id}','note',this.value)">${escHtml(p.note||'')}</textarea></div>
+  </div>`;
+}
+function updatePatient(id, field, val){ const p = state.patients.find(x=>x.id===id); if(p){ p[field]=val; renderPatients(); refreshPlanningViews(); } }
+function updatePatientFlag(id, flag, checked){
+  const p = state.patients.find(x=>x.id===id); if(!p) return;
+  p.defaultFlags = p.defaultFlags || {};
+  p.defaultFlags[flag] = checked;
+  renderPatients(); refreshPlanningViews();
+}
+function toggleCareType(patientId, careTypeId, checked){
+  const p = state.patients.find(x=>x.id===patientId); if(!p) return;
+  p.careTypeIds = patientCareTypeIds(p).slice();
+  if(checked){ if(!p.careTypeIds.includes(careTypeId)) p.careTypeIds.push(careTypeId); }
+  else { p.careTypeIds = p.careTypeIds.filter(id=>id!==careTypeId); }
+  delete p.careTypeId; // superseded by careTypeIds
+  renderPatients(); renderPatientAssignList(); refreshPlanningViews();
+}
+function toggleDefaultDay(id, dayIdx, checked){
+  const p = state.patients.find(x=>x.id===id); if(!p) return;
+  p.defaultDays = p.defaultDays || [];
+  if(checked){ if(!p.defaultDays.includes(dayIdx)) p.defaultDays.push(dayIdx); }
+  else { p.defaultDays = p.defaultDays.filter(d=>d!==dayIdx); }
+  refreshPlanningViews();
+}
+function removePatient(id){ if(!confirm('Supprimer ce patient et toutes ses données de planning ?')) return;
+  state.patients = state.patients.filter(p=>p.id!==id);
+  Object.keys(state.planning).forEach(k=>{ if(k.endsWith('|'+id)) delete state.planning[k]; });
+  renderPatients(); refreshPlanningViews();
+}
+document.getElementById('btnAddPatient').addEventListener('click', ()=>{
+  state.patients.push({id:uid('p'), name:'Nouveau patient', careTypeIds:[], km:0, montagne:false, deplacementType:'ifd', passagesParJour:1, defaultDays:[0,1,2,3,4,5,6], note:'', hasCancer:false});
+  renderPatients();
+});
+
+/* ============================= TARIFFS ============================= */
+const TARIFF_LABELS = {
+  AMI:"AMI (acte infirmier — €/coef.)", AMX:"AMX (acte en sus — €/coef.)", SFI:"SFI (séance soins infirmiers — €/coef.)",
+  DI:"DI (lettre-clé Bilan de Soins Infirmiers — €/coef.)", IFI:"IFI (indemnité forfaitaire infirmier — €)", AIS:"AIS (obsolète depuis 06/2026 — indicatif)",
+  BSA:"BSA — forfait dépendance léger (€/jour)", BSB:"BSB — forfait dépendance intermédiaire (€/jour)", BSC:"BSC — forfait dépendance lourd (€/jour)",
+  IFD:"IFD — indemnité forfaitaire de déplacement (€)", IK:"IK — indemnité kilométrique plaine (€/km)", IKM:"IKM — indemnité kilométrique montagne (€/km)",
+  IKS:"IKS — indemnité kilométrique à pied/ski, zone difficile d'accès (€/km)",
+  MCI:"MCI — majoration coordination infirmière (€)", MAU:"MAU — majoration acte unique (€)", MIE:"MIE — majoration enfant de moins de 7 ans (€)",
+  majNuit:"Majoration de nuit (20h-23h / 5h-8h) (€)", majNuitProfonde:"Majoration de nuit profonde 23h-5h (€)", majDimancheFerie:"Majoration dimanche / jour férié (€)"
+};
+function renderTariffs(){
+  scheduleAutosave();
+  const el = document.getElementById('tariffsGrid');
+  el.innerHTML = Object.keys(TARIFF_LABELS).map(key=>`
+    <div class="field"><label>${TARIFF_LABELS[key]}</label>
+      <input type="number" step="0.01" value="${state.tariffs[key]}" onchange="updateTariff('${key}',parseFloat(this.value)||0)"></div>
+  `).join('');
+  renderHolidays();
+}
+function updateTariff(key, val){ state.tariffs[key] = val; refreshPlanningViews(); renderBilling(); }
+function renderHolidays(){
+  const el = document.getElementById('holidaysList');
+  el.innerHTML = '<table><tr><th style="width:160px;">Date</th><th>Libellé</th><th style="width:40px;"></th></tr>' +
+    state.holidays.map((h,i)=>`
+      <tr>
+        <td><input type="date" value="${h.date}" onchange="updateHoliday(${i},'date',this.value)"></td>
+        <td><input type="text" value="${escAttr(h.label)}" onchange="updateHoliday(${i},'label',this.value)"></td>
+        <td><button class="icon-btn" onclick="removeHoliday(${i})">🗑️</button></td>
+      </tr>`).join('') + '</table>';
+}
+function updateHoliday(i,field,val){ state.holidays[i][field]=val; refreshPlanningViews(); renderBilling(); }
+function removeHoliday(i){ state.holidays.splice(i,1); renderHolidays(); refreshPlanningViews(); renderBilling(); }
+document.getElementById('btnAddHoliday').addEventListener('click', ()=>{ state.holidays.push({date:todayISO(), label:'Nouveau jour férié'}); renderHolidays(); });
+
+/* ============================= CALCULATION ENGINE ============================= */
+function isSunday(dateStr){ return new Date(dateStr+'T12:00:00').getDay() === 0; }
+function isHoliday(dateStr){ return state.holidays.some(h=>h.date===dateStr); }
+
+function getPlanningEntry(dateStr, patientId){
+  return state.planning[dateStr+'|'+patientId] || null;
+}
+function setPlanningEntry(dateStr, patientId, entry){
+  const key = dateStr+'|'+patientId;
+  const isEmpty = !entry || (!entry.nurseId && !entry.excluded && !entry.overrideActs &&
+    (!entry.overridePassages || entry.overridePassages.length===0) &&
+    (!entry.flags || Object.keys(entry.flags).length===0) && !entry.deplacement);
+  if(isEmpty){ delete state.planning[key]; }
+  else state.planning[key] = entry;
+}
+// Résout le/la infirmier(ère) effectif(ve) pour un patient un jour donné :
+// priorité à une exclusion ou une affectation individuelle explicite, sinon l'affectation globale du jour.
+function getEffectiveNurse(dateStr, patientId){
+  const entry = getPlanningEntry(dateStr, patientId);
+  if(entry && entry.excluded) return {nurseId:null, excluded:true, fromDefault:false, raw:entry};
+  if(entry && entry.nurseId) return {nurseId:entry.nurseId, excluded:false, fromDefault:false, raw:entry};
+  const dayDefault = state.dayNurse && state.dayNurse[dateStr];
+  if(dayDefault) return {nurseId:dayDefault, excluded:false, fromDefault:true, raw:entry};
+  return {nurseId:null, excluded:false, fromDefault:false, raw:entry};
+}
+
+function patientCareTypeIds(patient){
+  if(Array.isArray(patient.careTypeIds)) return patient.careTypeIds;
+  if(patient.careTypeId) return [patient.careTypeId];
+  return [];
+}
+function patientForfaitCareType(patient){
+  return patientCareTypeIds(patient).map(id=>state.careTypes.find(c=>c.id===id)).filter(Boolean).find(ct=>ct.mode==='forfait') || null;
+}
+function patientDefaultActs(patient){
+  return patientCareTypeIds(patient).map(id=>state.careTypes.find(c=>c.id===id)).filter(Boolean)
+    .filter(ct=>ct.mode==='acts').flatMap(ct=>ct.acts||[]);
+}
+// Construit la liste des passages (séances) du jour pour un patient, par ordre de priorité :
+// 1) exception ponctuelle enregistrée pour ce jour précis (entry.overridePassages) ;
+// 2) modèle par défaut du patient, valable tous les jours (patient.defaultPassages) ;
+// 3) comportement générique : les actes de ses types de prise en charge, répétés passagesParJour fois.
+function getDayPassages(dateStr, patient){
+  const entry = getPlanningEntry(dateStr, patient.id);
+  if(entry && entry.overridePassages && entry.overridePassages.length) return entry.overridePassages;
+  return getPatientDefaultPassages(patient);
+}
+// Passages par défaut d'un patient (modèle personnalisé s'il existe, sinon comportement générique :
+// actes de ses types de prise en charge, répétés passagesParJour fois), indépendamment de toute date.
+function getPatientDefaultPassages(patient){
+  if(patient.defaultPassages && patient.defaultPassages.length) return patient.defaultPassages;
+  const n = Math.max(1, patient.passagesParJour||1);
+  const defaultActs = patientDefaultActs(patient);
+  const out = [];
+  for(let i=0;i<n;i++) out.push({time:'', acts: defaultActs.map(a=>({...a})), deplacement:true});
+  return out;
+}
+// Article 4 chapitre II de la NGAP (immunodéprimé/cancéreux) : pour un patient marqué comme tel, les
+// perfusions sont facturées au tarif spécifique — AMI 10 au lieu d'AMI 9 (perfusion courte), AMI 15 au
+// lieu d'AMI 14 (perfusion longue) — quelle que soit la nature des produits perfusés (pas seulement en
+// chimiothérapie). Cette fonction opère sur une COPIE des passages (jamais sur les données d'origine) et
+// ne modifie que le calcul théorique ; les acts déjà saisis en AMI 10/15 restent inchangés.
+function applyCancerVariant(passagesList, patient){
+  if(!patient || !patient.hasCancer) return passagesList;
+  passagesList.forEach(passage=>{
+    (passage.acts||[]).forEach(act=>{
+      if(act.lc!=='AMI') return;
+      if(act.coef===9){
+        act.label = (act.label||'Perfusion courte') + ' — requalifié en AMI 10 (patient cancer/immunodéprimé)';
+        act.coef = 10;
+      } else if(act.coef===14){
+        act.label = (act.label||'Perfusion longue') + ' — requalifié en AMI 15 (patient cancer/immunodéprimé)';
+        act.coef = 15;
+      }
+    });
+  });
+  return passagesList;
+}
+// Règle NGAP (circulaire Convergence Infirmière CIR-9/2025) : le forfait "perfusion >1h avec
+// organisation de surveillance" (AMI 14 ou AMI 15) n'est facturable qu'UNE SEULE FOIS par jour et par
+// patient, quel que soit le nombre de passages de ce type ce jour-là. Toute perfusion longue
+// supplémentaire le même jour n'est donc PAS un second AMI 14/15 : elle est requalifiée en AMI 4,1
+// (changement de flacon / prise en charge d'une perfusion déjà en cours). Cette fonction opère sur une
+// COPIE de la liste de passages (jamais sur les données d'origine) et ne modifie que le calcul théorique.
+function requalifyDuplicatePerfusionLongue(passagesList){
+  const ordered = passagesList.slice().sort((a,b)=> (a.time||'').localeCompare(b.time||''));
+  let firstFound = false;
+  ordered.forEach(passage=>{
+    (passage.acts||[]).forEach(act=>{
+      if(act.lc==='AMI' && (act.coef===14 || act.coef===15)){
+        if(!firstFound){
+          firstFound = true;
+        } else {
+          act.label = (act.label||'Perfusion longue') + ' — requalifié en AMI 4,1 (perfusion longue déjà facturée ce jour, max 1×/j)';
+          act.coef = 4.1;
+          act.forfaitRate = 100;
+        }
+      }
+    });
+  });
+  return passagesList;
+}
+// Fusionne les majorations par défaut du patient avec une éventuelle exception ponctuelle du jour.
+function getEffectiveFlags(dateStr, patient){
+  const entry = getPlanningEntry(dateStr, patient.id);
+  const defaults = patient.defaultFlags || {};
+  const dayFlags = (entry && entry.flags) || {};
+  return {
+    nuit: dayFlags.nuit!==undefined ? dayFlags.nuit : !!defaults.nuit,
+    nuitProfonde: dayFlags.nuitProfonde!==undefined ? dayFlags.nuitProfonde : !!defaults.nuitProfonde,
+    mci: dayFlags.mci!==undefined ? dayFlags.mci : !!defaults.mci,
+    mau: dayFlags.mau!==undefined ? dayFlags.mau : !!defaults.mau,
+    mie: dayFlags.mie!==undefined ? dayFlags.mie : !!defaults.mie
+  };
+}
+// Applique la cotation d'une liste d'actes réalisés dans UNE séance : sans forfait, seul l'acte le
+// mieux coté passe à taux plein, le 2e à 50%, les suivants ne sont pas facturés (article 11B des
+// Dispositions générales NGAP). Les lettres clés hors-cumul (DI, IFI) sont toujours facturées à taux
+// plein. Avec un forfait de dépendance actif, chaque acte est facturé à son propre taux (forfaitRate).
+function computePassageActsAmount(acts, tariffs, hasForfait){
+  const breakdown = []; let total = 0;
+  const hors = acts.filter(a=>LETTRES_HORS_CUMUL.includes(a.lc));
+  const cumulables = acts.filter(a=>!LETTRES_HORS_CUMUL.includes(a.lc));
+  hors.forEach(a=>{
+    const lcVal = tariffs[a.lc] !== undefined ? tariffs[a.lc] : tariffs.AMI;
+    const amt = (a.coef||0) * (a.qty||1) * lcVal;
+    breakdown.push({label:`${a.label} (${a.lc} ${a.coef}${a.qty>1?' x'+a.qty:''}) — taux plein`, amount:amt});
+    total += amt;
+  });
+  if(hasForfait){
+    cumulables.forEach(a=>{
+      const rate = (a.forfaitRate!==undefined ? a.forfaitRate : 50) / 100;
+      const lcVal = tariffs[a.lc] !== undefined ? tariffs[a.lc] : tariffs.AMI;
+      const amt = (a.coef||0) * (a.qty||1) * lcVal * rate;
+      breakdown.push({label:`${a.label} (${a.lc} ${a.coef}${a.qty>1?' x'+a.qty:''}) — ${rate*100}% en sus du forfait`, amount:amt});
+      total += amt;
+    });
+  } else {
+    const sorted = cumulables.slice().sort((a,b)=>(b.coef||0)-(a.coef||0));
+    sorted.forEach((a,i)=>{
+      const rate = i===0 ? 1 : i===1 ? 0.5 : 0;
+      const lcVal = tariffs[a.lc] !== undefined ? tariffs[a.lc] : tariffs.AMI;
+      const amt = (a.coef||0) * (a.qty||1) * lcVal * rate;
+      if(rate===0){
+        breakdown.push({label:`${a.label} — non facturable (3e acte et + de la séance, art. 11B)`, amount:0});
+      } else {
+        breakdown.push({label:`${a.label} (${a.lc} ${a.coef}${a.qty>1?' x'+a.qty:''}) — ${rate*100}% (cumul art. 11B)`, amount:amt});
+        total += amt;
+      }
+    });
+  }
+  return {amount: total, breakdown};
+}
+
+// Calcule le montant des passages (séances) d'une liste, actes + déplacement, pour un patient donné.
+// Factorisé pour être réutilisé par le calcul d'un jour précis (computeDayAmount) et par l'estimation
+// « cotation type » affichée sur la fiche patient (computePatientTypicalDayAmount).
+function computePassagesAmount(passagesList, patient, forfaitCt, t){
+  const breakdown = []; let total = 0;
+  const list = requalifyDuplicatePerfusionLongue(applyCancerVariant(clonePassages(passagesList), patient));
+  list.forEach((passage,i)=>{
+    const timeLabel = passage.time ? ` à ${passage.time}` : (list.length>1 ? ` (passage ${i+1})` : '');
+    if(passage.acts && passage.acts.length){
+      const r = computePassageActsAmount(passage.acts, t, !!forfaitCt);
+      r.breakdown.forEach(b=>breakdown.push({label:`${b.label}${timeLabel}`, amount:b.amount}));
+      total += r.amount;
+    }
+    if(passage.deplacement!==false){
+      const isKmType = patient.deplacementType==='ik' || patient.deplacementType==='iks';
+      const dep = isKmType ? {type:patient.deplacementType, km:patient.km||0, montagne:!!patient.montagne} : {type:'ifd'};
+      if(dep.type==='ik' || dep.type==='iks'){
+        const perKm = dep.type==='iks' ? t.IKS : (dep.montagne ? t.IKM : t.IK);
+        const lbl = dep.type==='iks' ? 'IKS' : 'IK';
+        const amt = perKm * dep.km;
+        breakdown.push({label:`${lbl} (${dep.km} km x ${perKm}€)${timeLabel}`, amount:amt});
+        total += amt;
+      } else {
+        breakdown.push({label:`IFD${timeLabel}`, amount:t.IFD});
+        total += t.IFD;
+      }
+    }
+  });
+  return {amount: total, breakdown};
+}
+// Ajoute les majorations liées aux "flags" (nuit / nuit profonde / MCI / MAU / MIE) au breakdown fourni.
+function addFlagMajorations(flags, t, breakdown){
+  let total = 0;
+  if(flags.nuit){ breakdown.push({label:'Majoration de nuit', amount:t.majNuit}); total += t.majNuit; }
+  if(flags.nuitProfonde){ breakdown.push({label:'Majoration de nuit profonde', amount:t.majNuitProfonde}); total += t.majNuitProfonde; }
+  if(flags.mci){ breakdown.push({label:'MCI — coordination', amount:t.MCI}); total += t.MCI; }
+  if(flags.mau){ breakdown.push({label:'MAU — acte unique', amount:t.MAU}); total += t.MAU; }
+  if(flags.mie){ breakdown.push({label:'MIE — majoration enfant < 7 ans', amount:t.MIE}); total += t.MIE; }
+  return total;
+}
+
+// Returns {amount, breakdown:[{label,amount}], hasNurse}
+function computeDayAmount(dateStr, patient){
+  const eff = getEffectiveNurse(dateStr, patient.id);
+  if(!eff.nurseId) return {amount:0, breakdown:[], hasNurse:false};
+  const t = state.tariffs;
+  const breakdown = [];
+  let total = 0;
+
+  const forfaitCt = patientForfaitCareType(patient);
+  if(forfaitCt){
+    const val = t[forfaitCt.forfaitLevel] || 0;
+    breakdown.push({label:`Forfait ${forfaitCt.forfaitLevel} (${forfaitCt.name}) — 1x/jour`, amount:val});
+    total += val;
+  }
+
+  const passagesRes = computePassagesAmount(getDayPassages(dateStr, patient), patient, forfaitCt, t);
+  breakdown.push(...passagesRes.breakdown);
+  total += passagesRes.amount;
+
+  // Majorations date-based (une fois par jour)
+  const sunday = isSunday(dateStr), ferie = isHoliday(dateStr);
+  if(sunday || ferie){
+    breakdown.push({label: sunday?'Majoration dimanche':'Majoration jour férié', amount:t.majDimancheFerie});
+    total += t.majDimancheFerie;
+  }
+  const flags = getEffectiveFlags(dateStr, patient);
+  total += addFlagMajorations(flags, t, breakdown);
+
+  return {amount: total, breakdown, hasNurse:true, nurseId: eff.nurseId};
+}
+
+// Estimation de la "cotation type" d'un patient (indépendante de toute date précise) : forfait éventuel
+// + actes/passages par défaut de sa fiche + majorations cochées par défaut (nuit/MCI/MAU/MIE), HORS
+// majoration dimanche/jour férié (qui dépend du jour réel). Sert d'aperçu rapide dans l'onglet Patients.
+function computePatientTypicalDayAmount(patient){
+  const t = state.tariffs;
+  const breakdown = [];
+  let total = 0;
+  const forfaitCt = patientForfaitCareType(patient);
+  if(forfaitCt){
+    const val = t[forfaitCt.forfaitLevel] || 0;
+    breakdown.push({label:`Forfait ${forfaitCt.forfaitLevel} (${forfaitCt.name}) — 1x/jour`, amount:val});
+    total += val;
+  }
+  const passagesRes = computePassagesAmount(getPatientDefaultPassages(patient), patient, forfaitCt, t);
+  breakdown.push(...passagesRes.breakdown);
+  total += passagesRes.amount;
+  const flags = patient.defaultFlags || {};
+  total += addFlagMajorations(flags, t, breakdown);
+  return {amount: total, breakdown};
+}
+
+function daysInMonth(monthStr){ // monthStr "YYYY-MM"
+  const [y,m] = monthStr.split('-').map(Number);
+  const nb = new Date(y, m, 0).getDate();
+  const arr = [];
+  for(let d=1; d<=nb; d++){
+    const dd = String(d).padStart(2,'0');
+    arr.push(`${monthStr}-${dd}`);
+  }
+  return arr;
+}
+
+/* ============================= PLANNING RENDER ============================= */
+function getPlanMonth(){
+  const inp = document.getElementById('planMonth');
+  if(!inp.value) inp.value = currentMonthStr();
+  return inp.value;
+}
+document.getElementById('planMonth').addEventListener('change', renderPlanning);
+
+function renderPlanning(){
+  scheduleAutosave();
+  const month = getPlanMonth();
+  const days = daysInMonth(month);
+  const table = document.getElementById('planningTable');
+  const today = todayISO();
+  state.dayNurse = state.dayNurse || {};
+
+  let head = '<tr><th class="patient-col">Patient</th>' + days.map(d=>{
+    const dayNum = d.slice(8,10);
+    const cls = [isSunday(d)?'sunday':'', d===today?'today':''].filter(Boolean).join(' ');
+    return `<th class="${cls}" title="${d}">${dayNum}</th>`;
+  }).join('') + '</tr>';
+
+  // Ligne d'affectation globale : s'applique par défaut à tous les patients de ce jour.
+  let defaultRow = '<tr><td class="patient-col" style="font-weight:600;">🌐 Tous les patients (par défaut)</td>' + days.map(d=>{
+    const cls = [isSunday(d)?'sunday':'', d===today?'today':''].filter(Boolean).join(' ');
+    const val = state.dayNurse[d] || '';
+    return `<td class="${cls}">
+        <select onchange="setDayDefaultNurse('${d}',this.value)">
+          <option value="">—</option>
+          ${state.nurses.map(n=>`<option value="${n.id}" ${val===n.id?'selected':''}>${escAttr(n.name)}</option>`).join('')}
+        </select>
+      </td>`;
+  }).join('') + '</tr>';
+
+  let rows = state.patients.map(p=>{
+    let cells = days.map(d=>{
+      const cls = [isSunday(d)?'sunday':'', d===today?'today':''].filter(Boolean).join(' ');
+      const eff = getEffectiveNurse(d,p.id);
+      const entry = eff.raw;
+      const present = !eff.excluded;
+      const calc = computeDayAmount(d,p);
+      const flags = getEffectiveFlags(d,p);
+      const flagsBtns = `<div class="day-flags">
+          <button class="${flags.nuit?'on':''}" title="Majoration de nuit (coché par défaut sur ce patient : ${p.defaultFlags&&p.defaultFlags.nuit?'oui':'non'})" onclick="toggleFlag('${d}','${p.id}','nuit')">N</button>
+          <button class="${flags.mci?'on':''}" title="MCI coordination (coché par défaut sur ce patient : ${p.defaultFlags&&p.defaultFlags.mci?'oui':'non'})" onclick="toggleFlag('${d}','${p.id}','mci')">C</button>
+          <button class="${flags.mau?'on':''}" title="MAU acte unique (coché par défaut sur ce patient : ${p.defaultFlags&&p.defaultFlags.mau?'oui':'non'})" onclick="toggleFlag('${d}','${p.id}','mau')">U</button>
+          <button class="${flags.mie?'on':''}" title="MIE enfant < 7 ans (coché par défaut sur ce patient : ${p.defaultFlags&&p.defaultFlags.mie?'oui':'non'})" onclick="toggleFlag('${d}','${p.id}','mie')">E</button>
+        </div>`;
+      const presenceBox = `<input type="checkbox" title="Présent(e) ce jour" ${present?'checked':''} onchange="togglePresence('${d}','${p.id}',this.checked)">`;
+      const nurseSelect = present ? `<select title="Laisser sur « (jour) » pour suivre l'affectation globale" onchange="setNurseForCell('${d}','${p.id}',this.value)">
+          <option value="">(jour)</option>
+          ${state.nurses.map(n=>`<option value="${n.id}" ${entry&&entry.nurseId===n.id?'selected':''}>${escAttr(n.name)}</option>`).join('')}
+        </select>` : '';
+      const hasCustomPassages = !!(entry && entry.overridePassages && entry.overridePassages.length);
+      const detailBtn = present ? `<button class="detail-btn${hasCustomPassages?' has-detail':''}" title="Détail des soins de ce jour (plusieurs passages, heures, actes)" onclick="openPassageModal('${d}','${p.id}')">🕐</button>` : '';
+      return `<td class="${cls}${present?'':' '}" style="${present?'':'opacity:.45;'}">
+          <div class="cell-detail">
+            <div style="display:flex;align-items:center;gap:2px;">${presenceBox}${nurseSelect}${detailBtn}</div>
+            ${present && eff.nurseId ? `<span class="cell-amount">${calc.amount.toFixed(2)}€</span>${flagsBtns}` : ''}
+          </div>
+        </td>`;
+    }).join('');
+    const ctNames = patientCareTypeIds(p).map(id=>(state.careTypes.find(c=>c.id===id)||{}).name).filter(Boolean);
+    const ctTag = ctNames.length ? ` <span class="pill">${escHtml(ctNames.join(', '))}</span>` : '';
+    const cancerTag = p.hasCancer ? ` <span class="pill" title="Cancer / immunodéprimé (article 4 ch. II)">🎗️</span>` : '';
+    const nameLink = `<a href="#" title="Voir/modifier la fiche de ce patient" style="color:var(--accent-dark);text-decoration:none;cursor:pointer;" onclick="goToPatient('${p.id}');return false;">${escHtml(p.name)}</a>`;
+    return `<tr><td class="patient-col">${nameLink}${cancerTag}${ctTag}</td>${cells}</tr>`;
+  }).join('');
+
+  table.innerHTML = head + defaultRow + rows;
+}
+
+/* ============================= VUE JOUR (mobile) ============================= */
+// Rafraîchit les DEUX vues du planning (grille du mois + liste du jour) à chaque changement, qu'elle
+// soit visible ou non à l'écran : ça garantit qu'on ne voit jamais de données périmées en basculant de
+// vue, quelle que soit la fonction de mutation qui a déclenché le rafraîchissement.
+function refreshPlanningViews(){
+  renderPlanning();
+  if(document.getElementById('dayView')) renderDayView();
+}
+function getDayViewDate(){
+  const inp = document.getElementById('dayViewDate');
+  if(!inp.value) inp.value = todayISO();
+  return inp.value;
+}
+function renderDayView(){
+  scheduleAutosave();
+  const d = getDayViewDate();
+  const dt = new Date(d+'T00:00:00');
+  const wd = WEEKDAYS[(dt.getDay()+6)%7];
+  const sunday = isSunday(d), ferie = isHoliday(d);
+  const monthLabel = dt.toLocaleDateString('fr-FR', {month:'long'});
+  const titleEl = document.getElementById('dayViewTitle');
+  if(titleEl){
+    titleEl.textContent = `${wd} ${dt.getDate()} ${monthLabel} ${dt.getFullYear()}` + (ferie ? ' — férié' : '');
+    titleEl.className = 'day-title' + ((sunday||ferie) ? ' sunday' : '');
+  }
+  const listEl = document.getElementById('dayViewList');
+  if(!listEl) return;
+
+  state.dayNurse = state.dayNurse || {};
+  const dayDefault = state.dayNurse[d] || '';
+  const dayDefaultNurse = dayDefault ? state.nurses.find(n=>n.id===dayDefault) : null;
+  const tourneeHtml = `
+    <div class="tournee-card">
+      <label>🌐 Infirmier(ère) de la tournée aujourd'hui</label>
+      <select onchange="setDayDefaultNurse('${d}', this.value)">
+        <option value="">—</option>
+        ${state.nurses.map(n=>`<option value="${n.id}" ${dayDefault===n.id?'selected':''}>${escAttr(n.name)}</option>`).join('')}
+      </select>
+    </div>`;
+
+  if(state.patients.length===0){
+    listEl.innerHTML = tourneeHtml + '<p class="muted">Aucun patient enregistré (onglet Patients).</p>';
+    return;
+  }
+
+  const cardsHtml = state.patients.map(p=>{
+    const eff = getEffectiveNurse(d, p.id);
+    const entry = eff.raw;
+    const present = !eff.excluded;
+    const calc = computeDayAmount(d, p);
+    const flags = getEffectiveFlags(d, p);
+    const hasCustomPassages = !!(entry && entry.overridePassages && entry.overridePassages.length);
+    const nurseOptionLabel = dayDefaultNurse ? `(jour : ${escAttr(dayDefaultNurse.name)})` : '(jour)';
+    return `
+    <div class="day-card${present?'':' excluded'}">
+      <div class="day-card-top">
+        <span class="name">${escHtml(p.name)}${p.hasCancer?' 🎗️':''}</span>
+        ${present && eff.nurseId ? `<span class="day-card-amount">${calc.amount.toFixed(2)} €</span>` : ''}
+      </div>
+      <div class="day-card-row">
+        <label class="presence-toggle"><input type="checkbox" ${present?'checked':''} onchange="togglePresence('${d}','${p.id}',this.checked)"> Présent(e)</label>
+        ${present ? `<select title="Laisser sur « ${nurseOptionLabel} » pour suivre l'affectation globale" onchange="setNurseForCell('${d}','${p.id}',this.value)">
+            <option value="">${nurseOptionLabel}</option>
+            ${state.nurses.map(n=>`<option value="${n.id}" ${entry&&entry.nurseId===n.id?'selected':''}>${escAttr(n.name)}</option>`).join('')}
+          </select>` : ''}
+      </div>
+      ${present ? `
+      <div class="day-card-row">
+        <div class="day-flags">
+          <button class="${flags.nuit?'on':''}" onclick="toggleFlag('${d}','${p.id}','nuit')">N</button>
+          <button class="${flags.mci?'on':''}" onclick="toggleFlag('${d}','${p.id}','mci')">C</button>
+          <button class="${flags.mau?'on':''}" onclick="toggleFlag('${d}','${p.id}','mau')">U</button>
+          <button class="${flags.mie?'on':''}" onclick="toggleFlag('${d}','${p.id}','mie')">E</button>
+        </div>
+        <button class="detail-btn${hasCustomPassages?' has-detail':''}" onclick="openPassageModal('${d}','${p.id}')">🕐 Détail</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+
+  listEl.innerHTML = tourneeHtml + cardsHtml;
+}
+function changeDayView(deltaDays){
+  const d = new Date(getDayViewDate()+'T00:00:00');
+  d.setDate(d.getDate()+deltaDays);
+  document.getElementById('dayViewDate').value = d.toISOString().slice(0,10);
+  renderDayView();
+}
+document.getElementById('dayPrev').addEventListener('click', ()=>changeDayView(-1));
+document.getElementById('dayNext').addEventListener('click', ()=>changeDayView(1));
+document.getElementById('dayViewDate').addEventListener('change', renderDayView);
+function setPlanningView(mode){
+  document.getElementById('viewToggleDay').classList.toggle('active', mode==='day');
+  document.getElementById('viewToggleMonth').classList.toggle('active', mode==='month');
+  document.getElementById('dayView').style.display = mode==='day' ? 'block' : 'none';
+  document.getElementById('monthView').style.display = mode==='month' ? 'block' : 'none';
+}
+document.getElementById('viewToggleDay').addEventListener('click', ()=>setPlanningView('day'));
+document.getElementById('viewToggleMonth').addEventListener('click', ()=>setPlanningView('month'));
+
+function setDayDefaultNurse(dateStr, nurseId){
+  state.dayNurse = state.dayNurse || {};
+  if(nurseId) state.dayNurse[dateStr] = nurseId; else delete state.dayNurse[dateStr];
+  refreshPlanningViews();
+}
+function togglePresence(dateStr, patientId, present){
+  const entry = getPlanningEntry(dateStr,patientId) || {};
+  if(present){
+    entry.excluded = false;
+  } else {
+    entry.excluded = true;
+    entry.nurseId = null; // une exclusion prévaut toujours sur une affectation individuelle
+  }
+  setPlanningEntry(dateStr,patientId,entry);
+  refreshPlanningViews();
+}
+function setNurseForCell(dateStr, patientId, nurseId){
+  const entry = getPlanningEntry(dateStr,patientId) || {};
+  entry.nurseId = nurseId || null;
+  entry.excluded = false;
+  setPlanningEntry(dateStr,patientId,entry);
+  refreshPlanningViews();
+}
+function toggleFlag(dateStr, patientId, flag){
+  const eff = getEffectiveNurse(dateStr,patientId);
+  if(!eff.nurseId) return;
+  const patient = state.patients.find(p=>p.id===patientId); if(!patient) return;
+  const current = getEffectiveFlags(dateStr, patient)[flag];
+  const entry = getPlanningEntry(dateStr,patientId) || {};
+  entry.flags = entry.flags || {};
+  entry.flags[flag] = !current; // exception ponctuelle explicite pour ce jour, prévaut sur le défaut du patient
+  setPlanningEntry(dateStr,patientId,entry);
+  refreshPlanningViews();
+}
+
+/* ============================= PASSAGE DETAIL MODAL ============================= */
+let pmState = null; // {mode:'day'|'patient', dateStr, patientId, passages:[{time,acts:[{label,lc,coef,qty,forfaitRate}],deplacement}]}
+
+function clonePassages(list){ return list.map(p=>({time:p.time||'', deplacement:p.deplacement!==false, acts:(p.acts||[]).map(a=>({...a}))})); }
+
+// Exception ponctuelle pour UN jour précis d'UN patient.
+function openPassageModal(dateStr, patientId){
+  const patient = state.patients.find(p=>p.id===patientId); if(!patient) return;
+  pmState = {mode:'day', dateStr, patientId, passages: clonePassages(getDayPassages(dateStr, patient))};
+  document.getElementById('pmPatientName').textContent = patient.name;
+  document.getElementById('pmDate').textContent = dateStr + ' (exception ponctuelle, ce jour uniquement)';
+  renderPassageModal();
+  document.getElementById('passageModalOverlay').style.display = 'flex';
+}
+// Modèle par défaut d'UN patient : s'applique automatiquement à tous les jours suivis.
+function openPatientPassageModal(patientId){
+  const patient = state.patients.find(p=>p.id===patientId); if(!patient) return;
+  const base = (patient.defaultPassages && patient.defaultPassages.length) ? patient.defaultPassages : (()=>{
+    const n = Math.max(1, patient.passagesParJour||1);
+    const acts = patientDefaultActs(patient);
+    const out = []; for(let i=0;i<n;i++) out.push({time:'', acts: acts.map(a=>({...a})), deplacement:true});
+    return out;
+  })();
+  pmState = {mode:'patient', dateStr:null, patientId, passages: clonePassages(base)};
+  document.getElementById('pmPatientName').textContent = patient.name;
+  document.getElementById('pmDate').textContent = 'modèle par défaut — s\'applique à tous les jours suivis';
+  renderPassageModal();
+  document.getElementById('passageModalOverlay').style.display = 'flex';
+}
+function closePassageModal(){ document.getElementById('passageModalOverlay').style.display = 'none'; pmState = null; }
+function renderPassageModal(){
+  const el = document.getElementById('pmPassages');
+  if(!pmState) return;
+  el.innerHTML = pmState.passages.map((pas,pi)=>`
+    <div class="passage-block">
+      <div class="row">
+        <div class="field" style="max-width:160px;"><label>Heure (optionnel)</label>
+          <input type="text" placeholder="ex. 08:00" value="${escAttr(pas.time)}" onchange="pmUpdatePassage(${pi},'time',this.value)"></div>
+        <div class="field" style="max-width:200px;"><label>Déplacement facturé pour ce passage</label>
+          <select onchange="pmUpdatePassage(${pi},'deplacement',this.value==='1')">
+            <option value="1" ${pas.deplacement!==false?'selected':''}>Oui (IFD/IK)</option>
+            <option value="0" ${pas.deplacement===false?'selected':''}>Non</option>
+          </select>
+        </div>
+        <button class="icon-btn" style="align-self:end;" onclick="pmRemovePassage(${pi})">🗑️ Retirer ce passage</button>
+      </div>
+      <label class="small muted">Actes réalisés lors de ce passage</label>
+      ${pas.acts.map((a,ai)=>`
+        <div class="act-line">
+          <input type="text" value="${escAttr(a.label)}" onchange="pmUpdateAct(${pi},${ai},'label',this.value)" placeholder="Désignation de l'acte">
+          <select onchange="pmUpdateAct(${pi},${ai},'lc',this.value)">
+            ${LETTRES_CLES.map(lc=>`<option value="${lc.replace('(obsolète)','')}" ${a.lc===lc.replace('(obsolète)','')?'selected':''}>${lc}</option>`).join('')}
+          </select>
+          <input type="number" step="0.01" value="${a.coef}" onchange="pmUpdateAct(${pi},${ai},'coef',parseFloat(this.value)||0)" title="Coefficient">
+          <input type="number" step="1" min="1" value="${a.qty||1}" onchange="pmUpdateAct(${pi},${ai},'qty',parseInt(this.value)||1)" title="Quantité">
+          <button class="icon-btn" onclick="pmRemoveAct(${pi},${ai})">🗑️</button>
+        </div>`).join('')}
+      <div class="row tight">
+        <select id="pmQuickAdd${pi}">
+          <option value="">— ajouter un acte depuis le catalogue —</option>
+          ${COMMON_ACTS.map((a,i)=>`<option value="${i}">${escAttr(a.label)} (${a.lc} ${a.coef})</option>`).join('')}
+        </select>
+        <button class="btn secondary" onclick="pmQuickAddAct(${pi})">+ Ajouter</button>
+        <button class="btn secondary" onclick="pmAddBlankAct(${pi})">+ Acte libre</button>
+      </div>
+    </div>`).join('');
+}
+function pmUpdatePassage(pi, field, val){ pmState.passages[pi][field] = val; }
+function pmRemovePassage(pi){ pmState.passages.splice(pi,1); renderPassageModal(); }
+function pmUpdateAct(pi, ai, field, val){ pmState.passages[pi].acts[ai][field] = val; }
+function pmRemoveAct(pi, ai){ pmState.passages[pi].acts.splice(ai,1); renderPassageModal(); }
+function pmQuickAddAct(pi){
+  const sel = document.getElementById('pmQuickAdd'+pi);
+  if(!sel.value) return;
+  const src = COMMON_ACTS[parseInt(sel.value)];
+  pmState.passages[pi].acts.push({label:src.label, lc:src.lc, coef:src.coef, qty:1, forfaitRate:src.forfaitRate??100});
+  renderPassageModal();
+}
+function pmAddBlankAct(pi){
+  pmState.passages[pi].acts.push({label:'Nouvel acte', lc:'AMI', coef:1, qty:1, forfaitRate:100});
+  renderPassageModal();
+}
+document.getElementById('pmAddPassage').addEventListener('click', ()=>{
+  if(!pmState) return;
+  pmState.passages.push({time:'', deplacement:true, acts:[]});
+  renderPassageModal();
+});
+document.getElementById('pmCancel').addEventListener('click', closePassageModal);
+document.getElementById('pmSave').addEventListener('click', ()=>{
+  if(!pmState) return;
+  if(pmState.mode==='patient'){
+    const patient = state.patients.find(p=>p.id===pmState.patientId);
+    if(patient) patient.defaultPassages = pmState.passages;
+    renderPatients();
+  } else {
+    const entry = getPlanningEntry(pmState.dateStr, pmState.patientId) || {};
+    entry.overridePassages = pmState.passages;
+    setPlanningEntry(pmState.dateStr, pmState.patientId, entry);
+  }
+  closePassageModal();
+  refreshPlanningViews();
+});
+document.getElementById('pmReset').addEventListener('click', ()=>{
+  if(!pmState) return;
+  if(pmState.mode==='patient'){
+    const patient = state.patients.find(p=>p.id===pmState.patientId);
+    if(patient) delete patient.defaultPassages;
+    renderPatients();
+  } else {
+    const entry = getPlanningEntry(pmState.dateStr, pmState.patientId);
+    if(entry){ delete entry.overridePassages; setPlanningEntry(pmState.dateStr, pmState.patientId, entry); }
+  }
+  closePassageModal();
+  refreshPlanningViews();
+});
+
+/* ============================= BILLING RENDER ============================= */
+function getBillMonth(){
+  const inp = document.getElementById('billMonth');
+  if(!inp.value) inp.value = currentMonthStr();
+  return inp.value;
+}
+document.getElementById('billMonth').addEventListener('change', renderBilling);
+document.getElementById('billDeclared').addEventListener('input', renderBilling);
+
+// Calcule toutes les données agrégées de facturation théorique d'un mois. Factorisé pour être partagé
+// entre l'affichage de l'onglet Contrôle facturation (renderBilling) et l'export Excel détaillé
+// (buildBillingWorkbookXML), afin que les deux restent toujours cohérents entre eux.
+function computeBillingData(month){
+  const days = daysInMonth(month);
+  let grandTotal = 0;
+  const byPatient = {}; // id -> {name,total,count}
+  const byNurse = {};   // id -> {name,total,count}
+  const byNursePatient = {}; // nurseId -> {patientId -> {name,total,count}}
+  const activeDays = new Set(); // jours du mois ayant eu au moins un passage facturé
+  const detailRows = []; // une entrée par ligne du détail théorique (date, patient, infirmier, acte, montant)
+
+  state.patients.forEach(p=> byPatient[p.id] = {name:p.name, total:0, count:0});
+  state.nurses.forEach(n=>{ byNurse[n.id] = {name:n.name, total:0, count:0}; byNursePatient[n.id] = {}; });
+
+  days.forEach(d=>{
+    state.patients.forEach(p=>{
+      const calc = computeDayAmount(d,p);
+      if(calc.hasNurse){
+        grandTotal += calc.amount;
+        byPatient[p.id].total += calc.amount;
+        byPatient[p.id].count += 1;
+        activeDays.add(d);
+        const nurse = state.nurses.find(n=>n.id===calc.nurseId);
+        if(byNurse[calc.nurseId]){
+          byNurse[calc.nurseId].total += calc.amount; byNurse[calc.nurseId].count += 1;
+          const npMap = byNursePatient[calc.nurseId];
+          if(!npMap[p.id]) npMap[p.id] = {name:p.name, total:0, count:0};
+          npMap[p.id].total += calc.amount;
+          npMap[p.id].count += 1;
+        }
+        (calc.breakdown||[]).forEach(b=>{
+          detailRows.push({date:d, patientName:p.name, nurseName:nurse?nurse.name:'', label:b.label, amount:b.amount});
+        });
+      }
+    });
+  });
+  const nbActiveDays = activeDays.size;
+  const dailyAverage = nbActiveDays>0 ? grandTotal/nbActiveDays : 0;
+  return {month, days, grandTotal, byPatient, byNurse, byNursePatient, nbActiveDays, dailyAverage, detailRows};
+}
+
+function renderBilling(){
+  scheduleAutosave();
+  const month = getBillMonth();
+  const bd = computeBillingData(month);
+  const {grandTotal, byPatient, byNurse, byNursePatient, nbActiveDays, dailyAverage} = bd;
+
+  const declared = state.monthlyDeclared[month];
+  document.getElementById('billDeclared').value = declared !== undefined ? declared : '';
+  const declaredVal = parseFloat(document.getElementById('billDeclared').value);
+  if(!isNaN(declaredVal)) state.monthlyDeclared[month] = declaredVal;
+
+  document.getElementById('billTheoretical').value = grandTotal.toFixed(2) + ' €';
+  const diffEl = document.getElementById('billDiff');
+  if(!isNaN(declaredVal)){
+    const diff = declaredVal - grandTotal;
+    diffEl.value = (diff>=0?'+':'') + diff.toFixed(2) + ' €';
+    diffEl.style.color = Math.abs(diff) < 0.01 ? '' : (diff < 0 ? 'var(--bad)' : 'var(--warn)');
+  } else diffEl.value = '';
+
+  document.getElementById('billKpis').innerHTML = `
+    <div class="kpi"><div class="val">${grandTotal.toFixed(2)} €</div><div class="lbl">Total théorique du mois</div></div>
+    <div class="kpi"><div class="val">${dailyAverage.toFixed(2)} €</div><div class="lbl">Moyenne journalière de la tournée (${nbActiveDays} jour${nbActiveDays>1?'s':''} facturé${nbActiveDays>1?'s':''})</div></div>
+    <div class="kpi"><div class="val">${state.patients.length}</div><div class="lbl">Patients actifs</div></div>
+    <div class="kpi"><div class="val">${state.nurses.length}</div><div class="lbl">Infirmier(ère)s</div></div>
+  `;
+
+  const byPatientArr = Object.values(byPatient).filter(x=>x.count>0).sort((a,b)=>b.total-a.total);
+  document.getElementById('billByPatient').innerHTML = byPatientArr.length ? ('<table><tr><th>Patient</th><th>Passages</th><th>Total théorique</th></tr>' +
+    byPatientArr.map(x=>`<tr><td>${escHtml(x.name)}</td><td>${x.count}</td><td>${x.total.toFixed(2)} €</td></tr>`).join('') +
+    `<tr style="font-weight:700;"><td>Total</td><td></td><td>${grandTotal.toFixed(2)} €</td></tr></table>`)
+    : '<p class="muted">Aucune donnée pour ce mois.</p>';
+
+  const byNurseArr = Object.values(byNurse).filter(x=>x.count>0).sort((a,b)=>b.total-a.total);
+  document.getElementById('billByNurse').innerHTML = byNurseArr.length ? ('<table><tr><th>Infirmier(ère)</th><th>Passages</th><th>Total théorique</th></tr>' +
+    byNurseArr.map(x=>`<tr><td>${escHtml(x.name)}</td><td>${x.count}</td><td>${x.total.toFixed(2)} €</td></tr>`).join('') + '</table>')
+    : '<p class="muted">Aucune donnée pour ce mois.</p>';
+
+  const nursesWithData = state.nurses.filter(n=>byNurse[n.id] && byNurse[n.id].count>0);
+  document.getElementById('billByNursePatient').innerHTML = nursesWithData.length ? nursesWithData.map(n=>{
+    const npArr = Object.values(byNursePatient[n.id]||{}).filter(x=>x.count>0).sort((a,b)=>b.total-a.total);
+    return `<h3 style="margin-top:14px;">${escHtml(n.name)} — ${byNurse[n.id].total.toFixed(2)} € (${byNurse[n.id].count} passages)</h3>` +
+      (npArr.length ? `<table><tr><th>Patient</th><th>Passages</th><th>Total théorique</th></tr>` +
+        npArr.map(x=>`<tr><td>${escHtml(x.name)}</td><td>${x.count}</td><td>${x.total.toFixed(2)} €</td></tr>`).join('') + '</table>'
+      : '<p class="muted small">Aucun passage facturé pour cet infirmier(ère) ce mois.</p>');
+  }).join('') : '<p class="muted">Aucune donnée pour ce mois.</p>';
+}
+
+/* ============================= UTIL ============================= */
+function escHtml(s){ return String(s).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function escAttr(s){ return String(s).replace(/"/g,'&quot;'); }
+
+/* ============================= SAUVEGARDE AUTOMATIQUE (mémoire locale du navigateur) =============
+   Enregistre automatiquement vos données dans ce navigateur, sur cet ordinateur (localStorage), pour
+   les retrouver au prochain lancement sans avoir à réimporter un .json. C'est une mémoire LOCALE À CE
+   NAVIGATEUR ET CET APPAREIL (pas de synchronisation entre ordinateurs) : continuez d'utiliser
+   « Exporter (.json) » de temps en temps pour une sauvegarde portable/de secours en cas de changement
+   de machine, de navigateur ou de nettoyage des données du navigateur. Si le navigateur bloque cette
+   fonctionnalité (navigation privée, restrictions de sécurité...), l'outil continue de fonctionner
+   normalement, simplement sans mémorisation automatique — utilisez alors Exporter/Importer. ============= */
+const AUTOSAVE_KEY = 'jdConsultPlanning_autosave_v1';
+let autosaveTimer = null;
+let autosaveAvailable = true;
+function scheduleAutosave(){
+  if(!autosaveAvailable) return;
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(saveToLocalStorage, 600);
+}
+function saveToLocalStorage(){
+  try{
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(state));
+    updateAutosaveStatus(new Date());
+  }catch(err){
+    autosaveAvailable = false;
+    updateAutosaveStatus(null, err);
+  }
+}
+function loadFromLocalStorage(){
+  try{
+    const raw = localStorage.getItem(AUTOSAVE_KEY);
+    if(!raw) return false;
+    const data = JSON.parse(raw);
+    if(!data || typeof data !== 'object') return false;
+    state = Object.assign({
+      version:1,nurses:[],patients:[],careTypes:[],planning:{},dayNurse:{},
+      holidays:default2026Holidays(),tariffs:defaultTariffs(),monthlyDeclared:{}
+    }, data);
+    return true;
+  }catch(err){
+    autosaveAvailable = false;
+    updateAutosaveStatus(null, err);
+    return false;
+  }
+}
+function updateAutosaveStatus(when, err){
+  const el = document.getElementById('autosaveStatus');
+  if(!el) return;
+  if(err){
+    el.textContent = '⚠️ Sauvegarde locale indisponible dans ce navigateur — pensez à Exporter régulièrement.';
+    return;
+  }
+  if(when){
+    el.textContent = '💾 Sauvegardé automatiquement à ' + when.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  }
+}
+document.getElementById('btnClearAutosave').addEventListener('click', ()=>{
+  if(!confirm('Effacer la sauvegarde automatique locale de ce navigateur ?\n(Vos éventuels fichiers .json déjà exportés ne sont pas concernés.)')) return;
+  try{ localStorage.removeItem(AUTOSAVE_KEY); }catch(err){}
+  document.getElementById('autosaveStatus').textContent = 'Sauvegarde locale effacée.';
+});
+
+/* ============================= INIT ============================= */
+function renderAll(){
+  renderStaff(); renderCareTypes(); renderPatients(); renderTariffs();
+  refreshPlanningViews(); renderBilling();
+  scheduleAutosave();
+}
+document.getElementById('planMonth').value = currentMonthStr();
+document.getElementById('billMonth').value = currentMonthStr();
+document.getElementById('dayViewDate').value = todayISO();
+loadFromLocalStorage();
+renderAll();
+</script>
+</body>
+</html>

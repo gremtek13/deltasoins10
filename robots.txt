@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /espace-professionnel.html
+Disallow: /JD_Consult_Planning.html
+Disallow: /JD_Consult_Planning_Mobile.html
 
 Sitemap: https://www.deltasoins10.fr/sitemap.xml
