@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JD Consult — Planning &amp; Facturation infirmière</title>
+<title>JD Factu — Planning & Facturation infirmière</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --bg:#f4f6f8; --panel:#ffffff; --border:#d9dfe4; --text:#1f2933;
@@ -89,18 +90,57 @@
   .passage-block .row{margin-bottom:6px;}
   .detail-btn{border:1px solid var(--border);background:#fff;border-radius:3px;font-size:9px;padding:0 4px;cursor:pointer;color:var(--accent-dark);margin-left:2px;}
   .detail-btn.has-detail{background:var(--accent-light);border-color:var(--accent);}
+  /* ---- Authentification ---- */
+  #authOverlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;}
+  .auth-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:32px 28px;max-width:380px;width:100%;box-shadow:0 10px 30px rgba(20,30,40,.08);}
+  .auth-card h1{font-size:18px;margin:0 0 4px;}
+  .auth-card .sub{color:var(--muted);font-size:12px;margin-bottom:20px;}
+  .auth-card label{display:block;font-size:12px;font-weight:600;margin-bottom:4px;margin-top:12px;}
+  .auth-card input{width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;font-size:14px;}
+  .auth-card .btn{width:100%;margin-top:18px;}
+  .auth-switch{margin-top:14px;font-size:12px;text-align:center;color:var(--muted);}
+  .auth-switch a{color:var(--accent);cursor:pointer;text-decoration:underline;}
+  .auth-msg{font-size:12px;margin-top:10px;min-height:14px;}
+  .auth-msg.err{color:var(--bad);}
+  .auth-msg.ok{color:var(--ok);}
+  .user-badge{font-size:12px;color:var(--muted);white-space:nowrap;}
+  .ord-row{display:grid;grid-template-columns:1.6fr 1fr 0.8fr 1fr 1fr auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .ord-row.head{font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;border-bottom:2px solid var(--border);}
+  .ord-badge{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;display:inline-block;}
+  .ord-badge.soon{background:#fef3c7;color:#92400e;}
+  .ord-badge.urgent{background:#fee2e2;color:#991b1b;}
+  .ord-badge.ok{background:#dcfce7;color:#166534;}
 </style>
 </head>
 <body>
 
+<!-- ÉCRAN DE CONNEXION / INSCRIPTION -->
+<div id="authOverlay">
+  <div class="auth-card">
+    <h1>🩺 JD Factu</h1>
+    <div class="sub" id="authSubtitle">Connectez-vous à votre compte</div>
+    <label>Adresse email</label>
+    <input type="email" id="authEmail" autocomplete="username" placeholder="vous@exemple.fr">
+    <label>Mot de passe</label>
+    <input type="password" id="authPassword" autocomplete="current-password" placeholder="••••••••">
+    <button class="btn" id="btnAuthSubmit">Se connecter</button>
+    <div class="auth-msg" id="authMsg"></div>
+    <div class="auth-switch"><span id="authSwitchText">Pas encore de compte ?</span> <a id="authToggleMode">Créer un compte</a></div>
+  </div>
+</div>
+
+<div id="appRoot" style="display:none;">
+
 <header>
-  <h1>🩺 JD Consult — Planning &amp; Contrôle facturation</h1>
+  <h1>🩺 JD Factu — Planning & Contrôle facturation</h1>
   <span class="sub">Version en vigueur des tarifs : à vérifier / ajuster (onglet Tarifs)</span>
   <div class="spacer"></div>
-  <span class="small muted" id="autosaveStatus" title="Sauvegarde automatique dans ce navigateur, sur cet ordinateur. Continuez d'utiliser « Exporter » régulièrement pour une sauvegarde portable/de secours."></span>
-  <button class="btn secondary" id="btnClearAutosave" title="Efface la sauvegarde automatique locale (ne touche pas à un .json déjà exporté)">🗑️ Effacer la sauvegarde locale</button>
+  <span class="user-badge" id="userBadge"></span>
+  <span class="small muted" id="autosaveStatus" title="Sauvegarde automatique dans ce navigateur et sur votre compte. Continuez d'utiliser « Exporter » régulièrement pour une sauvegarde portable/de secours."></span>
+  <button class="btn secondary" id="btnClearAutosave" title="Efface la sauvegarde automatique locale (ne touche pas à un .json déjà exporté, ni à votre compte)">🗑️ Effacer la sauvegarde locale</button>
   <button class="btn secondary" id="btnExport">⬇️ Exporter (.json)</button>
   <button class="btn secondary" id="btnImportTrigger">⬆️ Importer</button>
+  <button class="btn secondary" id="btnLogout">🚪 Se déconnecter</button>
   <input type="file" id="fileImport" class="file-input-hidden" accept="application/json">
 </header>
 
@@ -108,6 +148,7 @@
   <button data-tab="planning" class="active">📅 Planning mensuel</button>
   <button data-tab="billing">💶 Contrôle facturation</button>
   <button data-tab="patients">🧑‍🤝‍🧑 Patients</button>
+  <button data-tab="ordonnances">💊 Ordonnances</button>
   <button data-tab="staff">👩‍⚕️ Personnel</button>
   <button data-tab="caretypes">🗂️ Types de prise en charge</button>
   <button data-tab="tariffs">⚙️ Tarifs</button>
@@ -155,7 +196,7 @@
       <h2>Comparaison avec la facturière</h2>
       <p class="muted small">Renseignez ici le montant réellement facturé/remonté par votre facturière pour ce mois, afin d'obtenir l'écart approximatif à investiguer.</p>
       <div class="row">
-        <div class="field"><label>Montant théorique JD Consult (calculé)</label><input type="text" id="billTheoretical" readonly></div>
+        <div class="field"><label>Montant théorique JD Factu (calculé)</label><input type="text" id="billTheoretical" readonly></div>
         <div class="field"><label>Montant déclaré par la facturière (€)</label><input type="number" step="0.01" id="billDeclared"></div>
         <div class="field"><label>Écart</label><input type="text" id="billDiff" readonly></div>
       </div>
@@ -167,6 +208,21 @@
     <div class="panel">
       <div class="row"><h2 style="margin:0;">Patients</h2><span class="spacer"></span><button class="btn" id="btnAddPatient">+ Ajouter un patient</button></div>
       <div id="patientsList"></div>
+    </div>
+  </div>
+
+  <!-- ORDONNANCES TAB -->
+  <div class="tab-content" id="tab-ordonnances" style="display:none;">
+    <div class="panel">
+      <div class="row"><h2 style="margin:0;">Ordonnances</h2><span class="spacer"></span></div>
+      <p class="muted small">Renseignez la date de début et la durée de chaque ordonnance. Un email d'alerte est envoyé automatiquement à l'adresse de votre compte 30 jours avant la date de fin.</p>
+      <div class="row tight" style="flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px;">
+        <div class="field" style="min-width:200px;"><label>Patient</label><select id="ordPatient"></select></div>
+        <div class="field"><label>Date de début</label><input type="date" id="ordDateDebut"></div>
+        <div class="field"><label>Durée (jours)</label><input type="number" id="ordDuree" min="1" step="1" value="30" style="max-width:100px;"></div>
+        <button class="btn" id="btnAddOrdonnance">+ Ajouter</button>
+      </div>
+      <div id="ordonnancesList"><p class="muted small">Chargement…</p></div>
     </div>
   </div>
 
@@ -233,7 +289,7 @@
       <h2>Patients cancéreux / immunodéprimés</h2>
       <p>La case <b>🎗️ « Patient atteint de cancer / immunodéprimé »</b> de la fiche patient (onglet Patients) applique automatiquement la cotation spécifique de l'article 4 chapitre II de la NGAP, quels que soient les actes saisis (types de prise en charge, passages par défaut ou exceptions ponctuelles) : toute perfusion courte facturée en <b>AMI 9</b> est calculée en <b>AMI 10</b>, et toute perfusion longue facturée en <b>AMI 14</b> est calculée en <b>AMI 15</b> — cotation qui s'applique quelle que soit la nature des produits perfusés, pas uniquement en cas de chimiothérapie (vous verrez la mention « requalifié en AMI 10/15 » dans le détail du calcul). Cette bascule reste purement théorique/calculatoire : elle ne modifie pas les actes que vous avez saisis, seulement leur cotation. L'injection intraveineuse spécifique <b>AMI 7</b> (au lieu d'AMI 2) reste en revanche à choisir manuellement dans le catalogue d'actes, son usage dépendant davantage de la prescription (chimiothérapie IV) que du seul statut du patient.</p>
       <h2>Sauvegarde de vos données</h2>
-      <p>Toutes vos données (personnel, patients, planning, tarifs) restent uniquement dans cette page tant que vous ne les exportez pas. Utilisez <b>« Exporter »</b> régulièrement pour sauvegarder un fichier .json sur votre ordinateur, et <b>« Importer »</b> pour le recharger la prochaine fois que vous ouvrez l'outil.</p>
+      <p>Vos données (personnel, patients, planning, tarifs, ordonnances) sont liées à votre compte (email + mot de passe) et sauvegardées automatiquement en ligne : connectez-vous depuis n'importe quel appareil pour les retrouver. Une copie est aussi gardée dans ce navigateur pour continuer de travailler hors connexion. Utilisez <b>« Exporter »</b> de temps en temps pour garder un fichier .json de secours sur votre ordinateur.</p>
       <h2>Important — évolution de la nomenclature</h2>
       <p>Depuis la décision UNCAM du 02/06/2026, l'ancien système <b>AIS</b> (soins de base à la séance) a été abrogé au profit du <b>Bilan de Soins Infirmiers (BSI)</b> et des forfaits de dépendance <b>BSA / BSB / BSC</b>. Ce programme reflète cette évolution : privilégiez les forfaits BSA/BSB/BSC pour vos patients dépendants plutôt que l'AIS, qui n'est conservé ici qu'à titre indicatif/historique.</p>
       <p class="muted small">Cet outil fournit une estimation théorique à des fins de contrôle approximatif, basée sur la nomenclature NGAP en vigueur au 21/06/2026 et des recoupements avec des guides professionnels en ligne (voir sources fournies dans la conversation). Les règles de cumul réelles comportent des cas particuliers (lésions traumatiques multiples, dérogations spécifiques...) non tous modélisés ici. Il ne remplace pas un contrôle professionnel de facturation et ne constitue pas un conseil juridique ou comptable — vérifiez les cas litigieux avec votre facturière ou la caisse.</p>
@@ -241,7 +297,7 @@
   </div>
 
 </main>
-<footer>JD Consult — outil interne de planning et de contrôle de facturation. Données stockées localement dans le fichier exporté uniquement.</footer>
+<footer>JD Factu — outil interne de planning et de contrôle de facturation. Données sauvegardées sur votre compte + copie locale dans ce navigateur.</footer>
 
 <div class="modal-overlay" id="passageModalOverlay" style="display:none;">
   <div class="modal-box">
@@ -257,6 +313,8 @@
     </div>
   </div>
 </div>
+
+</div><!-- /appRoot -->
 
 <script>
 /* ============================= STATE ============================= */
@@ -352,6 +410,7 @@ function switchTab(tabName){
   if(tabName==='billing') renderBilling();
   if(tabName==='patients') renderPatients();
   if(tabName==='caretypes') renderPatientAssignList();
+  if(tabName==='ordonnances') renderOrdonnancesTab();
 }
 document.querySelectorAll('nav.tabs button').forEach(btn=>{
   btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
@@ -375,7 +434,7 @@ document.getElementById('btnExport').addEventListener('click', ()=>{
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
-  a.href = url; a.download = `jd-consult-planning_${stamp}.json`;
+  a.href = url; a.download = `jd-factu_${stamp}.json`;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 });
@@ -458,7 +517,7 @@ function buildPlanningWorkbookXML(month){
   <Style ss:ID="emptyCell"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/>${XL_BORDER}</Style>
   ${nurseStylesXml}`;
 
-  const titleRow = xlRow(`<Cell ss:StyleID="title" ss:MergeAcross="${nCols-1}"><Data ss:Type="String">🩺 JD Consult — Planning ${xmlEsc(monthLabel)}</Data></Cell>`, 22);
+  const titleRow = xlRow(`<Cell ss:StyleID="title" ss:MergeAcross="${nCols-1}"><Data ss:Type="String">🩺 JD Factu — Planning ${xmlEsc(monthLabel)}</Data></Cell>`, 22);
 
   let dayHeadCells = xlCell('Patient', {styleId:'headPatientCol'});
   days.forEach(d=>{
@@ -1546,34 +1605,40 @@ function renderBilling(){
 function escHtml(s){ return String(s).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 function escAttr(s){ return String(s).replace(/"/g,'&quot;'); }
 
-/* ============================= SAUVEGARDE AUTOMATIQUE (mémoire locale du navigateur) =============
-   Enregistre automatiquement vos données dans ce navigateur, sur cet ordinateur (localStorage), pour
-   les retrouver au prochain lancement sans avoir à réimporter un .json. C'est une mémoire LOCALE À CE
-   NAVIGATEUR ET CET APPAREIL (pas de synchronisation entre ordinateurs) : continuez d'utiliser
-   « Exporter (.json) » de temps en temps pour une sauvegarde portable/de secours en cas de changement
-   de machine, de navigateur ou de nettoyage des données du navigateur. Si le navigateur bloque cette
-   fonctionnalité (navigation privée, restrictions de sécurité...), l'outil continue de fonctionner
-   normalement, simplement sans mémorisation automatique — utilisez alors Exporter/Importer. ============= */
-const AUTOSAVE_KEY = 'jdConsultPlanning_autosave_v1';
+/* ============================= COMPTES & SAUVEGARDE (Supabase + copie locale) =============
+   Chaque utilisateur se connecte avec son email + mot de passe (compte Supabase). Ses données
+   (personnel, patients, planning, tarifs) sont sauvegardées automatiquement sur son compte, ce qui
+   permet de les retrouver depuis n'importe quel appareil. Une copie est aussi gardée dans ce
+   navigateur (localStorage, sous une clé propre à ce compte) pour continuer à travailler
+   momentanément hors connexion — elle est resynchronisée dès que la connexion revient. ============= */
+const SUPABASE_URL = 'https://lkhjobnmrvzstpfmvfma.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxraGpvYm5tcnZ6c3RwZm12Zm1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMTkxNjgsImV4cCI6MjEwMjc5NTE2OH0.JrN3dWGjeuv8VSHPsLdAg9Wm9EJZZPuTKNXOR2O9kzs';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null;
+let authMode = 'signin'; // 'signin' | 'signup'
+const AUTOSAVE_KEY_PREFIX = 'jdFactu_autosave_v1_';
+let currentAutosaveKey = null;
 let autosaveTimer = null;
 let autosaveAvailable = true;
+
 function scheduleAutosave(){
-  if(!autosaveAvailable) return;
   clearTimeout(autosaveTimer);
-  autosaveTimer = setTimeout(saveToLocalStorage, 600);
+  autosaveTimer = setTimeout(()=>{ saveToLocalStorage(); saveStateToCloud(); }, 700);
 }
 function saveToLocalStorage(){
+  if(!currentAutosaveKey) return;
   try{
-    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(state));
-    updateAutosaveStatus(new Date());
+    localStorage.setItem(currentAutosaveKey, JSON.stringify(state));
+    autosaveAvailable = true;
   }catch(err){
     autosaveAvailable = false;
-    updateAutosaveStatus(null, err);
   }
+  updateAutosaveStatus();
 }
-function loadFromLocalStorage(){
+function loadFromLocalStorage(key){
   try{
-    const raw = localStorage.getItem(AUTOSAVE_KEY);
+    const raw = localStorage.getItem(key);
     if(!raw) return false;
     const data = JSON.parse(raw);
     if(!data || typeof data !== 'object') return false;
@@ -1584,26 +1649,221 @@ function loadFromLocalStorage(){
     return true;
   }catch(err){
     autosaveAvailable = false;
-    updateAutosaveStatus(null, err);
     return false;
   }
 }
-function updateAutosaveStatus(when, err){
+async function saveStateToCloud(){
+  if(!currentUser) return;
+  try{
+    const { error } = await sb.from('app_state').upsert({
+      user_id: currentUser.id, data: state, updated_at: new Date().toISOString()
+    });
+    if(error) throw error;
+    lastCloudSaveOk = true;
+  }catch(err){
+    lastCloudSaveOk = false;
+    console.error('Sauvegarde en ligne impossible :', err);
+  }
+  updateAutosaveStatus();
+}
+let lastCloudSaveOk = null;
+async function loadStateFromCloudThenLocal(){
+  try{
+    const { data, error } = await sb.from('app_state').select('data').eq('user_id', currentUser.id).maybeSingle();
+    if(error) throw error;
+    if(data && data.data && Object.keys(data.data).length){
+      state = Object.assign({
+        version:1,nurses:[],patients:[],careTypes:[],planning:{},dayNurse:{},
+        holidays:default2026Holidays(),tariffs:defaultTariffs(),monthlyDeclared:{}
+      }, data.data);
+      saveToLocalStorage();
+      lastCloudSaveOk = true;
+    } else {
+      // Rien en ligne pour ce compte : on part de la copie locale s'il y en a une, puis on l'envoie en ligne.
+      loadFromLocalStorage(currentAutosaveKey);
+      await saveStateToCloud();
+    }
+  }catch(err){
+    console.error('Chargement en ligne impossible, utilisation de la copie locale :', err);
+    lastCloudSaveOk = false;
+    loadFromLocalStorage(currentAutosaveKey);
+  }
+}
+function updateAutosaveStatus(){
   const el = document.getElementById('autosaveStatus');
   if(!el) return;
-  if(err){
-    el.textContent = '⚠️ Sauvegarde locale indisponible dans ce navigateur — pensez à Exporter régulièrement.';
-    return;
-  }
-  if(when){
-    el.textContent = '💾 Sauvegardé automatiquement à ' + when.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  const now = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  if(lastCloudSaveOk === false && !autosaveAvailable){
+    el.textContent = '⚠️ Sauvegarde indisponible (ni en ligne, ni locale) — pensez à Exporter.';
+  } else if(lastCloudSaveOk === false){
+    el.textContent = '⚠️ Sauvegarde en ligne indisponible (hors connexion ?) — copie locale à jour (' + now + ').';
+  } else if(lastCloudSaveOk === true){
+    el.textContent = '☁️ Sauvegardé sur votre compte à ' + now;
   }
 }
 document.getElementById('btnClearAutosave').addEventListener('click', ()=>{
-  if(!confirm('Effacer la sauvegarde automatique locale de ce navigateur ?\n(Vos éventuels fichiers .json déjà exportés ne sont pas concernés.)')) return;
-  try{ localStorage.removeItem(AUTOSAVE_KEY); }catch(err){}
-  document.getElementById('autosaveStatus').textContent = 'Sauvegarde locale effacée.';
+  if(!confirm('Effacer la copie locale de ce navigateur ?\n(Vos données restent sur votre compte en ligne, et vos éventuels .json déjà exportés ne sont pas concernés.)')) return;
+  try{ if(currentAutosaveKey) localStorage.removeItem(currentAutosaveKey); }catch(err){}
+  document.getElementById('autosaveStatus').textContent = 'Copie locale effacée (vos données restent sur votre compte).';
 });
+
+/* ---------- Authentification ---------- */
+function setAuthMsg(text, kind){
+  const el = document.getElementById('authMsg');
+  el.textContent = text || '';
+  el.className = 'auth-msg' + (kind ? ' '+kind : '');
+}
+function updateAuthModeUI(){
+  const isSignup = authMode === 'signup';
+  document.getElementById('authSubtitle').textContent = isSignup ? 'Créez votre compte' : 'Connectez-vous à votre compte';
+  document.getElementById('btnAuthSubmit').textContent = isSignup ? 'Créer le compte' : 'Se connecter';
+  document.getElementById('authSwitchText').textContent = isSignup ? 'Déjà un compte ?' : 'Pas encore de compte ?';
+  document.getElementById('authToggleMode').textContent = isSignup ? 'Se connecter' : 'Créer un compte';
+  setAuthMsg('', '');
+}
+document.getElementById('authToggleMode').addEventListener('click', ()=>{
+  authMode = authMode === 'signin' ? 'signup' : 'signin';
+  updateAuthModeUI();
+});
+function translateAuthError(error){
+  const msg = (error && error.message) || '';
+  if(/Invalid login credentials/i.test(msg)) return 'Email ou mot de passe incorrect.';
+  if(/User already registered/i.test(msg)) return 'Un compte existe déjà avec cet email — connectez-vous plutôt.';
+  if(/Password should be at least/i.test(msg)) return 'Le mot de passe doit contenir au moins 6 caractères.';
+  if(/Unable to validate email/i.test(msg) || /invalid.*email/i.test(msg)) return 'Adresse email invalide.';
+  return msg || 'Une erreur est survenue.';
+}
+document.getElementById('btnAuthSubmit').addEventListener('click', async ()=>{
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  if(!email || !password){ setAuthMsg('Merci de renseigner un email et un mot de passe.', 'err'); return; }
+  const btn = document.getElementById('btnAuthSubmit');
+  btn.disabled = true;
+  setAuthMsg('', '');
+  try{
+    if(authMode === 'signin'){
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if(error){ setAuthMsg(translateAuthError(error), 'err'); return; }
+      await onAuthenticated(data.user);
+    } else {
+      const { data, error } = await sb.auth.signUp({ email, password });
+      if(error){ setAuthMsg(translateAuthError(error), 'err'); return; }
+      if(data.session){
+        await onAuthenticated(data.user);
+      } else {
+        setAuthMsg('Compte créé ! Vérifiez votre boîte mail pour confirmer votre adresse, puis connectez-vous.', 'ok');
+        authMode = 'signin';
+        updateAuthModeUI();
+      }
+    }
+  } finally {
+    btn.disabled = false;
+  }
+});
+document.getElementById('authPassword').addEventListener('keydown', (e)=>{ if(e.key==='Enter') document.getElementById('btnAuthSubmit').click(); });
+document.getElementById('btnLogout').addEventListener('click', async ()=>{
+  if(!confirm('Se déconnecter ?')) return;
+  clearTimeout(autosaveTimer);
+  saveToLocalStorage();
+  await saveStateToCloud(); // on s'assure que la dernière modification est bien enregistrée avant de quitter
+  try{ await sb.auth.signOut(); }catch(err){}
+  location.reload();
+});
+
+async function onAuthenticated(user){
+  currentUser = user;
+  currentAutosaveKey = AUTOSAVE_KEY_PREFIX + user.id;
+  document.getElementById('authOverlay').style.display = 'none';
+  document.getElementById('appRoot').style.display = '';
+  document.getElementById('userBadge').textContent = '👤 ' + user.email;
+  await loadStateFromCloudThenLocal();
+  renderAll();
+}
+
+async function initAuth(){
+  updateAuthModeUI();
+  try{
+    const { data: { session } } = await sb.auth.getSession();
+    if(session && session.user){
+      await onAuthenticated(session.user);
+    }
+  }catch(err){
+    console.error('Vérification de session impossible :', err);
+  }
+}
+
+/* ---------- Ordonnances ---------- */
+let ordonnancesCache = [];
+async function renderOrdonnancesTab(){
+  const sel = document.getElementById('ordPatient');
+  sel.innerHTML = state.patients.length
+    ? state.patients.map(p=>`<option value="${escAttr(p.id)}">${escHtml(p.name)}</option>`).join('')
+    : '<option value="">(aucun patient — ajoutez-en un dans l\'onglet Patients)</option>';
+  if(!document.getElementById('ordDateDebut').value) document.getElementById('ordDateDebut').value = todayISO();
+  await loadOrdonnances();
+}
+async function loadOrdonnances(){
+  const listEl = document.getElementById('ordonnancesList');
+  if(!currentUser){ listEl.innerHTML = '<p class="muted small">Connectez-vous pour voir vos ordonnances.</p>'; return; }
+  try{
+    const { data, error } = await sb.from('ordonnances').select('*').eq('user_id', currentUser.id).order('date_fin', {ascending:true});
+    if(error) throw error;
+    ordonnancesCache = data || [];
+    renderOrdonnancesList();
+  }catch(err){
+    listEl.innerHTML = '<p class="muted small">⚠️ Impossible de charger les ordonnances (' + escHtml(err.message||'erreur') + ').</p>';
+  }
+}
+function renderOrdonnancesList(){
+  const listEl = document.getElementById('ordonnancesList');
+  if(!ordonnancesCache.length){ listEl.innerHTML = '<p class="muted small">Aucune ordonnance enregistrée.</p>'; return; }
+  const today = todayISO();
+  const head = `<div class="ord-row head"><div>Patient</div><div>Début</div><div>Durée</div><div>Fin</div><div>Statut</div><div></div></div>`;
+  const rows = ordonnancesCache.map(o=>{
+    const daysLeft = Math.round((new Date(o.date_fin+'T00:00:00') - new Date(today+'T00:00:00')) / 86400000);
+    let badge;
+    if(daysLeft <= 0) badge = '<span class="ord-badge urgent">Expirée</span>';
+    else if(daysLeft <= 30) badge = `<span class="ord-badge urgent">${daysLeft} j restants</span>`;
+    else if(daysLeft <= 45) badge = `<span class="ord-badge soon">${daysLeft} j restants</span>`;
+    else badge = `<span class="ord-badge ok">${daysLeft} j restants</span>`;
+    return `<div class="ord-row">
+      <div>${escHtml(o.patient_nom)}</div>
+      <div>${escHtml(o.date_debut)}</div>
+      <div>${o.duree_jours} j</div>
+      <div>${escHtml(o.date_fin)}</div>
+      <div>${badge}</div>
+      <div><button class="btn danger" style="padding:4px 8px;" onclick="deleteOrdonnance('${o.id}')">🗑️</button></div>
+    </div>`;
+  }).join('');
+  listEl.innerHTML = head + rows;
+}
+document.getElementById('btnAddOrdonnance').addEventListener('click', async ()=>{
+  const patientId = document.getElementById('ordPatient').value;
+  const patient = state.patients.find(p=>p.id===patientId);
+  const dateDebut = document.getElementById('ordDateDebut').value;
+  const duree = parseInt(document.getElementById('ordDuree').value, 10);
+  if(!patient || !dateDebut || !duree || duree<1){ alert('Merci de renseigner un patient, une date de début et une durée valides.'); return; }
+  try{
+    const { error } = await sb.from('ordonnances').insert({
+      user_id: currentUser.id, patient_id: patient.id, patient_nom: patient.name,
+      date_debut: dateDebut, duree_jours: duree
+    });
+    if(error) throw error;
+    await loadOrdonnances();
+  }catch(err){
+    alert("Erreur lors de l'ajout : " + (err.message||err));
+  }
+});
+async function deleteOrdonnance(id){
+  if(!confirm('Supprimer cette ordonnance ?')) return;
+  try{
+    const { error } = await sb.from('ordonnances').delete().eq('id', id);
+    if(error) throw error;
+    await loadOrdonnances();
+  }catch(err){
+    alert('Erreur lors de la suppression : ' + (err.message||err));
+  }
+}
 
 /* ============================= INIT ============================= */
 function renderAll(){
@@ -1613,8 +1873,7 @@ function renderAll(){
 }
 document.getElementById('planMonth').value = currentMonthStr();
 document.getElementById('billMonth').value = currentMonthStr();
-loadFromLocalStorage();
-renderAll();
+initAuth();
 </script>
 </body>
 </html>

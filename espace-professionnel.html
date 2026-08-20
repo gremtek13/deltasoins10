@@ -10,11 +10,13 @@
 <!--
   Cette page est un simple portail d'accès à usage interne : elle demande un code avant d'ouvrir l'outil
   de planning/facturation. CE N'EST PAS UNE VRAIE SÉCURITÉ — le code est visible par quiconque regarde le
-  code source de la page (comme n'importe quel code côté navigateur). Son seul but, comme demandé, est
-  d'éviter qu'un visiteur du site tombe dessus par hasard en naviguant. Ne rien y mettre qui nécessite une
-  vraie protection (données patients, mots de passe...) : l'outil lui-même ne stocke des données que dans
-  le navigateur de la personne qui l'utilise (export/import + sauvegarde locale), rien n'est hébergé sur
-  cette page.
+  code source de la page (comme n'importe quel code côté navigateur). Son seul but est d'éviter qu'un
+  visiteur du site tombe dessus par hasard en naviguant. La vraie protection des données se fait en aval :
+  - Version bureau (JD_Consult_Planning.html) : compte email/mot de passe (Supabase), données patients et
+    ordonnances synchronisées en ligne sur ce compte. Vérifier que la sécurité entre comptes (Row Level
+    Security) est bien activée côté Supabase avant d'y saisir de vraies données patients.
+  - Version mobile (JD_Consult_Planning_Mobile.html) : pas encore de compte, données uniquement dans ce
+    navigateur (export/import + sauvegarde locale), rien n'est envoyé en ligne.
 
   Cette page n'est volontairement liée depuis aucun menu du site (ni .main-nav ni footer), n'apparaît pas
   dans sitemap.xml, et est exclue de l'indexation via robots.txt + la balise meta robots ci-dessus.
