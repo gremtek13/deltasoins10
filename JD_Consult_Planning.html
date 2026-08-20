@@ -13,7 +13,8 @@
   }
   *{box-sizing:border-box;}
   body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
-  header{background:var(--panel);border-bottom:1px solid var(--border);padding:10px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:50;}
+  .sticky-top{position:sticky;top:0;z-index:60;background:var(--panel);}
+  header{background:var(--panel);border-bottom:1px solid var(--border);padding:10px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
   header h1{font-size:16px;margin:0;white-space:nowrap;}
   header .sub{color:var(--muted);font-size:12px;}
   .spacer{flex:1;}
@@ -53,11 +54,15 @@
   .badge-ok{color:var(--ok);font-weight:600;}
   .badge-bad{color:var(--bad);font-weight:600;}
   .badge-warn{color:var(--warn);font-weight:600;}
-  .planning-wrap{overflow-x:auto;}
+  .planning-wrap{overflow:auto;max-height:calc(100vh - 230px);min-height:280px;border-radius:6px;}
   table.plan{font-size:11.5px;}
   table.plan th, table.plan td{padding:3px 4px;text-align:center;min-width:30px;}
   table.plan th.patient-col, table.plan td.patient-col{text-align:left;min-width:150px;position:sticky;left:0;background:#fff;z-index:5;}
   table.plan th.patient-col{background:#f8fafc;z-index:6;}
+  table.plan tr:first-child th{position:sticky;top:0;z-index:7;background:#f8fafc;}
+  table.plan tr:first-child th.patient-col{z-index:9;}
+  .validate-btn{border:1px solid var(--border);background:#fff;border-radius:3px;font-size:10px;padding:0 4px;cursor:pointer;color:var(--ok);margin-left:4px;vertical-align:middle;}
+  .validate-btn:hover{background:#f0fdf4;border-color:var(--ok);}
   table.plan td.sunday, table.plan th.sunday{background:var(--sunday);}
   table.plan td.today, table.plan th.today{background:var(--today);}
   table.plan select{padding:2px;font-size:11px;width:100%;}
@@ -131,6 +136,7 @@
 
 <div id="appRoot" style="display:none;">
 
+<div class="sticky-top">
 <header>
   <h1>🩺 JD Factu — Planning & Contrôle facturation</h1>
   <span class="sub">Version en vigueur des tarifs : à vérifier / ajuster (onglet Tarifs)</span>
@@ -154,6 +160,7 @@
   <button data-tab="tariffs">⚙️ Tarifs</button>
   <button data-tab="help">ℹ️ Aide</button>
 </nav>
+</div>
 
 <main>
 
@@ -1347,7 +1354,8 @@ function renderPlanning(){
     const ctTag = ctNames.length ? ` <span class="pill">${escHtml(ctNames.join(', '))}</span>` : '';
     const cancerTag = p.hasCancer ? ` <span class="pill" title="Cancer / immunodéprimé (article 4 ch. II)">🎗️</span>` : '';
     const nameLink = `<a href="#" title="Voir/modifier la fiche de ce patient" style="color:var(--accent-dark);text-decoration:none;cursor:pointer;" onclick="goToPatient('${p.id}');return false;">${escHtml(p.name)}</a>`;
-    return `<tr><td class="patient-col">${nameLink}${cancerTag}${ctTag}</td>${cells}</tr>`;
+    const validateBtn = `<button class="validate-btn" title="Cocher présent(e) tous les jours du mois affiché pour ce patient" onclick="validateMonthForPatient('${p.id}')">✅</button>`;
+    return `<tr><td class="patient-col">${nameLink}${validateBtn}${cancerTag}${ctTag}</td>${cells}</tr>`;
   }).join('');
 
   table.innerHTML = head + defaultRow + rows;
@@ -1355,6 +1363,19 @@ function renderPlanning(){
 function setDayDefaultNurse(dateStr, nurseId){
   state.dayNurse = state.dayNurse || {};
   if(nurseId) state.dayNurse[dateStr] = nurseId; else delete state.dayNurse[dateStr];
+  renderPlanning();
+}
+// Coche « présent(e) » sur tous les jours du mois actuellement affiché, pour un patient donné.
+// Les affectations infirmier(ère) et exceptions déjà saisies sur chaque jour sont conservées.
+function validateMonthForPatient(patientId){
+  const patient = state.patients.find(p=>p.id===patientId); if(!patient) return;
+  if(!confirm(`Cocher « présent(e) » sur tous les jours du mois affiché pour ${patient.name} ?\n(Les affectations et exceptions déjà saisies sont conservées.)`)) return;
+  const days = daysInMonth(getPlanMonth());
+  days.forEach(d=>{
+    const entry = getPlanningEntry(d,patientId) || {};
+    entry.excluded = false;
+    setPlanningEntry(d,patientId,entry);
+  });
   renderPlanning();
 }
 function togglePresence(dateStr, patientId, present){
