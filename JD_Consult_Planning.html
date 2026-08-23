@@ -566,7 +566,7 @@ function buildPlanningWorkbookXML(month){
   });
   const tourneeRow = xlRow(tourneeCells, 18);
 
-  const patientRows = state.patients.filter(p=>p.activeInPlanning!==false).map(p=>{
+  const patientRows = state.patients.filter(p=>isPatientActiveInMonth(p, month)).map(p=>{
     let cells = xlCell(p.name + (p.hasCancer?' 🎗️':''), {styleId:'patientName'});
     days.forEach(d=>{
       const calc = computeDayAmount(d,p);
@@ -903,7 +903,7 @@ function renderPatients(){
 }
 function renderPatientCard(p){
   const cotation = computePatientTypicalDayAmount(p);
-  const isActive = p.activeInPlanning !== false;
+  const isActive = !p.inactiveFromMonth;
   return `
   <div class="panel" id="patient-${p.id}" style="background:#fafcff;${isActive?'':'opacity:.7;'}">
     <div class="row">
@@ -913,10 +913,10 @@ function renderPatientCard(p){
     </div>
     <div class="field" style="background:${isActive?'var(--accent-light)':'#f3f1ea'};border-radius:10px;padding:8px 12px;margin-bottom:12px;">
       <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text);font-weight:600;">
-        <input type="checkbox" style="width:auto;" ${isActive?'checked':''} onchange="updatePatient('${p.id}','activeInPlanning',this.checked)">
+        <input type="checkbox" style="width:auto;" ${isActive?'checked':''} onchange="updatePatientActive('${p.id}',this.checked)">
         📅 Actif dans le planning (visible dans la grille mensuelle)
       </label>
-      <p class="muted small" style="margin:2px 0 0;">Décochez pour un patient dont la prise en charge est terminée : il reste dans cet historique mais disparaît de la grille du planning mensuel. Cette case reste identique d'un mois à l'autre — pas besoin de la recocher chaque mois.</p>
+      <p class="muted small" style="margin:2px 0 0;">${isActive ? "Décochez pour un patient dont la prise en charge est terminée : il disparaît du planning à partir du mois actuel (inclus), mais reste visible sur tous les mois déjà passés — rien n'est perdu de l'historique." : `Inactif depuis ${p.inactiveFromMonth} — masqué du planning à partir de ce mois-là (les mois précédents restent visibles). Recochez pour le réactiver.`}</p>
     </div>
     <div class="note-box" style="margin-bottom:12px;">
       <b>Détail de la cotation théorique (jour type)&nbsp;: ${cotation.amount.toFixed(2)} €</b>
@@ -996,6 +996,29 @@ function renderPatientCard(p){
   </div>`;
 }
 function updatePatient(id, field, val){ const p = state.patients.find(x=>x.id===id); if(p){ p[field]=val; renderPatients(); renderPlanning(); } }
+// Un patient est visible dans le planning du mois "month" (format AAAA-MM) s'il n'a jamais été
+// désactivé, ou si ce mois est ANTÉRIEUR au mois où il a été désactivé — ce qui garde tout l'historique
+// des mois déjà passés visible, même après avoir décoché le patient plus tard.
+function isPatientActiveInMonth(patient, month){
+  return !patient.inactiveFromMonth || month < patient.inactiveFromMonth;
+}
+// Décoche = inactif à partir du mois actuel (inclus) ; les mois déjà passés restent visibles.
+// Coche = de nouveau actif sur tous les mois (passés, actuel, futurs).
+function updatePatientActive(id, checked){
+  const p = state.patients.find(x=>x.id===id); if(!p) return;
+  if(checked) delete p.inactiveFromMonth;
+  else p.inactiveFromMonth = currentMonthStr();
+  renderPatients(); renderPlanning();
+}
+// Migration ponctuelle de l'ancien champ activeInPlanning (booléen, masquait le patient sur TOUS les
+// mois y compris passés) vers inactiveFromMonth (ne masque qu'à partir du mois de désactivation).
+function migrateLegacyActiveFlags(){
+  const month = currentMonthStr();
+  state.patients.forEach(p=>{
+    if(p.activeInPlanning===false && !p.inactiveFromMonth) p.inactiveFromMonth = month;
+    if('activeInPlanning' in p) delete p.activeInPlanning;
+  });
+}
 function updatePatientFlag(id, flag, checked){
   const p = state.patients.find(x=>x.id===id); if(!p) return;
   p.defaultFlags = p.defaultFlags || {};
@@ -1023,9 +1046,9 @@ function removePatient(id){ if(!confirm('Supprimer ce patient et toutes ses donn
   renderPatients(); renderPlanning();
 }
 document.getElementById('btnAddPatient').addEventListener('click', ()=>{
-  // activeInPlanning:false par défaut — le patient n'apparaît dans la grille du planning qu'une fois
-  // coché ci-dessous, pour ne pas polluer le planning avec des fiches en cours de saisie/anciennes.
-  state.patients.push({id:uid('p'), name:'Nouveau patient', careTypeIds:[], km:0, montagne:false, deplacementType:'ifd', passagesParJour:1, defaultDays:[0,1,2,3,4,5,6], note:'', hasCancer:false, activeInPlanning:false});
+  // inactiveFromMonth = mois actuel par défaut — le patient n'apparaît dans la grille du planning
+  // qu'une fois coché ci-dessous, pour ne pas polluer le planning avec des fiches en cours de saisie.
+  state.patients.push({id:uid('p'), name:'Nouveau patient', careTypeIds:[], km:0, montagne:false, deplacementType:'ifd', passagesParJour:1, defaultDays:[0,1,2,3,4,5,6], note:'', hasCancer:false, inactiveFromMonth:currentMonthStr()});
   renderPatients();
 });
 
@@ -1366,9 +1389,10 @@ function renderPlanning(){
       </td>`;
   }).join('') + '</tr>';
 
-  // Seuls les patients actifs (case cochée dans l'onglet Patients) apparaissent dans la grille : les
-  // autres restent dans l'historique de l'onglet Patients sans encombrer le planning mensuel.
-  let rows = state.patients.filter(p=>p.activeInPlanning!==false).map(p=>{
+  // Seuls les patients actifs CE MOIS-CI (case cochée dans l'onglet Patients) apparaissent dans la
+  // grille : un patient désactivé disparaît à partir du mois de désactivation, mais reste visible sur
+  // tous les mois antérieurs (historique préservé).
+  let rows = state.patients.filter(p=>isPatientActiveInMonth(p, month)).map(p=>{
     let cells = days.map(d=>{
       const cls = [isSunday(d)?'sunday':'', d===today?'today':''].filter(Boolean).join(' ');
       const eff = getEffectiveNurse(d,p.id);
@@ -1983,6 +2007,7 @@ async function deleteOrdonnance(id){
 
 /* ============================= INIT ============================= */
 function renderAll(){
+  migrateLegacyActiveFlags();
   renderStaff(); renderCareTypes(); renderPatients(); renderTariffs();
   renderPlanning(); renderBilling();
   scheduleAutosave();
