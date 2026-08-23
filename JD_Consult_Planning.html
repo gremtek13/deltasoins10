@@ -286,7 +286,7 @@
     <div class="panel">
       <div class="row"><h2 style="margin:0;">Nouvelle prescription</h2><span class="spacer"></span></div>
       <div class="row tight" style="flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:10px;">
-        <div class="field" style="min-width:220px;"><label>Patient</label><select id="pxPatient"></select></div>
+        <div class="field" style="min-width:220px;"><label>Patient</label><input type="text" id="pxPatient" list="pxPatientDatalist" placeholder="Nom du patient (liste ou saisie libre)"><datalist id="pxPatientDatalist"></datalist></div>
         <div class="field"><label>Date</label><input type="date" id="pxDate"></div>
       </div>
       <div id="pxItemsList"></div>
@@ -2083,12 +2083,7 @@ function renderPrescriptionsTab(){
   document.getElementById('pxNom').value = state.practitioner.nom || '';
   document.getElementById('pxAdeli').value = state.practitioner.adeli || '';
   renderSignaturePreview();
-  const sel = document.getElementById('pxPatient');
-  const prevVal = sel.value;
-  sel.innerHTML = state.patients.length
-    ? state.patients.map(p=>`<option value="${escAttr(p.id)}">${escHtml(p.name)}</option>`).join('')
-    : '<option value="">(aucun patient — ajoutez-en un dans l\'onglet Patients)</option>';
-  if(prevVal && state.patients.some(p=>p.id===prevVal)) sel.value = prevVal;
+  document.getElementById('pxPatientDatalist').innerHTML = state.patients.map(p=>`<option value="${escAttr(p.name)}"></option>`).join('');
   if(!document.getElementById('pxDate').value) document.getElementById('pxDate').value = todayISO();
   if(!pxItemsDraft.length) pxItemsDraft = [{catalogId:'', freeText:'', qty:''}];
   renderPxItemsDraft();
@@ -2153,16 +2148,16 @@ document.getElementById('btnGeneratePx').addEventListener('click', ()=>{
     alert('Merci de renseigner votre nom et votre numéro ADELI avant de générer une prescription.');
     return;
   }
-  const patientId = document.getElementById('pxPatient').value;
-  const patient = state.patients.find(p=>p.id===patientId);
+  const patientNom = document.getElementById('pxPatient').value.trim();
   const date = document.getElementById('pxDate').value;
-  if(!patient || !date){ alert('Merci de choisir un patient et une date.'); return; }
+  if(!patientNom || !date){ alert('Merci de renseigner le nom du patient et une date.'); return; }
+  const matchedPatient = state.patients.find(p=>p.name.trim().toLowerCase()===patientNom.toLowerCase());
   const items = pxItemsDraft.filter(it=>it.catalogId);
   if(!items.length){ alert('Ajoutez au moins un dispositif.'); return; }
   const missingPrecision = items.some(it=>!it.freeText || !it.freeText.trim());
   if(missingPrecision && !confirm("Au moins un dispositif n'a pas de précision (marque/référence/taille). Continuer quand même ?")) return;
   const entry = {
-    id: uid('px'), patientId: patient.id, patientNom: patient.name,
+    id: uid('px'), patientId: matchedPatient ? matchedPatient.id : null, patientNom,
     date, items: items.map(it=>({
       catalogId: it.catalogId,
       label: (LPPR_CATALOG.find(c=>c.id===it.catalogId)||{}).label || it.catalogId,
