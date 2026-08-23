@@ -566,7 +566,7 @@ function buildPlanningWorkbookXML(month){
   });
   const tourneeRow = xlRow(tourneeCells, 18);
 
-  const patientRows = state.patients.map(p=>{
+  const patientRows = state.patients.filter(p=>p.activeInPlanning!==false).map(p=>{
     let cells = xlCell(p.name + (p.hasCancer?' 🎗️':''), {styleId:'patientName'});
     days.forEach(d=>{
       const calc = computeDayAmount(d,p);
@@ -903,12 +903,20 @@ function renderPatients(){
 }
 function renderPatientCard(p){
   const cotation = computePatientTypicalDayAmount(p);
+  const isActive = p.activeInPlanning !== false;
   return `
-  <div class="panel" id="patient-${p.id}" style="background:#fafcff;">
+  <div class="panel" id="patient-${p.id}" style="background:#fafcff;${isActive?'':'opacity:.7;'}">
     <div class="row">
       <div class="field"><label>Nom du patient</label>
         <input type="text" value="${escAttr(p.name)}" onchange="updatePatient('${p.id}','name',this.value)"></div>
       <button class="icon-btn" style="align-self:end;" onclick="removePatient('${p.id}')">🗑️ Supprimer</button>
+    </div>
+    <div class="field" style="background:${isActive?'var(--accent-light)':'#f3f1ea'};border-radius:10px;padding:8px 12px;margin-bottom:12px;">
+      <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text);font-weight:600;">
+        <input type="checkbox" style="width:auto;" ${isActive?'checked':''} onchange="updatePatient('${p.id}','activeInPlanning',this.checked)">
+        📅 Actif dans le planning (visible dans la grille mensuelle)
+      </label>
+      <p class="muted small" style="margin:2px 0 0;">Décochez pour un patient dont la prise en charge est terminée : il reste dans cet historique mais disparaît de la grille du planning mensuel. Cette case reste identique d'un mois à l'autre — pas besoin de la recocher chaque mois.</p>
     </div>
     <div class="note-box" style="margin-bottom:12px;">
       <b>Détail de la cotation théorique (jour type)&nbsp;: ${cotation.amount.toFixed(2)} €</b>
@@ -1015,7 +1023,9 @@ function removePatient(id){ if(!confirm('Supprimer ce patient et toutes ses donn
   renderPatients(); renderPlanning();
 }
 document.getElementById('btnAddPatient').addEventListener('click', ()=>{
-  state.patients.push({id:uid('p'), name:'Nouveau patient', careTypeIds:[], km:0, montagne:false, deplacementType:'ifd', passagesParJour:1, defaultDays:[0,1,2,3,4,5,6], note:'', hasCancer:false});
+  // activeInPlanning:false par défaut — le patient n'apparaît dans la grille du planning qu'une fois
+  // coché ci-dessous, pour ne pas polluer le planning avec des fiches en cours de saisie/anciennes.
+  state.patients.push({id:uid('p'), name:'Nouveau patient', careTypeIds:[], km:0, montagne:false, deplacementType:'ifd', passagesParJour:1, defaultDays:[0,1,2,3,4,5,6], note:'', hasCancer:false, activeInPlanning:false});
   renderPatients();
 });
 
@@ -1064,7 +1074,8 @@ function setPlanningEntry(dateStr, patientId, entry){
   const key = dateStr+'|'+patientId;
   const isEmpty = !entry || (!entry.nurseId && !entry.excluded && !entry.overrideActs &&
     (!entry.overridePassages || entry.overridePassages.length===0) &&
-    (!entry.flags || Object.keys(entry.flags).length===0) && !entry.deplacement);
+    (!entry.flags || Object.keys(entry.flags).length===0) && !entry.deplacement &&
+    (!entry.disabledCareTypeIds || entry.disabledCareTypeIds.length===0));
   if(isEmpty){ delete state.planning[key]; }
   else state.planning[key] = entry;
 }
@@ -1087,25 +1098,32 @@ function patientCareTypeIds(patient){
 function patientForfaitCareType(patient){
   return patientCareTypeIds(patient).map(id=>state.careTypes.find(c=>c.id===id)).filter(Boolean).find(ct=>ct.mode==='forfait') || null;
 }
-function patientDefaultActs(patient){
+// excludeCareTypeIds : types de prise en charge à ignorer (désactivés ponctuellement pour un jour
+// précis via la case à cocher du planning — voir disabledCareTypeIds ci-dessous).
+function patientDefaultActs(patient, excludeCareTypeIds){
+  const excl = excludeCareTypeIds || [];
   return patientCareTypeIds(patient).map(id=>state.careTypes.find(c=>c.id===id)).filter(Boolean)
-    .filter(ct=>ct.mode==='acts').flatMap(ct=>ct.acts||[]);
+    .filter(ct=>ct.mode==='acts').filter(ct=>!excl.includes(ct.id)).flatMap(ct=>ct.acts||[]);
 }
 // Construit la liste des passages (séances) du jour pour un patient, par ordre de priorité :
 // 1) exception ponctuelle enregistrée pour ce jour précis (entry.overridePassages) ;
-// 2) modèle par défaut du patient, valable tous les jours (patient.defaultPassages) ;
+// 2) modèle par défaut du patient, valable tous les jours (patient.defaultPassages), en retirant les
+//    actes des types de prise en charge décochés pour ce jour précis (entry.disabledCareTypeIds) ;
 // 3) comportement générique : les actes de ses types de prise en charge, répétés passagesParJour fois.
 function getDayPassages(dateStr, patient){
   const entry = getPlanningEntry(dateStr, patient.id);
   if(entry && entry.overridePassages && entry.overridePassages.length) return entry.overridePassages;
-  return getPatientDefaultPassages(patient);
+  const disabled = (entry && entry.disabledCareTypeIds) || [];
+  return getPatientDefaultPassages(patient, disabled);
 }
 // Passages par défaut d'un patient (modèle personnalisé s'il existe, sinon comportement générique :
 // actes de ses types de prise en charge, répétés passagesParJour fois), indépendamment de toute date.
-function getPatientDefaultPassages(patient){
+// excludeCareTypeIds ne s'applique qu'au comportement générique (pas à un modèle defaultPassages
+// personnalisé, qui est déjà une liste d'actes figée sans lien avec les types de prise en charge).
+function getPatientDefaultPassages(patient, excludeCareTypeIds){
   if(patient.defaultPassages && patient.defaultPassages.length) return patient.defaultPassages;
   const n = Math.max(1, patient.passagesParJour||1);
-  const defaultActs = patientDefaultActs(patient);
+  const defaultActs = patientDefaultActs(patient, excludeCareTypeIds);
   const out = [];
   for(let i=0;i<n;i++) out.push({time:'', acts: defaultActs.map(a=>({...a})), deplacement:true});
   return out;
@@ -1255,8 +1273,11 @@ function computeDayAmount(dateStr, patient){
   const t = state.tariffs;
   const breakdown = [];
   let total = 0;
+  const entry = getPlanningEntry(dateStr, patient.id);
+  const disabledCT = (entry && entry.disabledCareTypeIds) || [];
 
-  const forfaitCt = patientForfaitCareType(patient);
+  const forfaitCtRaw = patientForfaitCareType(patient);
+  const forfaitCt = (forfaitCtRaw && !disabledCT.includes(forfaitCtRaw.id)) ? forfaitCtRaw : null;
   if(forfaitCt){
     const val = t[forfaitCt.forfaitLevel] || 0;
     breakdown.push({label:`Forfait ${forfaitCt.forfaitLevel} (${forfaitCt.name}) — 1x/jour`, amount:val});
@@ -1345,7 +1366,9 @@ function renderPlanning(){
       </td>`;
   }).join('') + '</tr>';
 
-  let rows = state.patients.map(p=>{
+  // Seuls les patients actifs (case cochée dans l'onglet Patients) apparaissent dans la grille : les
+  // autres restent dans l'historique de l'onglet Patients sans encombrer le planning mensuel.
+  let rows = state.patients.filter(p=>p.activeInPlanning!==false).map(p=>{
     let cells = days.map(d=>{
       const cls = [isSunday(d)?'sunday':'', d===today?'today':''].filter(Boolean).join(' ');
       const eff = getEffectiveNurse(d,p.id);
@@ -1377,7 +1400,7 @@ function renderPlanning(){
     const ctTag = ctNames.length ? ` <span class="pill">${escHtml(ctNames.join(', '))}</span>` : '';
     const cancerTag = p.hasCancer ? ` <span class="pill" title="Cancer / immunodéprimé (article 4 ch. II)">🎗️</span>` : '';
     const nameLink = `<a href="#" title="Voir/modifier la fiche de ce patient" style="color:var(--accent-dark);text-decoration:none;cursor:pointer;" onclick="goToPatient('${p.id}');return false;">${escHtml(p.name)}</a>`;
-    const validateBtn = `<button class="validate-btn" title="Cocher présent(e) tous les jours du mois affiché pour ce patient" onclick="validateMonthForPatient('${p.id}')">✅</button>`;
+    const validateBtn = `<button class="validate-btn" title="Basculer présent(e)/absent(e) sur tous les jours du mois affiché pour ce patient" onclick="validateMonthForPatient('${p.id}')">✅</button>`;
     return `<tr><td class="patient-col">${nameLink}${validateBtn}${cancerTag}${ctTag}</td>${cells}</tr>`;
   }).join('');
 
@@ -1390,15 +1413,32 @@ function setDayDefaultNurse(dateStr, nurseId){
 }
 // Coche « présent(e) » sur tous les jours du mois actuellement affiché, pour un patient donné.
 // Les affectations infirmier(ère) et exceptions déjà saisies sur chaque jour sont conservées.
+// Bouton bascule : si le patient est déjà présent tous les jours du mois affiché, un nouveau clic
+// décoche tout le mois (absent partout) ; sinon il coche « présent(e) » partout. Les affectations
+// infirmier(ère) et autres exceptions déjà saisies sur chaque jour sont toujours conservées.
 function validateMonthForPatient(patientId){
   const patient = state.patients.find(p=>p.id===patientId); if(!patient) return;
-  if(!confirm(`Cocher « présent(e) » sur tous les jours du mois affiché pour ${patient.name} ?\n(Les affectations et exceptions déjà saisies sont conservées.)`)) return;
   const days = daysInMonth(getPlanMonth());
-  days.forEach(d=>{
-    const entry = getPlanningEntry(d,patientId) || {};
-    entry.excluded = false;
-    setPlanningEntry(d,patientId,entry);
+  const allPresent = days.every(d=>{
+    const entry = getPlanningEntry(d,patientId);
+    return !(entry && entry.excluded);
   });
+  if(allPresent){
+    if(!confirm(`Décocher « présent(e) » sur tous les jours du mois affiché pour ${patient.name} (marquer tout le mois absent) ?`)) return;
+    days.forEach(d=>{
+      const entry = getPlanningEntry(d,patientId) || {};
+      entry.excluded = true;
+      entry.nurseId = null;
+      setPlanningEntry(d,patientId,entry);
+    });
+  } else {
+    if(!confirm(`Cocher « présent(e) » sur tous les jours du mois affiché pour ${patient.name} ?\n(Les affectations et exceptions déjà saisies sont conservées.)`)) return;
+    days.forEach(d=>{
+      const entry = getPlanningEntry(d,patientId) || {};
+      entry.excluded = false;
+      setPlanningEntry(d,patientId,entry);
+    });
+  }
   renderPlanning();
 }
 function togglePresence(dateStr, patientId, present){
@@ -1461,10 +1501,42 @@ function openPatientPassageModal(patientId){
   document.getElementById('passageModalOverlay').style.display = 'flex';
 }
 function closePassageModal(){ document.getElementById('passageModalOverlay').style.display = 'none'; pmState = null; }
+// Coche/décoche un type de prise en charge pour CE jour précis uniquement (n'affecte pas les autres
+// jours ni le reste de la prise en charge du patient). S'enregistre immédiatement, indépendamment du
+// bouton "Enregistrer" de la modale (qui ne concerne que l'éditeur d'actes détaillé ci-dessous).
+function pmToggleCareType(careTypeId, active){
+  if(!pmState || pmState.mode!=='day') return;
+  const entry = getPlanningEntry(pmState.dateStr, pmState.patientId) || {};
+  entry.disabledCareTypeIds = entry.disabledCareTypeIds || [];
+  entry.disabledCareTypeIds = active
+    ? entry.disabledCareTypeIds.filter(id=>id!==careTypeId)
+    : (entry.disabledCareTypeIds.includes(careTypeId) ? entry.disabledCareTypeIds : [...entry.disabledCareTypeIds, careTypeId]);
+  setPlanningEntry(pmState.dateStr, pmState.patientId, entry);
+  const patient = state.patients.find(p=>p.id===pmState.patientId);
+  if(patient) pmState.passages = clonePassages(getDayPassages(pmState.dateStr, patient));
+  renderPassageModal();
+  renderPlanning();
+}
 function renderPassageModal(){
   const el = document.getElementById('pmPassages');
   if(!pmState) return;
-  el.innerHTML = pmState.passages.map((pas,pi)=>`
+  const careTypesHtml = (()=>{
+    if(pmState.mode!=='day') return '';
+    const patient = state.patients.find(p=>p.id===pmState.patientId); if(!patient) return '';
+    const cts = patientCareTypeIds(patient).map(id=>state.careTypes.find(c=>c.id===id)).filter(Boolean);
+    if(cts.length<2) return '';
+    const entry = getPlanningEntry(pmState.dateStr, pmState.patientId);
+    const disabled = (entry && entry.disabledCareTypeIds) || [];
+    return `<div class="field" style="background:var(--accent-light);border-radius:10px;padding:10px 12px;margin-bottom:14px;">
+        <label style="margin-bottom:6px;">Types de prise en charge actifs ce jour</label>
+        ${cts.map(ct=>`<label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400;margin-bottom:3px;">
+            <input type="checkbox" style="width:auto;" ${!disabled.includes(ct.id)?'checked':''} onchange="pmToggleCareType('${ct.id}',this.checked)">
+            ${escHtml(ct.name)}
+          </label>`).join('')}
+        <p class="muted small" style="margin:4px 0 0;">Décochez un type pour l'ignorer uniquement ce jour (le patient reste suivi, avec ses autres soins) — sans toucher au reste de sa prise en charge ni aux autres jours.</p>
+      </div>`;
+  })();
+  el.innerHTML = careTypesHtml + pmState.passages.map((pas,pi)=>`
     <div class="passage-block">
       <div class="row">
         <div class="field" style="max-width:160px;"><label>Heure (optionnel)</label>
