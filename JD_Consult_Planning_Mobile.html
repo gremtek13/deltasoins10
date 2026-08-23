@@ -234,6 +234,7 @@
   <button data-tab="billing">💶 Contrôle facturation</button>
   <button data-tab="patients">🧑‍🤝‍🧑 Patients</button>
   <button data-tab="ordonnances">💊 Ordonnances</button>
+  <button data-tab="prescriptions">🩹 Prescriptions DM</button>
   <button data-tab="staff">👩‍⚕️ Personnel</button>
   <button data-tab="caretypes">🗂️ Types de prise en charge</button>
   <button data-tab="tariffs">⚙️ Tarifs</button>
@@ -326,6 +327,38 @@
       <button class="btn" id="btnAddOrdonnance" style="width:100%;">+ Ajouter</button>
     </div>
     <div id="ordonnancesList"><p class="muted small">Chargement…</p></div>
+  </div>
+
+  <!-- PRESCRIPTIONS DM TAB -->
+  <div class="tab-content" id="tab-prescriptions" style="display:none;">
+    <div class="warn-box">
+      Cette liste de dispositifs est <b>indicative et non exhaustive</b>. Avant de valider, vérifiez que chaque dispositif prescrit entre bien dans le champ de compétence propre de l'infirmier(ère) (arrêté du 20 mars 2012 modifié, article R.4311-7 du Code de la santé publique). Ce document ne constitue pas un conseil juridique.
+    </div>
+    <div class="panel">
+      <h2 style="margin:0 0 6px;">Vos informations</h2>
+      <p class="muted small">Renseignées une fois, réutilisées automatiquement sur chaque prescription générée.</p>
+      <div class="field"><label>Nom et prénom (infirmier·ère)</label><input type="text" id="pxNom" placeholder="Ex. Jean Dupont"></div>
+      <div class="field"><label>Numéro ADELI</label><input type="text" id="pxAdeli" placeholder="Ex. 139999999"></div>
+      <div class="field">
+        <label>Signature (importée une fois, réutilisée sur tous les documents)</label>
+        <div><img id="pxSignaturePreview" alt="Signature" style="display:none;max-height:60px;max-width:220px;border:1px solid var(--border);border-radius:8px;background:#fff;padding:4px;margin-bottom:8px;"></div>
+        <button class="btn secondary" id="btnImportSignature" style="width:100%;">🖊️ Importer une signature</button>
+        <button class="btn danger" id="btnRemoveSignature" style="width:100%;margin-top:6px;display:none;">🗑️ Supprimer la signature</button>
+        <input type="file" id="pxSignatureFile" class="file-input-hidden" accept="image/*">
+      </div>
+    </div>
+    <div class="panel">
+      <h2 style="margin:0 0 6px;">Nouvelle prescription</h2>
+      <div class="field"><label>Patient</label><select id="pxPatient"></select></div>
+      <div class="field"><label>Date</label><input type="date" id="pxDate"></div>
+      <div id="pxItemsList"></div>
+      <button class="btn secondary" id="btnAddPxItem" style="width:100%;margin-top:4px;">+ Ajouter un dispositif</button>
+      <button class="btn" id="btnGeneratePx" style="width:100%;margin-top:10px;">🖨️ Générer / Imprimer le PDF</button>
+    </div>
+    <div class="panel">
+      <h2 style="margin:0 0 6px;">Historique des prescriptions</h2>
+      <div id="pxHistoryList"><p class="muted small">Aucune prescription enregistrée.</p></div>
+    </div>
   </div>
 
   <!-- STAFF TAB -->
@@ -497,7 +530,9 @@ let state = {
   dayNurse: {},        // key "YYYY-MM-DD" -> nurseId, affectation par défaut de la tournée entière ce jour-là
   holidays: default2026Holidays(),
   tariffs: defaultTariffs(),
-  monthlyDeclared: {}  // "YYYY-MM" -> number
+  monthlyDeclared: {},  // "YYYY-MM" -> number
+  practitioner: {nom:'', adeli:'', signatureDataUrl:''}, // identité + signature pour les prescriptions DM
+  dmPrescriptions: []   // historique des prescriptions de dispositifs médicaux générées
 };
 
 function todayISO(){ const d=new Date(); return d.toISOString().slice(0,10); }
@@ -513,6 +548,7 @@ function switchTab(tabName){
   if(tabName==='patients') renderPatients();
   if(tabName==='caretypes') renderPatientAssignList();
   if(tabName==='ordonnances') renderOrdonnancesTab();
+  if(tabName==='prescriptions') renderPrescriptionsTab();
 }
 document.querySelectorAll('nav.tabs button').forEach(btn=>{
   btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
@@ -550,7 +586,8 @@ document.getElementById('fileImport').addEventListener('change', (e)=>{
       if(!data || typeof data !== 'object') throw new Error('format invalide');
       state = Object.assign({
         version:1,nurses:[],patients:[],careTypes:[],planning:{},dayNurse:{},
-        holidays:default2026Holidays(),tariffs:defaultTariffs(),monthlyDeclared:{}
+        holidays:default2026Holidays(),tariffs:defaultTariffs(),monthlyDeclared:{},
+        practitioner:{nom:'',adeli:'',signatureDataUrl:''},dmPrescriptions:[]
       }, data);
       renderAll();
       alert('Import réussi.');
@@ -1956,7 +1993,8 @@ function loadFromLocalStorage(key){
     if(!data || typeof data !== 'object') return false;
     state = Object.assign({
       version:1,nurses:[],patients:[],careTypes:[],planning:{},dayNurse:{},
-      holidays:default2026Holidays(),tariffs:defaultTariffs(),monthlyDeclared:{}
+      holidays:default2026Holidays(),tariffs:defaultTariffs(),monthlyDeclared:{},
+      practitioner:{nom:'',adeli:'',signatureDataUrl:''},dmPrescriptions:[]
     }, data);
     return true;
   }catch(err){
@@ -1986,7 +2024,8 @@ async function loadStateFromCloudThenLocal(){
     if(data && data.data && Object.keys(data.data).length){
       state = Object.assign({
         version:1,nurses:[],patients:[],careTypes:[],planning:{},dayNurse:{},
-        holidays:default2026Holidays(),tariffs:defaultTariffs(),monthlyDeclared:{}
+        holidays:default2026Holidays(),tariffs:defaultTariffs(),monthlyDeclared:{},
+        practitioner:{nom:'',adeli:'',signatureDataUrl:''},dmPrescriptions:[]
       }, data.data);
       saveToLocalStorage();
       lastCloudSaveOk = true;
@@ -2169,6 +2208,211 @@ async function deleteOrdonnance(id){
     await loadOrdonnances();
   }catch(err){
     alert('Erreur lors de la suppression : ' + (err.message||err));
+  }
+}
+
+/* ---------- Prescriptions DM (dispositifs médicaux — arrêté du 20 mars 2012 modifié) ---------- */
+// Liste indicative de catégories courantes ; le champ "précision" libre permet de préciser
+// marque/référence/taille (ex. "Mepilex Border Sacrum 16x20cm"), impossible à pré-remplir de façon générique.
+const LPPR_CATALOG = [
+  {id:'interface', label:"Pansement interface / tulle gras"},
+  {id:'hydrocolloide', label:"Pansement hydrocolloïde"},
+  {id:'hydrocellulaire', label:"Pansement hydrocellulaire (mousse)"},
+  {id:'hydrofibre', label:"Pansement hydrofibre / fibre de CMC"},
+  {id:'alginate', label:"Pansement à l'alginate"},
+  {id:'charbon', label:"Pansement au charbon"},
+  {id:'argent', label:"Pansement antimicrobien (à l'argent)"},
+  {id:'film', label:"Film de protection cutanée / pansement transparent"},
+  {id:'compresse', label:"Compresses stériles"},
+  {id:'bandecontention', label:"Bande de contention élastique"},
+  {id:'bandemaintien', label:"Bande de maintien / de fixation"},
+  {id:'filet', label:"Filet tubulaire"},
+  {id:'autre', label:"Autre dispositif médical (à préciser)"}
+];
+let pxItemsDraft = [];
+
+function renderPrescriptionsTab(){
+  if(!state.practitioner) state.practitioner = {nom:'',adeli:'',signatureDataUrl:''};
+  if(!state.dmPrescriptions) state.dmPrescriptions = [];
+  document.getElementById('pxNom').value = state.practitioner.nom || '';
+  document.getElementById('pxAdeli').value = state.practitioner.adeli || '';
+  renderSignaturePreview();
+  const sel = document.getElementById('pxPatient');
+  const prevVal = sel.value;
+  sel.innerHTML = state.patients.length
+    ? state.patients.map(p=>`<option value="${escAttr(p.id)}">${escHtml(p.name)}</option>`).join('')
+    : '<option value="">(aucun patient — ajoutez-en un dans l\'onglet Patients)</option>';
+  if(prevVal && state.patients.some(p=>p.id===prevVal)) sel.value = prevVal;
+  if(!document.getElementById('pxDate').value) document.getElementById('pxDate').value = todayISO();
+  if(!pxItemsDraft.length) pxItemsDraft = [{catalogId:'', freeText:'', qty:''}];
+  renderPxItemsDraft();
+  renderPxHistory();
+}
+function renderSignaturePreview(){
+  const img = document.getElementById('pxSignaturePreview');
+  const has = !!(state.practitioner && state.practitioner.signatureDataUrl);
+  img.src = has ? state.practitioner.signatureDataUrl : '';
+  img.style.display = has ? '' : 'none';
+  document.getElementById('btnRemoveSignature').style.display = has ? '' : 'none';
+}
+document.getElementById('pxNom').addEventListener('input', (e)=>{ state.practitioner.nom = e.target.value; scheduleAutosave(); });
+document.getElementById('pxAdeli').addEventListener('input', (e)=>{ state.practitioner.adeli = e.target.value; scheduleAutosave(); });
+document.getElementById('btnImportSignature').addEventListener('click', ()=> document.getElementById('pxSignatureFile').click());
+document.getElementById('pxSignatureFile').addEventListener('change', (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  if(!file.type.startsWith('image/')){ alert('Merci de choisir un fichier image (PNG, JPG…).'); e.target.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    state.practitioner.signatureDataUrl = ev.target.result;
+    renderSignaturePreview();
+    scheduleAutosave();
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+document.getElementById('btnRemoveSignature').addEventListener('click', ()=>{
+  if(!confirm('Supprimer la signature enregistrée ?')) return;
+  state.practitioner.signatureDataUrl = '';
+  renderSignaturePreview();
+  scheduleAutosave();
+});
+
+function renderPxItemsDraft(){
+  const el = document.getElementById('pxItemsList');
+  el.innerHTML = pxItemsDraft.map((it,i)=>`
+    <div class="ord-card">
+      <div class="field"><label>Catégorie</label>
+        <select onchange="updatePxItem(${i},'catalogId',this.value)">
+          <option value="">— Choisir —</option>
+          ${LPPR_CATALOG.map(c=>`<option value="${c.id}" ${it.catalogId===c.id?'selected':''}>${escHtml(c.label)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Précision (marque, référence, taille…)</label><input type="text" value="${escAttr(it.freeText)}" placeholder="Ex. Mepilex Border Sacrum 16x20cm" oninput="updatePxItem(${i},'freeText',this.value)"></div>
+      <div class="field"><label>Quantité</label><input type="text" value="${escAttr(it.qty)}" placeholder="Ex. 10 unités" oninput="updatePxItem(${i},'qty',this.value)"></div>
+      <button class="btn danger" style="width:100%;" onclick="removePxItem(${i})">🗑️ Supprimer ce dispositif</button>
+    </div>`).join('');
+}
+function updatePxItem(i, field, val){ if(pxItemsDraft[i]){ pxItemsDraft[i][field] = val; } }
+function removePxItem(i){ pxItemsDraft.splice(i,1); if(!pxItemsDraft.length) pxItemsDraft=[{catalogId:'',freeText:'',qty:''}]; renderPxItemsDraft(); }
+document.getElementById('btnAddPxItem').addEventListener('click', ()=>{ pxItemsDraft.push({catalogId:'',freeText:'',qty:''}); renderPxItemsDraft(); });
+
+function resetPxForm(){
+  pxItemsDraft = [{catalogId:'',freeText:'',qty:''}];
+  renderPxItemsDraft();
+  document.getElementById('pxDate').value = todayISO();
+}
+
+document.getElementById('btnGeneratePx').addEventListener('click', ()=>{
+  if(!state.practitioner || !state.practitioner.nom || !state.practitioner.adeli){
+    alert('Merci de renseigner votre nom et votre numéro ADELI avant de générer une prescription.');
+    return;
+  }
+  const patientId = document.getElementById('pxPatient').value;
+  const patient = state.patients.find(p=>p.id===patientId);
+  const date = document.getElementById('pxDate').value;
+  if(!patient || !date){ alert('Merci de choisir un patient et une date.'); return; }
+  const items = pxItemsDraft.filter(it=>it.catalogId);
+  if(!items.length){ alert('Ajoutez au moins un dispositif.'); return; }
+  const missingPrecision = items.some(it=>!it.freeText || !it.freeText.trim());
+  if(missingPrecision && !confirm("Au moins un dispositif n'a pas de précision (marque/référence/taille). Continuer quand même ?")) return;
+  const entry = {
+    id: uid('px'), patientId: patient.id, patientNom: patient.name,
+    date, items: items.map(it=>({
+      catalogId: it.catalogId,
+      label: (LPPR_CATALOG.find(c=>c.id===it.catalogId)||{}).label || it.catalogId,
+      freeText: it.freeText || '', qty: it.qty || ''
+    })),
+    createdAt: new Date().toISOString()
+  };
+  state.dmPrescriptions.unshift(entry);
+  scheduleAutosave();
+  renderPxHistory();
+  openPrescriptionPrintWindow(entry);
+  resetPxForm();
+});
+
+function renderPxHistory(){
+  const el = document.getElementById('pxHistoryList');
+  const list = state.dmPrescriptions || [];
+  if(!list.length){ el.innerHTML = '<p class="muted small">Aucune prescription enregistrée.</p>'; return; }
+  el.innerHTML = list.map(e=>{
+    const summary = e.items.map(it=>it.label + (it.freeText?(' — '+it.freeText):'')).join(', ');
+    return `<div class="ord-card">
+      <div class="ord-card-top"><span class="name">${escHtml(e.patientNom)}</span><span>${escHtml(e.date)}</span></div>
+      <div class="ord-card-row">${escHtml(summary)}</div>
+      <div class="row tight">
+        <button class="btn secondary" style="flex:1;" onclick="reprintPrescription('${e.id}')">🖨️ PDF</button>
+        <button class="btn danger" style="flex:1;" onclick="deletePrescription('${e.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function reprintPrescription(id){
+  const entry = (state.dmPrescriptions||[]).find(e=>e.id===id);
+  if(entry) openPrescriptionPrintWindow(entry);
+}
+function deletePrescription(id){
+  if(!confirm("Supprimer cette prescription de l'historique ?")) return;
+  state.dmPrescriptions = (state.dmPrescriptions||[]).filter(e=>e.id!==id);
+  scheduleAutosave();
+  renderPxHistory();
+}
+
+function openPrescriptionPrintWindow(entry){
+  const nom = escHtml(state.practitioner.nom||'');
+  const adeli = escHtml(state.practitioner.adeli||'');
+  const sig = state.practitioner.signatureDataUrl || '';
+  const dateAffichee = entry.date ? new Date(entry.date+'T00:00:00').toLocaleDateString('fr-FR', {day:'2-digit',month:'long',year:'numeric'}) : '';
+  const itemsHtml = entry.items.map(it=>`
+    <tr>
+      <td>${escHtml(it.label)}</td>
+      <td>${escHtml(it.freeText||'—')}</td>
+      <td>${escHtml(it.qty||'—')}</td>
+    </tr>`).join('');
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Prescription — ${escHtml(entry.patientNom)}</title>
+  <style>
+    body{font-family:'Nunito',Arial,sans-serif;color:#222;padding:36px 46px;max-width:760px;margin:0 auto;}
+    h1{font-size:19px;margin:0 0 2px;}
+    .sub{color:#666;font-size:12px;margin-bottom:26px;}
+    .block{margin-bottom:18px;}
+    .block b{display:inline-block;min-width:130px;}
+    table{border-collapse:collapse;width:100%;margin:18px 0;font-size:13px;}
+    th,td{border:1px solid #ccc;padding:7px 9px;text-align:left;}
+    th{background:#f2f2f2;}
+    .legal{font-size:10.5px;color:#666;margin-top:26px;line-height:1.4;}
+    .sign{margin-top:44px;text-align:right;}
+    .sign img{max-height:70px;max-width:220px;}
+    @media print{ body{padding:14mm 18mm;} }
+  </style></head>
+  <body>
+    <h1>Prescription de dispositifs médicaux</h1>
+    <div class="sub">Établie dans le cadre des compétences propres de l'infirmier(ère) (article R.4311-7 du Code de la santé publique — arrêté du 20 mars 2012 modifié)</div>
+    <div class="block">
+      <div><b>Infirmier(ère) :</b> ${nom}</div>
+      <div><b>N° ADELI :</b> ${adeli}</div>
+      <div><b>Patient :</b> ${escHtml(entry.patientNom)}</div>
+      <div><b>Date :</b> ${escHtml(dateAffichee)}</div>
+    </div>
+    <table>
+      <thead><tr><th>Dispositif</th><th>Précision (marque / référence / taille)</th><th>Quantité</th></tr></thead>
+      <tbody>${itemsHtml}</tbody>
+    </table>
+    <div class="sign">
+      ${sig ? `<img src="${sig}" alt="Signature"><br>` : ''}
+      ${nom}
+    </div>
+    <div class="legal">Ce document ne remplace pas une ordonnance médicale et se limite aux dispositifs médicaux que l'infirmier(ère) est habilité(e) à prescrire dans le cadre de son exercice.</div>
+  </body></html>`;
+  const w = window.open('', '_blank');
+  if(!w){ alert("Merci d'autoriser les fenêtres pop-up pour générer le PDF."); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+  const doPrint = ()=>{ try{ w.focus(); w.print(); }catch(err){} };
+  if(sig){
+    const imgEl = w.document.querySelector('img');
+    if(imgEl && !imgEl.complete){ imgEl.addEventListener('load', doPrint); imgEl.addEventListener('error', doPrint); }
+    else setTimeout(doPrint, 200);
+  } else {
+    setTimeout(doPrint, 150);
   }
 }
 
