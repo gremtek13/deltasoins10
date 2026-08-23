@@ -308,6 +308,7 @@
       <label style="margin:0;">Mois :</label>
       <input type="month" id="billMonth" style="max-width:160px;">
       <button class="btn secondary" id="btnExportExcelBilling">📊 Exporter le détail facturation (Excel)</button>
+      <button class="btn secondary" id="btnExportPdfBilling">🖨️ Exporter en PDF</button>
     </div>
     <div class="kpis" id="billKpis"></div>
     <div class="panel">
@@ -879,9 +880,11 @@ function buildPlanningPrintHTML(month){
     .legend{margin-top:14px;font-size:10.5px;}
     .legend-item{display:inline-flex;align-items:center;gap:5px;margin-right:16px;}
     .swatch{display:inline-block;width:11px;height:11px;border-radius:3px;border:1px solid;}
-    @media print{ @page{ size:landscape; margin:10mm; } }
+    .no-print{margin-bottom:14px;}
+    @media print{ @page{ size:landscape; margin:10mm; } .no-print{display:none !important;} }
   </style></head>
   <body>
+    <div class="no-print"><button onclick="window.close()" style="font:inherit;font-weight:700;background:#4f9d94;color:#fff;border:none;border-radius:999px;padding:8px 18px;cursor:pointer;">← Fermer cet onglet</button></div>
     <h1>🩺 JD Factu — Planning ${escHtml(monthLabel)}</h1>
     <table>
       <thead><tr><th class="patient-col">Patient</th>${headCells}</tr></thead>
@@ -983,6 +986,80 @@ function downloadBillingExcel(month){
   URL.revokeObjectURL(url);
 }
 document.getElementById('btnExportExcelBilling').addEventListener('click', ()=> downloadBillingExcel(getBillMonth()));
+
+/* ---------- Export contrôle facturation en PDF (fenêtre d'impression) ---------- */
+function buildBillingPrintHTML(month){
+  const monthLabel = new Date(month+'-01T00:00:00').toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+  const bd = computeBillingData(month);
+  const {grandTotal, byPatient, byNurse, byNursePatient, nbActiveDays, dailyAverage} = bd;
+  const declared = state.monthlyDeclared[month];
+  const byPatientArr = Object.values(byPatient).filter(x=>x.count>0).sort((a,b)=>b.total-a.total);
+  const byNurseArr = Object.values(byNurse).filter(x=>x.count>0).sort((a,b)=>b.total-a.total);
+  const nursesWithData = state.nurses.filter(n=>byNurse[n.id] && byNurse[n.id].count>0);
+
+  const kpiHtml = `
+    <div class="kpi"><div class="v">${grandTotal.toFixed(2)} €</div><div class="l">Total théorique du mois</div></div>
+    <div class="kpi"><div class="v">${dailyAverage.toFixed(2)} €</div><div class="l">Moyenne journalière (${nbActiveDays} jour${nbActiveDays>1?'s':''})</div></div>
+    <div class="kpi"><div class="v">${state.patients.length}</div><div class="l">Patients actifs</div></div>
+    <div class="kpi"><div class="v">${state.nurses.length}</div><div class="l">Infirmier(ère)s</div></div>`;
+  const byPatientHtml = byPatientArr.length ? (`<table><tr><th>Patient</th><th>Passages</th><th>Total théorique</th></tr>` +
+    byPatientArr.map(x=>`<tr><td>${escHtml(x.name)}</td><td>${x.count}</td><td>${x.total.toFixed(2)} €</td></tr>`).join('') +
+    `<tr style="font-weight:700;"><td>Total</td><td></td><td>${grandTotal.toFixed(2)} €</td></tr></table>`)
+    : '<p class="muted">Aucune donnée pour ce mois.</p>';
+  const byNurseHtml = byNurseArr.length ? (`<table><tr><th>Infirmier(ère)</th><th>Passages</th><th>Total théorique</th></tr>` +
+    byNurseArr.map(x=>`<tr><td>${escHtml(x.name)}</td><td>${x.count}</td><td>${x.total.toFixed(2)} €</td></tr>`).join('') + '</table>')
+    : '<p class="muted">Aucune donnée pour ce mois.</p>';
+  const byNursePatientHtml = nursesWithData.length ? nursesWithData.map(n=>{
+    const npArr = Object.values(byNursePatient[n.id]||{}).filter(x=>x.count>0).sort((a,b)=>b.total-a.total);
+    return `<h3>${escHtml(n.name)} — ${byNurse[n.id].total.toFixed(2)} € (${byNurse[n.id].count} passages)</h3>` +
+      (npArr.length ? `<table><tr><th>Patient</th><th>Passages</th><th>Total théorique</th></tr>` +
+        npArr.map(x=>`<tr><td>${escHtml(x.name)}</td><td>${x.count}</td><td>${x.total.toFixed(2)} €</td></tr>`).join('') + '</table>'
+      : '<p class="muted small">Aucun passage facturé pour cet infirmier(ère) ce mois.</p>');
+  }).join('') : '<p class="muted">Aucune donnée pour ce mois.</p>';
+  const comparisonHtml = (declared !== undefined && !isNaN(declared)) ? (()=>{
+    const diff = declared - grandTotal;
+    return `<table><tr><th>Montant théorique JD Factu</th><th>Montant déclaré par la facturière</th><th>Écart</th></tr>
+      <tr><td>${grandTotal.toFixed(2)} €</td><td>${declared.toFixed(2)} €</td><td>${(diff>=0?'+':'')+diff.toFixed(2)} €</td></tr></table>`;
+  })() : '';
+
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Contrôle facturation — ${escHtml(monthLabel)}</title>
+  <style>
+    body{font-family:'Nunito',Arial,sans-serif;color:#222;padding:20px 26px;}
+    h1{font-size:17px;margin:0 0 4px;color:#397a72;}
+    h2{font-size:13.5px;color:#397a72;margin:22px 0 8px;}
+    h3{font-size:12.5px;margin:14px 0 6px;}
+    .muted{color:#777;font-size:12px;}
+    .kpis{display:flex;gap:14px;flex-wrap:wrap;margin:14px 0 6px;}
+    .kpi{border:1px solid #ddd;border-radius:10px;padding:8px 14px;min-width:130px;}
+    .kpi .v{font-size:17px;font-weight:800;color:#397a72;}
+    .kpi .l{font-size:10.5px;color:#666;}
+    table{border-collapse:collapse;width:100%;font-size:11.5px;margin-bottom:6px;}
+    th,td{border:1px solid #ccc;padding:4px 7px;text-align:left;}
+    th{background:#eaf5f3;color:#397a72;}
+    .no-print{margin-bottom:16px;}
+    @media print{ .no-print{display:none !important;} }
+  </style></head>
+  <body>
+    <div class="no-print"><button onclick="window.close()" style="font:inherit;font-weight:700;background:#4f9d94;color:#fff;border:none;border-radius:999px;padding:8px 18px;cursor:pointer;">← Fermer cet onglet</button></div>
+    <h1>🩺 JD Factu — Contrôle facturation ${escHtml(monthLabel)}</h1>
+    <div class="kpis">${kpiHtml}</div>
+    <h2>Détail théorique par patient</h2>
+    ${byPatientHtml}
+    <h2>Détail théorique par infirmier(ère)</h2>
+    ${byNurseHtml}
+    <h2>Détail par infirmier(ère), patient par patient</h2>
+    ${byNursePatientHtml}
+    ${comparisonHtml ? `<h2>Comparaison avec la facturière</h2>${comparisonHtml}` : ''}
+  </body></html>`;
+}
+function printBillingPDF(month){
+  const html = buildBillingPrintHTML(month);
+  const w = window.open('', '_blank');
+  if(!w){ alert("Merci d'autoriser les fenêtres pop-up pour générer le PDF."); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(err){} }, 150);
+}
+document.getElementById('btnExportPdfBilling').addEventListener('click', ()=> printBillingPDF(getBillMonth()));
 
 /* ============================= STAFF ============================= */
 function renderStaff(){
@@ -2620,9 +2697,11 @@ function openPrescriptionPrintWindow(entry){
     .px-sign .label{font-size:12px;margin-bottom:2px;color:#2f6b63;font-weight:600;}
     .px-sign img{max-height:70px;max-width:220px;display:block;margin-left:auto;}
     .px-footer{margin-top:40px;font-size:10.5px;color:#666;text-align:center;}
-    @media print{ body{padding:14mm 18mm;} }
+    .no-print{margin-bottom:20px;}
+    @media print{ body{padding:14mm 18mm;} .no-print{display:none !important;} }
   </style></head>
   <body>
+    <div class="no-print"><button onclick="window.close()" style="font:inherit;font-weight:700;background:#4f9d94;color:#fff;border:none;border-radius:999px;padding:8px 18px;cursor:pointer;">← Fermer cet onglet</button></div>
     <div class="px-header">
       <div class="name">${nom}</div>
       ${titre ? `<div class="role">${titre}</div>` : ''}
