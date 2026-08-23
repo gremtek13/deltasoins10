@@ -338,7 +338,12 @@
       <h2 style="margin:0 0 6px;">Vos informations</h2>
       <p class="muted small">Renseignées une fois, réutilisées automatiquement sur chaque prescription générée.</p>
       <div class="field"><label>Nom et prénom (infirmier·ère)</label><input type="text" id="pxNom" placeholder="Ex. Jean Dupont"></div>
-      <div class="field"><label>Numéro ADELI</label><input type="text" id="pxAdeli" placeholder="Ex. 139999999"></div>
+      <div class="field"><label>Titre / statut</label><input type="text" id="pxTitre" placeholder="Ex. Infirmier Diplômé d'État — Exercice libéral"></div>
+      <div class="field"><label>Adresse</label><input type="text" id="pxAdresse" placeholder="Ex. 5 boulevard Rouvier"></div>
+      <div class="field"><label>Code postal</label><input type="text" id="pxCodePostal" placeholder="Ex. 13010"></div>
+      <div class="field"><label>Ville</label><input type="text" id="pxVille" placeholder="Ex. Marseille"></div>
+      <div class="field"><label>Téléphone</label><input type="text" id="pxTelephone" placeholder="Ex. 06 14 14 94 44"></div>
+      <div class="field"><label>N° AM (identifiant Assurance Maladie)</label><input type="text" id="pxAdeli" placeholder="Ex. 13 6 24434 0"></div>
       <div class="field">
         <label>Signature (importée une fois, réutilisée sur tous les documents)</label>
         <div><img id="pxSignaturePreview" alt="Signature" style="display:none;max-height:60px;max-width:220px;border:1px solid var(--border);border-radius:8px;background:#fff;padding:4px;margin-bottom:8px;"></div>
@@ -349,6 +354,7 @@
     </div>
     <div class="panel">
       <h2 style="margin:0 0 6px;">Nouvelle prescription</h2>
+      <div class="field"><label>Civilité</label><select id="pxCivilite"><option value="">—</option><option value="Monsieur">Monsieur</option><option value="Madame">Madame</option></select></div>
       <div class="field"><label>Patient</label><input type="text" id="pxPatient" list="pxPatientDatalist" placeholder="Nom du patient (liste ou saisie libre)"><datalist id="pxPatientDatalist"></datalist></div>
       <div class="field"><label>Date</label><input type="date" id="pxDate"></div>
       <div id="pxItemsList"></div>
@@ -521,6 +527,19 @@ function default2026Holidays(){
   ];
 }
 
+function defaultPractitioner(){
+  return {
+    nom:'Jérémy Darnis',
+    titre:"Infirmier Diplômé d'État — Exercice libéral",
+    adresse:'5 boulevard Rouvier',
+    codePostal:'13010',
+    ville:'Marseille',
+    telephone:'06 14 14 94 44',
+    adeli:'',              // N° AM (identifiant Assurance Maladie) affiché sur l'ordonnance
+    signatureDataUrl:''
+  };
+}
+
 let state = {
   version: 1,
   nurses: [],
@@ -531,7 +550,7 @@ let state = {
   holidays: default2026Holidays(),
   tariffs: defaultTariffs(),
   monthlyDeclared: {},  // "YYYY-MM" -> number
-  practitioner: {nom:'', adeli:'', signatureDataUrl:''}, // identité + signature pour les prescriptions DM
+  practitioner: defaultPractitioner(), // identité + signature pour les prescriptions DM
   dmPrescriptions: []   // historique des prescriptions de dispositifs médicaux générées
 };
 
@@ -587,7 +606,7 @@ document.getElementById('fileImport').addEventListener('change', (e)=>{
       state = Object.assign({
         version:1,nurses:[],patients:[],careTypes:[],planning:{},dayNurse:{},
         holidays:default2026Holidays(),tariffs:defaultTariffs(),monthlyDeclared:{},
-        practitioner:{nom:'',adeli:'',signatureDataUrl:''},dmPrescriptions:[]
+        practitioner:defaultPractitioner(),dmPrescriptions:[]
       }, data);
       renderAll();
       alert('Import réussi.');
@@ -1994,7 +2013,7 @@ function loadFromLocalStorage(key){
     state = Object.assign({
       version:1,nurses:[],patients:[],careTypes:[],planning:{},dayNurse:{},
       holidays:default2026Holidays(),tariffs:defaultTariffs(),monthlyDeclared:{},
-      practitioner:{nom:'',adeli:'',signatureDataUrl:''},dmPrescriptions:[]
+      practitioner:defaultPractitioner(),dmPrescriptions:[]
     }, data);
     return true;
   }catch(err){
@@ -2025,7 +2044,7 @@ async function loadStateFromCloudThenLocal(){
       state = Object.assign({
         version:1,nurses:[],patients:[],careTypes:[],planning:{},dayNurse:{},
         holidays:default2026Holidays(),tariffs:defaultTariffs(),monthlyDeclared:{},
-        practitioner:{nom:'',adeli:'',signatureDataUrl:''},dmPrescriptions:[]
+        practitioner:defaultPractitioner(),dmPrescriptions:[]
       }, data.data);
       saveToLocalStorage();
       lastCloudSaveOk = true;
@@ -2215,31 +2234,36 @@ async function deleteOrdonnance(id){
 // Liste indicative de catégories courantes ; le champ "précision" libre permet de préciser
 // marque/référence/taille (ex. "Mepilex Border Sacrum 16x20cm"), impossible à pré-remplir de façon générique.
 const LPPR_CATALOG = [
-  {id:'interface', label:"Pansement interface / tulle gras"},
-  {id:'hydrocolloide', label:"Pansement hydrocolloïde"},
-  {id:'hydrocellulaire', label:"Pansement hydrocellulaire (mousse)"},
-  {id:'hydrofibre', label:"Pansement hydrofibre / fibre de CMC"},
-  {id:'alginate', label:"Pansement à l'alginate"},
-  {id:'charbon', label:"Pansement au charbon"},
-  {id:'argent', label:"Pansement antimicrobien (à l'argent)"},
-  {id:'film', label:"Film de protection cutanée / pansement transparent"},
-  {id:'compresse', label:"Compresses stériles"},
-  {id:'bandecontention', label:"Bande de contention élastique"},
-  {id:'bandemaintien', label:"Bande de maintien / de fixation"},
-  {id:'filet', label:"Filet tubulaire"},
-  {id:'autre', label:"Autre dispositif médical (à préciser)"}
+  {id:'interface', label:"Pansement interface / tulle gras", desc:"Pansement interface neutre stérile imprégné"},
+  {id:'hydrocolloide', label:"Pansement hydrocolloïde", desc:"Pansement hydrocolloïde adhésif, stérile"},
+  {id:'hydrocellulaire', label:"Pansement hydrocellulaire (mousse)", desc:"Pansement hydrocellulaire siliconé adhésif, stérile"},
+  {id:'hydrofibre', label:"Pansement hydrofibre / fibre de CMC", desc:"Pansement en fibres de carboxyméthylcellulose (hydrofibre), stérile"},
+  {id:'alginate', label:"Pansement à l'alginate", desc:"Pansement à l'alginate de calcium, stérile"},
+  {id:'charbon', label:"Pansement au charbon", desc:"Pansement au charbon actif, stérile"},
+  {id:'argent', label:"Pansement antimicrobien (à l'argent)", desc:"Pansement antimicrobien à l'argent, stérile"},
+  {id:'film', label:"Film de protection cutanée / pansement transparent", desc:"Film de protection cutanée transparent, semi-perméable, stérile"},
+  {id:'compresse', label:"Compresses stériles", desc:"Compresses de gaze stériles"},
+  {id:'bandecontention', label:"Bande de contention élastique", desc:"Bande de contention élastique adhésive ou cohésive"},
+  {id:'bandemaintien', label:"Bande de maintien / de fixation", desc:"Bande de maintien / de fixation, non tissée"},
+  {id:'filet', label:"Filet tubulaire", desc:"Filet tubulaire de maintien de pansement"},
+  {id:'autre', label:"Autre dispositif médical (à préciser)", desc:""}
 ];
 let pxItemsDraft = [];
 
 function renderPrescriptionsTab(){
-  if(!state.practitioner) state.practitioner = {nom:'',adeli:'',signatureDataUrl:''};
+  if(!state.practitioner) state.practitioner = defaultPractitioner();
   if(!state.dmPrescriptions) state.dmPrescriptions = [];
   document.getElementById('pxNom').value = state.practitioner.nom || '';
+  document.getElementById('pxTitre').value = state.practitioner.titre || '';
+  document.getElementById('pxAdresse').value = state.practitioner.adresse || '';
+  document.getElementById('pxCodePostal').value = state.practitioner.codePostal || '';
+  document.getElementById('pxVille').value = state.practitioner.ville || '';
+  document.getElementById('pxTelephone').value = state.practitioner.telephone || '';
   document.getElementById('pxAdeli').value = state.practitioner.adeli || '';
   renderSignaturePreview();
   document.getElementById('pxPatientDatalist').innerHTML = state.patients.map(p=>`<option value="${escAttr(p.name)}"></option>`).join('');
   if(!document.getElementById('pxDate').value) document.getElementById('pxDate').value = todayISO();
-  if(!pxItemsDraft.length) pxItemsDraft = [{catalogId:'', freeText:'', qty:''}];
+  if(!pxItemsDraft.length) pxItemsDraft = [{catalogId:'', designation:'', description:'', qty:''}];
   renderPxItemsDraft();
   renderPxHistory();
 }
@@ -2251,6 +2275,11 @@ function renderSignaturePreview(){
   document.getElementById('btnRemoveSignature').style.display = has ? '' : 'none';
 }
 document.getElementById('pxNom').addEventListener('input', (e)=>{ state.practitioner.nom = e.target.value; scheduleAutosave(); });
+document.getElementById('pxTitre').addEventListener('input', (e)=>{ state.practitioner.titre = e.target.value; scheduleAutosave(); });
+document.getElementById('pxAdresse').addEventListener('input', (e)=>{ state.practitioner.adresse = e.target.value; scheduleAutosave(); });
+document.getElementById('pxCodePostal').addEventListener('input', (e)=>{ state.practitioner.codePostal = e.target.value; scheduleAutosave(); });
+document.getElementById('pxVille').addEventListener('input', (e)=>{ state.practitioner.ville = e.target.value; scheduleAutosave(); });
+document.getElementById('pxTelephone').addEventListener('input', (e)=>{ state.practitioner.telephone = e.target.value; scheduleAutosave(); });
 document.getElementById('pxAdeli').addEventListener('input', (e)=>{ state.practitioner.adeli = e.target.value; scheduleAutosave(); });
 document.getElementById('btnImportSignature').addEventListener('click', ()=> document.getElementById('pxSignatureFile').click());
 document.getElementById('pxSignatureFile').addEventListener('change', (e)=>{
@@ -2282,40 +2311,50 @@ function renderPxItemsDraft(){
           ${LPPR_CATALOG.map(c=>`<option value="${c.id}" ${it.catalogId===c.id?'selected':''}>${escHtml(c.label)}</option>`).join('')}
         </select>
       </div>
-      <div class="field"><label>Précision (marque, référence, taille…)</label><input type="text" value="${escAttr(it.freeText)}" placeholder="Ex. Mepilex Border Sacrum 16x20cm" oninput="updatePxItem(${i},'freeText',this.value)"></div>
-      <div class="field"><label>Quantité</label><input type="text" value="${escAttr(it.qty)}" placeholder="Ex. 10 unités" oninput="updatePxItem(${i},'qty',this.value)"></div>
+      <div class="field"><label>Désignation (marque, taille…)</label><input type="text" value="${escAttr(it.designation)}" placeholder="Ex. Mepilex® Border Sacrum — 16 x 20 cm" oninput="updatePxItem(${i},'designation',this.value)"></div>
+      <div class="field"><label>Description</label><input type="text" value="${escAttr(it.description)}" placeholder="Ex. Pansement hydrocellulaire siliconé adhésif, stérile" oninput="updatePxItem(${i},'description',this.value)"></div>
+      <div class="field"><label>Quantité</label><input type="text" value="${escAttr(it.qty)}" placeholder="Ex. 2 boîtes" oninput="updatePxItem(${i},'qty',this.value)"></div>
       <button class="btn danger" style="width:100%;" onclick="removePxItem(${i})">🗑️ Supprimer ce dispositif</button>
     </div>`).join('');
 }
-function updatePxItem(i, field, val){ if(pxItemsDraft[i]){ pxItemsDraft[i][field] = val; } }
-function removePxItem(i){ pxItemsDraft.splice(i,1); if(!pxItemsDraft.length) pxItemsDraft=[{catalogId:'',freeText:'',qty:''}]; renderPxItemsDraft(); }
-document.getElementById('btnAddPxItem').addEventListener('click', ()=>{ pxItemsDraft.push({catalogId:'',freeText:'',qty:''}); renderPxItemsDraft(); });
+function updatePxItem(i, field, val){
+  if(!pxItemsDraft[i]) return;
+  pxItemsDraft[i][field] = val;
+  if(field==='catalogId'){
+    const cat = LPPR_CATALOG.find(c=>c.id===val);
+    if(cat && !pxItemsDraft[i].description) pxItemsDraft[i].description = cat.desc || '';
+    renderPxItemsDraft();
+  }
+}
+function removePxItem(i){ pxItemsDraft.splice(i,1); if(!pxItemsDraft.length) pxItemsDraft=[{catalogId:'',designation:'',description:'',qty:''}]; renderPxItemsDraft(); }
+document.getElementById('btnAddPxItem').addEventListener('click', ()=>{ pxItemsDraft.push({catalogId:'',designation:'',description:'',qty:''}); renderPxItemsDraft(); });
 
 function resetPxForm(){
-  pxItemsDraft = [{catalogId:'',freeText:'',qty:''}];
+  pxItemsDraft = [{catalogId:'',designation:'',description:'',qty:''}];
   renderPxItemsDraft();
   document.getElementById('pxDate').value = todayISO();
 }
 
 document.getElementById('btnGeneratePx').addEventListener('click', ()=>{
   if(!state.practitioner || !state.practitioner.nom || !state.practitioner.adeli){
-    alert('Merci de renseigner votre nom et votre numéro ADELI avant de générer une prescription.');
+    alert('Merci de renseigner votre nom et votre N° AM avant de générer une prescription.');
     return;
   }
+  const civilite = document.getElementById('pxCivilite').value;
   const patientNom = document.getElementById('pxPatient').value.trim();
   const date = document.getElementById('pxDate').value;
   if(!patientNom || !date){ alert('Merci de renseigner le nom du patient et une date.'); return; }
   const matchedPatient = state.patients.find(p=>p.name.trim().toLowerCase()===patientNom.toLowerCase());
   const items = pxItemsDraft.filter(it=>it.catalogId);
   if(!items.length){ alert('Ajoutez au moins un dispositif.'); return; }
-  const missingPrecision = items.some(it=>!it.freeText || !it.freeText.trim());
-  if(missingPrecision && !confirm("Au moins un dispositif n'a pas de précision (marque/référence/taille). Continuer quand même ?")) return;
+  const missingPrecision = items.some(it=>!it.designation || !it.designation.trim());
+  if(missingPrecision && !confirm("Au moins un dispositif n'a pas de désignation (marque/référence/taille). Continuer quand même ?")) return;
   const entry = {
-    id: uid('px'), patientId: matchedPatient ? matchedPatient.id : null, patientNom,
+    id: uid('px'), patientId: matchedPatient ? matchedPatient.id : null, patientNom, civilite,
     date, items: items.map(it=>({
       catalogId: it.catalogId,
       label: (LPPR_CATALOG.find(c=>c.id===it.catalogId)||{}).label || it.catalogId,
-      freeText: it.freeText || '', qty: it.qty || ''
+      designation: it.designation || '', description: it.description || '', qty: it.qty || ''
     })),
     createdAt: new Date().toISOString()
   };
@@ -2331,7 +2370,7 @@ function renderPxHistory(){
   const list = state.dmPrescriptions || [];
   if(!list.length){ el.innerHTML = '<p class="muted small">Aucune prescription enregistrée.</p>'; return; }
   el.innerHTML = list.map(e=>{
-    const summary = e.items.map(it=>it.label + (it.freeText?(' — '+it.freeText):'')).join(', ');
+    const summary = e.items.map(it=>it.designation || it.label).join(', ');
     return `<div class="ord-card">
       <div class="ord-card-top"><span class="name">${escHtml(e.patientNom)}</span><span>${escHtml(e.date)}</span></div>
       <div class="ord-card-row">${escHtml(summary)}</div>
@@ -2354,49 +2393,67 @@ function deletePrescription(id){
 }
 
 function openPrescriptionPrintWindow(entry){
-  const nom = escHtml(state.practitioner.nom||'');
-  const adeli = escHtml(state.practitioner.adeli||'');
-  const sig = state.practitioner.signatureDataUrl || '';
+  const p = state.practitioner || {};
+  const nom = escHtml(p.nom||'');
+  const titre = escHtml(p.titre||'');
+  const adresse = escHtml(p.adresse||'');
+  const cpVille = escHtml([p.codePostal, p.ville].filter(Boolean).join(' '));
+  const tel = escHtml(p.telephone||'');
+  const adeli = escHtml(p.adeli||'');
+  const sig = p.signatureDataUrl || '';
+  const ville = escHtml(p.ville || '');
   const dateAffichee = entry.date ? new Date(entry.date+'T00:00:00').toLocaleDateString('fr-FR', {day:'2-digit',month:'long',year:'numeric'}) : '';
-  const itemsHtml = entry.items.map(it=>`
-    <tr>
-      <td>${escHtml(it.label)}</td>
-      <td>${escHtml(it.freeText||'—')}</td>
-      <td>${escHtml(it.qty||'—')}</td>
-    </tr>`).join('');
-  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Prescription — ${escHtml(entry.patientNom)}</title>
+  const patientLigne = [entry.civilite, entry.patientNom].filter(Boolean).join(' ');
+  const itemsHtml = entry.items.map((it,i)=>`
+    <div class="px-item">
+      <div class="desig">${i+1}. ${escHtml(it.designation || it.label)}</div>
+      ${it.description ? `<div class="desc">${escHtml(it.description)}</div>` : ''}
+      <div class="qty">Quantité : ${escHtml(it.qty || '—')}</div>
+    </div>`).join('');
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Ordonnance — ${escHtml(entry.patientNom)}</title>
   <style>
-    body{font-family:'Nunito',Arial,sans-serif;color:#222;padding:36px 46px;max-width:760px;margin:0 auto;}
-    h1{font-size:19px;margin:0 0 2px;}
-    .sub{color:#666;font-size:12px;margin-bottom:26px;}
-    .block{margin-bottom:18px;}
-    .block b{display:inline-block;min-width:130px;}
-    table{border-collapse:collapse;width:100%;margin:18px 0;font-size:13px;}
-    th,td{border:1px solid #ccc;padding:7px 9px;text-align:left;}
-    th{background:#f2f2f2;}
-    .legal{font-size:10.5px;color:#666;margin-top:26px;line-height:1.4;}
-    .sign{margin-top:44px;text-align:right;}
-    .sign img{max-height:70px;max-width:220px;}
+    body{font-family:'Nunito',Arial,sans-serif;color:#222;padding:36px 46px;max-width:720px;margin:0 auto;font-size:13px;}
+    .px-header .name{font-size:16px;font-weight:800;}
+    .px-header .role{font-size:12px;color:#444;margin-top:2px;}
+    .px-header .addr{font-size:12px;color:#444;}
+    .px-date{text-align:right;margin:26px 0 16px;}
+    .px-patient{margin-bottom:28px;}
+    .px-title{text-align:center;margin:14px 0 30px;}
+    .px-title h1{font-size:19px;letter-spacing:.06em;margin:0;text-transform:uppercase;}
+    .px-title .subtitle{font-size:13px;margin-top:6px;}
+    .px-title .legal{font-size:10.5px;color:#555;font-style:italic;margin-top:4px;}
+    .px-items{margin-top:8px;}
+    .px-item{margin-bottom:18px;}
+    .px-item .desig{font-weight:700;font-size:13.5px;}
+    .px-item .desc{font-size:12.5px;color:#333;margin:2px 0;}
+    .px-item .qty{font-size:12.5px;color:#333;}
+    .px-sign{margin-top:56px;text-align:right;}
+    .px-sign .label{font-size:12px;margin-bottom:2px;}
+    .px-sign img{max-height:70px;max-width:220px;display:block;margin-left:auto;}
+    .px-footer{margin-top:40px;font-size:10.5px;color:#666;text-align:center;}
     @media print{ body{padding:14mm 18mm;} }
   </style></head>
   <body>
-    <h1>Prescription de dispositifs médicaux</h1>
-    <div class="sub">Établie dans le cadre des compétences propres de l'infirmier(ère) (article R.4311-7 du Code de la santé publique — arrêté du 20 mars 2012 modifié)</div>
-    <div class="block">
-      <div><b>Infirmier(ère) :</b> ${nom}</div>
-      <div><b>N° ADELI :</b> ${adeli}</div>
-      <div><b>Patient :</b> ${escHtml(entry.patientNom)}</div>
-      <div><b>Date :</b> ${escHtml(dateAffichee)}</div>
+    <div class="px-header">
+      <div class="name">${nom}</div>
+      ${titre ? `<div class="role">${titre}</div>` : ''}
+      ${adresse ? `<div class="addr">${adresse}</div>` : ''}
+      ${(cpVille || tel) ? `<div class="addr">${cpVille}${cpVille && tel ? ' — ' : ''}${tel ? 'Tél. : '+tel : ''}</div>` : ''}
+      ${adeli ? `<div class="addr">N° AM : ${adeli}</div>` : ''}
     </div>
-    <table>
-      <thead><tr><th>Dispositif</th><th>Précision (marque / référence / taille)</th><th>Quantité</th></tr></thead>
-      <tbody>${itemsHtml}</tbody>
-    </table>
-    <div class="sign">
-      ${sig ? `<img src="${sig}" alt="Signature"><br>` : ''}
-      ${nom}
+    <div class="px-date">${ville ? ville+', ' : ''}le ${escHtml(dateAffichee)}</div>
+    <div class="px-patient">Patient : ${escHtml(patientLigne)}</div>
+    <div class="px-title">
+      <h1>Ordonnance</h1>
+      <div class="subtitle">Prescription infirmière de dispositifs médicaux</div>
+      <div class="legal">(Article L. 4311-1 du Code de la santé publique — Arrêté du 20 mars 2012)</div>
     </div>
-    <div class="legal">Ce document ne remplace pas une ordonnance médicale et se limite aux dispositifs médicaux que l'infirmier(ère) est habilité(e) à prescrire dans le cadre de son exercice.</div>
+    <div class="px-items">${itemsHtml}</div>
+    <div class="px-sign">
+      <div class="label">Signature et cachet du prescripteur :</div>
+      ${sig ? `<img src="${sig}" alt="Signature">` : ''}
+    </div>
+    <div class="px-footer">Ordonnance à présenter au pharmacien ou au prestataire pour délivrance.</div>
   </body></html>`;
   const w = window.open('', '_blank');
   if(!w){ alert("Merci d'autoriser les fenêtres pop-up pour générer le PDF."); return; }
