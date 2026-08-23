@@ -2396,15 +2396,55 @@ document.getElementById('pxCodePostal').addEventListener('input', (e)=>{ getActi
 document.getElementById('pxVille').addEventListener('input', (e)=>{ getActiveProfile().ville = e.target.value; scheduleAutosave(); });
 document.getElementById('pxTelephone').addEventListener('input', (e)=>{ getActiveProfile().telephone = e.target.value; scheduleAutosave(); });
 document.getElementById('pxAdeli').addEventListener('input', (e)=>{ getActiveProfile().adeli = e.target.value; scheduleAutosave(); });
+// Les photos de signature prises au téléphone peuvent peser plusieurs Mo une fois converties en base64 —
+// or l'état complet (state) est ré-enregistré (localStorage + Supabase) à quasiment chaque interaction
+// (scheduleAutosave() est appelé par la plupart des fonctions de rendu, dont renderPlanning()). Sans
+// compression, une signature "brute" alourdirait donc CHAQUE sauvegarde et ralentirait perceptiblement
+// l'appli. On redimensionne systématiquement via canvas avant stockage (largeur bien suffisante pour un
+// document imprimé, où la signature n'occupe que 220px de large).
+function loadImageFromDataUrl(dataUrl){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = ()=> resolve(img);
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+function compressSignatureImage(img, maxWidth){
+  maxWidth = maxWidth || 600;
+  const scale = Math.min(1, maxWidth / img.width);
+  const w = Math.max(1, Math.round(img.width * scale));
+  const h = Math.max(1, Math.round(img.height * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+  return canvas.toDataURL('image/png');
+}
+// Repasse automatiquement en compression les signatures déjà enregistrées avant l'ajout de ce
+// redimensionnement (import passé en taille "brute"), sans action requise de l'utilisateur.
+function shrinkOversizedSignatures(){
+  if(!state.practitionerProfiles) return;
+  state.practitionerProfiles.forEach(prof=>{
+    if(!prof.signatureDataUrl || prof.signatureDataUrl.length < 150000) return;
+    loadImageFromDataUrl(prof.signatureDataUrl).then(img=>{
+      prof.signatureDataUrl = compressSignatureImage(img, 600);
+      scheduleAutosave();
+      const tab = document.getElementById('tab-prescriptions');
+      if(tab && tab.style.display !== 'none') renderSignaturePreview();
+    }).catch(()=>{ /* image illisible : on la laisse telle quelle plutôt que de bloquer */ });
+  });
+}
 document.getElementById('btnImportSignature').addEventListener('click', ()=> document.getElementById('pxSignatureFile').click());
 document.getElementById('pxSignatureFile').addEventListener('change', (e)=>{
   const file = e.target.files[0]; if(!file) return;
   if(!file.type.startsWith('image/')){ alert('Merci de choisir un fichier image (PNG, JPG…).'); e.target.value=''; return; }
   const reader = new FileReader();
   reader.onload = (ev)=>{
-    getActiveProfile().signatureDataUrl = ev.target.result;
-    renderSignaturePreview();
-    scheduleAutosave();
+    loadImageFromDataUrl(ev.target.result).then(img=>{
+      getActiveProfile().signatureDataUrl = compressSignatureImage(img, 600);
+      renderSignaturePreview();
+      scheduleAutosave();
+    }).catch(()=>{ alert("Impossible de lire cette image, merci d'en essayer une autre."); });
   };
   reader.readAsDataURL(file);
   e.target.value = '';
@@ -2600,6 +2640,7 @@ function openPrescriptionPrintWindow(entry){
 function renderAll(){
   migrateLegacyActiveFlags();
   migratePractitionerProfiles();
+  shrinkOversizedSignatures();
   renderStaff(); renderCareTypes(); renderPatients(); renderTariffs();
   renderPlanning(); renderBilling();
   scheduleAutosave();
