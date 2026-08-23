@@ -52,12 +52,13 @@
   header h1{font-size:16px;margin:0;white-space:nowrap;display:flex;align-items:center;gap:8px;}
   header .sub{color:var(--muted);font-size:12px;}
   .app-title-wrap{position:relative;cursor:pointer;border-radius:10px;}
-  .app-menu{position:absolute;top:100%;left:0;margin-top:8px;background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-md);padding:6px;z-index:100;min-width:190px;display:none;}
+  .app-menu{position:absolute;top:100%;left:0;margin-top:8px;background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-md);padding:6px;z-index:100;min-width:240px;white-space:nowrap;display:none;}
   .app-menu.open{display:block;}
   .app-menu-item{display:block;width:100%;text-align:left;background:none;border:none;padding:10px 12px;border-radius:9px;cursor:pointer;font-size:13px;color:var(--text);font-family:var(--font-body);}
   .app-menu-item:hover{background:var(--accent-light);}
   .app-menu-item.active{color:var(--accent-dark);font-weight:700;}
   .app-menu-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:6px 12px 2px;}
+  .app-menu-sep{border:none;border-top:1px solid var(--border);margin:5px 4px;}
   .spacer{flex:1;}
   nav.tabs{display:flex;gap:4px;background:var(--panel);border-top:1px solid var(--border);padding:8px 12px;overflow-x:auto;}
   nav.tabs button{background:none;border:none;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--muted);border-radius:999px;white-space:nowrap;font-weight:700;font-family:var(--font-heading);transition:background .15s ease,color .15s ease;}
@@ -242,13 +243,16 @@
       <div class="app-menu-label">Apparence</div>
       <button class="app-menu-item" data-theme-choice="light">☀️ Mode clair</button>
       <button class="app-menu-item" data-theme-choice="dark">🌙 Mode sombre</button>
+      <hr class="app-menu-sep">
+      <div class="app-menu-label">Compte & données</div>
+      <button class="app-menu-item" id="btnClearAutosave" title="Effacer la sauvegarde automatique locale">🗑️ Effacer la sauvegarde locale</button>
+      <button class="app-menu-item" id="btnExport">⬇️ Exporter (.json)</button>
+      <button class="app-menu-item" id="btnImportTrigger">⬆️ Importer</button>
+      <hr class="app-menu-sep">
+      <button class="app-menu-item" id="btnLogout" style="color:var(--bad);">🚪 Se déconnecter</button>
     </div>
   </div>
   <div class="spacer"></div>
-  <button class="btn secondary" id="btnClearAutosave" title="Effacer la sauvegarde automatique locale">🗑️</button>
-  <button class="btn secondary" id="btnExport" title="Exporter (.json)">⬇️</button>
-  <button class="btn secondary" id="btnImportTrigger" title="Importer (.json)">⬆️</button>
-  <button class="btn secondary" id="btnLogout" title="Se déconnecter">🚪</button>
   <input type="file" id="fileImport" class="file-input-hidden" accept="application/json">
 </header>
 <div id="userBadge" class="user-badge"></div>
@@ -557,7 +561,12 @@ document.getElementById('appTitleWrap').addEventListener('click', (e)=>{
   e.stopPropagation();
   document.getElementById('appMenu').classList.toggle('open');
 });
-document.getElementById('appMenu').addEventListener('click', (e)=> e.stopPropagation());
+document.getElementById('appMenu').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  // Referme le menu après le clic sur n'importe quel bouton qu'il contient (thème, export, déconnexion…),
+  // en laissant d'abord le gestionnaire propre à ce bouton s'exécuter.
+  if(e.target.closest('button')) setTimeout(()=> document.getElementById('appMenu').classList.remove('open'), 0);
+});
 document.addEventListener('click', ()=> document.getElementById('appMenu').classList.remove('open'));
 document.querySelectorAll('.app-menu-item[data-theme-choice]').forEach(btn=>{
   btn.addEventListener('click', ()=>{ setTheme(btn.dataset.themeChoice); document.getElementById('appMenu').classList.remove('open'); });
