@@ -2696,6 +2696,26 @@ function shrinkOversizedSignatures(){
     }).catch(()=>{ /* image illisible : on la laisse telle quelle plutôt que de bloquer */ });
   });
 }
+// Ménage pour les prescriptions déjà générées avant que la signature ne soit référencée par profil au
+// lieu d'être copiée : si on peut relier l'entrée à un profil existant qui a encore sa signature, on
+// retire la copie embarquée (redondante et lourde) plutôt que de la garder dupliquée indéfiniment.
+function slimPrescriptionSignatures(){
+  if(!state.dmPrescriptions || !state.dmPrescriptions.length) return;
+  let changed = false;
+  state.dmPrescriptions.forEach(entry=>{
+    if(!entry.practitioner || !entry.practitioner.signatureDataUrl) return;
+    if(!entry.practitionerProfileId){
+      const match = (state.practitionerProfiles||[]).find(p=> p.nom===entry.practitioner.nom && p.adeli===entry.practitioner.adeli);
+      if(match) entry.practitionerProfileId = match.id;
+    }
+    const stillFindable = entry.practitionerProfileId && (state.practitionerProfiles||[]).some(p=>p.id===entry.practitionerProfileId && p.signatureDataUrl);
+    if(stillFindable){
+      delete entry.practitioner.signatureDataUrl;
+      changed = true;
+    }
+  });
+  if(changed) scheduleAutosave();
+}
 document.getElementById('btnImportSignature').addEventListener('click', ()=> document.getElementById('pxSignatureFile').click());
 document.getElementById('pxSignatureFile').addEventListener('change', (e)=>{
   const file = e.target.files[0]; if(!file) return;
@@ -2774,13 +2794,18 @@ document.getElementById('btnGeneratePx').addEventListener('click', ()=>{
       label: (LPPR_CATALOG.find(c=>c.id===it.catalogId)||{}).label || it.catalogId,
       designation: it.designation || '', description: it.description || '', qty: it.qty || ''
     })),
-    // Instantané de l'identité du prescripteur au moment de la génération : garantit qu'une prescription
-    // déjà générée conserve toujours la bonne identité/signature même si le profil actif change ensuite
-    // (compte partagé par plusieurs infirmier(ère)s) ou si le profil est modifié/supprimé plus tard.
+    // Instantané de l'identité du prescripteur au moment de la génération (texte seulement, léger) :
+    // garantit qu'une prescription déjà générée conserve toujours la bonne identité même si le profil
+    // actif change ensuite (compte partagé par plusieurs infirmier(ère)s) ou si le profil est modifié
+    // plus tard. La signature n'est PAS dupliquée ici (elle peut peser plusieurs dizaines de Ko) : on
+    // garde juste une référence vers le profil (practitionerProfileId) pour aller la rechercher au
+    // moment de l'impression — sinon chaque prescription générée alourdirait tout `state`, qui est
+    // ré-enregistré à quasiment chaque interaction.
     practitioner: {
       nom:prof.nom||'', titre:prof.titre||'', adresse:prof.adresse||'', codePostal:prof.codePostal||'',
-      ville:prof.ville||'', telephone:prof.telephone||'', adeli:prof.adeli||'', signatureDataUrl:prof.signatureDataUrl||''
+      ville:prof.ville||'', telephone:prof.telephone||'', adeli:prof.adeli||''
     },
+    practitionerProfileId: prof.id,
     createdAt: new Date().toISOString()
   };
   state.dmPrescriptions.unshift(entry);
@@ -2827,7 +2852,11 @@ function openPrescriptionPrintWindow(entry){
   const cpVille = escHtml([p.codePostal, p.ville].filter(Boolean).join(' '));
   const tel = escHtml(p.telephone||'');
   const adeli = escHtml(p.adeli||'');
-  const sig = p.signatureDataUrl || '';
+  // La signature n'est pas dupliquée dans chaque prescription (poids) : on va la chercher sur le profil
+  // référencé par id, qui existe encore la plupart du temps. On retombe sur entry.practitioner.signatureDataUrl
+  // pour les prescriptions plus anciennes qui l'avaient encore embarquée directement.
+  const sigProfile = entry.practitionerProfileId ? (state.practitionerProfiles||[]).find(pr=>pr.id===entry.practitionerProfileId) : null;
+  const sig = (sigProfile && sigProfile.signatureDataUrl) || p.signatureDataUrl || '';
   const ville = escHtml(p.ville || '');
   const dateAffichee = entry.date ? new Date(entry.date+'T00:00:00').toLocaleDateString('fr-FR', {day:'2-digit',month:'long',year:'numeric'}) : '';
   const patientLigne = [entry.civilite, entry.patientNom].filter(Boolean).join(' ');
@@ -2902,6 +2931,7 @@ function renderAll(){
   migrateLegacyActiveFlags();
   migratePractitionerProfiles();
   shrinkOversizedSignatures();
+  slimPrescriptionSignatures();
   renderStaff(); renderCareTypes(); renderPatients(); renderTariffs();
   refreshPlanningViews(); renderBilling();
   scheduleAutosave();
