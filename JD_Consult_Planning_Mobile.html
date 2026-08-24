@@ -60,6 +60,17 @@
   .app-menu-item.active{color:var(--accent-dark);font-weight:700;}
   .app-menu-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:6px 12px 2px;}
   .app-menu-sep{border:none;border-top:1px solid var(--border);margin:5px 4px;}
+  .rota-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .rota-weekday{font-size:10.5px;color:var(--muted);text-align:center;text-transform:uppercase;padding:2px 0;}
+  .rota-day{border:1px solid var(--border);border-radius:10px;min-height:56px;padding:4px;cursor:pointer;background:var(--panel);}
+  .rota-day.outside{visibility:hidden;cursor:default;}
+  .rota-daynum{font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;}
+  .rota-day.today .rota-daynum{color:#fff;background:var(--accent);border-radius:50%;}
+  .rota-bar{margin-top:5px;height:7px;border-radius:4px;}
+  .rota-bar.rota-preview{opacity:.35;}
+  .rota-bar-label{font-size:9px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .rota-seq-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 5px 3px 10px;border-radius:999px;font-size:12px;color:#fff;}
+  .rota-seq-pill button{background:rgba(255,255,255,.35);border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;cursor:pointer;line-height:1;padding:0;}
   .spacer{flex:1;}
   nav.tabs{display:flex;gap:4px;background:var(--panel);border-top:1px solid var(--border);padding:8px 12px;overflow-x:auto;}
   nav.tabs button{background:none;border:none;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--muted);border-radius:999px;white-space:nowrap;font-weight:700;font-family:var(--font-heading);transition:background .15s ease,color .15s ease;}
@@ -156,6 +167,12 @@
   nav.tabs{ -webkit-overflow-scrolling:touch; }
   nav.tabs button{ padding:9px 10px; font-size:12px; }
   .panel{ padding:12px; }
+  /* Grille du roulement plus compacte au doigt : on masque le nom sous la barre de couleur (la légende
+     en haut du calendrier + le clic sur un jour suffisent) et on réduit les marges. */
+  .rota-grid{ gap:2px; }
+  .rota-day{ min-height:44px; padding:3px; border-radius:8px; }
+  .rota-bar-label{ display:none; }
+  .rota-daynum{ font-size:11px; width:17px; height:17px; }
   /* Sur mobile, tous les formulaires passent en une seule colonne pour rester lisibles au doigt. */
   .grid-2,.grid-3{ grid-template-columns:1fr; }
   .row > *{ min-width:100%; }
@@ -279,12 +296,12 @@
   <!-- PLANNING TAB -->
   <div class="tab-content" id="tab-planning">
     <div class="view-toggle">
-      <button id="viewToggleDay" class="active">📅 Vue jour</button>
-      <button id="viewToggleMonth">🗓️ Vue mois</button>
+      <button id="viewToggleDay">📅 Vue jour</button>
+      <button id="viewToggleMonth" class="active">🗓️ Vue mois</button>
     </div>
 
-    <!-- Vue JOUR : liste de cartes verticale, pensée pour l'usage au doigt sur iPhone (vue par défaut). -->
-    <div id="dayView">
+    <!-- Vue JOUR : liste de cartes verticale, pensée pour l'usage au doigt sur iPhone (gardée en secours, la vue mois est la vue par défaut). -->
+    <div id="dayView" style="display:none;">
       <div class="day-nav">
         <button id="dayPrev" aria-label="Jour précédent">‹</button>
         <input type="date" id="dayViewDate">
@@ -295,8 +312,8 @@
       <p class="muted small" style="margin-top:6px;">N/C/U/E = majorations exceptionnelles (nuit / coordination / acte unique / enfant &lt;7 ans). Le bouton 🕐 Détail ouvre le détail des soins de ce jour précis.</p>
     </div>
 
-    <!-- Vue MOIS : la grille complète (identique à la version bureau), pour une vision d'ensemble. -->
-    <div id="monthView" style="display:none;">
+    <!-- Vue MOIS : la grille complète (identique à la version bureau), pour une vision d'ensemble. Vue par défaut. -->
+    <div id="monthView">
       <div class="toolbar">
         <label style="margin:0;">Mois :</label>
         <input type="month" id="planMonth" style="max-width:160px;">
@@ -308,6 +325,7 @@
 
     <button class="btn secondary" id="btnExportExcel" style="width:100%;margin-top:12px;">📊 Exporter en Excel</button>
     <button class="btn secondary" id="btnExportPdf" style="width:100%;margin-top:8px;">🖨️ Exporter en PDF</button>
+    <button class="btn secondary" id="btnOpenRota" style="width:100%;margin-top:8px;">🗓️ Roulement</button>
   </div>
 
   <!-- BILLING TAB -->
@@ -513,6 +531,37 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="rotaModalOverlay" style="display:none;">
+  <div class="modal-box">
+    <h2>🗓️ Roulement</h2>
+    <p class="muted small">Définissez l'ordre de rotation de vos infirmier(ère)s (ex. Claire, Claire, Sophie, Claire, Sophie…) et une date de départ : le planning se remplit ensuite tout seul en boucle, jour après jour, sans écraser les jours déjà renseignés. Touchez un jour pour changer ponctuellement l'infirmier(ère) (remplacement).</p>
+
+    <h3>Cycle de rotation</h3>
+    <div class="row tight" id="rotaSequenceList" style="flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
+    <div class="field"><label>Ajouter au cycle</label><select id="rotaAddNurse"></select></div>
+    <button class="btn secondary" id="rotaAddBtn" style="width:100%;margin-bottom:10px;">+ Ajouter</button>
+    <div class="field"><label>Date de départ du cycle</label><input type="date" id="rotaStartDate"></div>
+
+    <div class="row tight" id="rotaLegend" style="flex-wrap:wrap;gap:10px;margin:10px 0;"></div>
+
+    <div class="row tight" style="justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <button class="btn secondary" id="rotaPrevMonth">‹</button>
+      <div style="font-weight:700;font-family:var(--font-heading);" id="rotaMonthLabel"></div>
+      <button class="btn secondary" id="rotaNextMonth">›</button>
+    </div>
+    <button class="btn" id="rotaApplyMonth" style="width:100%;margin-bottom:8px;">✅ Remplir ce mois selon le roulement</button>
+    <p class="muted small" style="margin:-4px 0 8px;">Les jours en aperçu (barre atténuée) ne sont pas encore enregistrés — touchez le bouton ci-dessus pour les valider. Un jour déjà rempli n'est jamais écrasé automatiquement.</p>
+    <div id="rotaCalendar"></div>
+
+    <div id="rotaDayEditor" style="display:none;margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--accent-light);"></div>
+
+    <hr>
+    <div class="row tight" style="justify-content:flex-end;">
+      <button class="btn" id="rotaClose" style="width:100%;">Fermer</button>
+    </div>
+  </div>
+</div>
+
 </div><!-- /appRoot -->
 
 <script>
@@ -662,7 +711,8 @@ let state = {
   tariffs: defaultTariffs(),
   monthlyDeclared: {},  // "YYYY-MM" -> number
   ...defaultPractitionerState(), // practitionerProfiles + activePractitionerProfileId
-  dmPrescriptions: []   // historique des prescriptions de dispositifs médicaux générées
+  dmPrescriptions: [],   // historique des prescriptions de dispositifs médicaux générées
+  rotation: {sequence:[], startDate:''} // cycle de roulement des infirmier(ère)s (remplit dayNurse tout seul)
 };
 
 function todayISO(){ const d=new Date(); return d.toISOString().slice(0,10); }
@@ -717,7 +767,7 @@ document.getElementById('fileImport').addEventListener('change', (e)=>{
       state = Object.assign({
         version:1,nurses:[],patients:[],careTypes:[],planning:{},dayNurse:{},
         holidays:default2026Holidays(),tariffs:defaultTariffs(),monthlyDeclared:{},
-        ...defaultPractitionerState(),dmPrescriptions:[]
+        ...defaultPractitionerState(),dmPrescriptions:[],rotation:{sequence:[],startDate:''}
       }, data);
       renderAll();
       alert('Import réussi.');
@@ -928,6 +978,154 @@ function printPlanningPDF(month){
   setTimeout(()=>{ try{ w.focus(); w.print(); }catch(err){} }, 150);
 }
 document.getElementById('btnExportPdf').addEventListener('click', ()=> printPlanningPDF(getPlanMonth()));
+
+/* ---------- Roulement des infirmier(ère)s (calendrier auto-rempli, style iPhone) ---------- */
+// state.rotation = {sequence:[nurseId,...], startDate:'YYYY-MM-DD'} : un cycle qui se répète en boucle
+// jour après jour à partir de startDate. On ne fait que COMBLER les jours vides de state.dayNurse (le
+// même champ déjà utilisé par le planning détaillé, l'export Excel/PDF et les statistiques) : un jour
+// déjà renseigné (manuellement, ou suite à un remplacement) n'est jamais écrasé automatiquement.
+let rotaViewMonth = null;
+let rotaSelectedDay = null;
+function computeRotationNurse(dateStr){
+  const rot = state.rotation;
+  if(!rot || !rot.sequence || !rot.sequence.length || !rot.startDate) return null;
+  const start = new Date(rot.startDate+'T00:00:00');
+  const cur = new Date(dateStr+'T00:00:00');
+  const diffDays = Math.round((cur - start) / 86400000);
+  if(diffDays < 0) return null;
+  const idx = diffDays % rot.sequence.length;
+  return rot.sequence[idx] || null;
+}
+function applyRotaToMonth(month){
+  if(!month) return false;
+  let changed = false;
+  daysInMonth(month).forEach(d=>{
+    if(!state.dayNurse[d]){
+      const nid = computeRotationNurse(d);
+      if(nid){ state.dayNurse[d] = nid; changed = true; }
+    }
+  });
+  if(changed) scheduleAutosave();
+  return changed;
+}
+function openRotaModal(){
+  if(!state.rotation) state.rotation = {sequence:[], startDate:''};
+  if(!rotaViewMonth) rotaViewMonth = getPlanMonth();
+  rotaSelectedDay = null;
+  document.getElementById('rotaDayEditor').style.display = 'none';
+  document.getElementById('rotaStartDate').value = state.rotation.startDate || todayISO();
+  document.getElementById('rotaModalOverlay').style.display = 'flex';
+  renderRotaAddNurseSelect();
+  renderRotaSequence();
+  renderRotaLegend();
+  renderRotaCalendar();
+}
+document.getElementById('btnOpenRota').addEventListener('click', openRotaModal);
+document.getElementById('rotaClose').addEventListener('click', ()=>{ document.getElementById('rotaModalOverlay').style.display = 'none'; });
+function renderRotaAddNurseSelect(){
+  document.getElementById('rotaAddNurse').innerHTML = state.nurses.length
+    ? state.nurses.map(n=>`<option value="${n.id}">${escHtml(n.name)}</option>`).join('')
+    : '<option value="">(aucun infirmier(ère) — onglet Personnel)</option>';
+}
+function renderRotaSequence(){
+  const seq = (state.rotation && state.rotation.sequence) || [];
+  document.getElementById('rotaSequenceList').innerHTML = seq.length ? seq.map((nid,i)=>{
+    const n = state.nurses.find(x=>x.id===nid);
+    const color = n ? (n.color||'#4f9d94') : '#999';
+    return `<span class="rota-seq-pill" style="background:${escAttr(color)};">${i+1}. ${escHtml(n?n.name:'?')} <button onclick="removeRotaSeqItem(${i})" title="Retirer du cycle">✕</button></span>`;
+  }).join('') : '<span class="muted small">Cycle vide — ajoutez au moins un(e) infirmier(ère) ci-dessous.</span>';
+}
+function removeRotaSeqItem(i){
+  state.rotation.sequence.splice(i,1);
+  scheduleAutosave();
+  renderRotaSequence();
+  renderRotaCalendar();
+}
+document.getElementById('rotaAddBtn').addEventListener('click', ()=>{
+  const nid = document.getElementById('rotaAddNurse').value;
+  if(!nid) return;
+  if(!state.rotation.sequence) state.rotation.sequence = [];
+  state.rotation.sequence.push(nid);
+  scheduleAutosave();
+  renderRotaSequence();
+  renderRotaCalendar();
+});
+document.getElementById('rotaStartDate').addEventListener('change', (e)=>{
+  state.rotation.startDate = e.target.value;
+  scheduleAutosave();
+  renderRotaCalendar();
+});
+function renderRotaLegend(){
+  document.getElementById('rotaLegend').innerHTML = state.nurses.map(n=>
+    `<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;"><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:${escAttr(n.color||'#4f9d94')};"></span>${escHtml(n.name)}</span>`
+  ).join('');
+}
+function renderRotaCalendar(){
+  // Ne commit PAS automatiquement ici (voir applyRotaToMonth) : tant qu'on construit encore le cycle,
+  // les jours vides affichent juste un aperçu en direct (barre atténuée), pas une valeur figée — sinon
+  // ajouter un 2e infirmier(ère) au cycle après le 1er ne changerait plus rien aux jours déjà "remplis"
+  // par erreur avec le cycle incomplet du 1er ajout. Le remplissage réel se fait via le bouton dédié.
+  const days = daysInMonth(rotaViewMonth);
+  const [y,m] = rotaViewMonth.split('-').map(Number);
+  const monthLabel = new Date(y, m-1, 1).toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+  document.getElementById('rotaMonthLabel').textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+  const firstWeekday = (new Date(days[0]+'T00:00:00').getDay()+6)%7; // lundi=0
+  const today = todayISO();
+  let cells = '';
+  for(let i=0;i<firstWeekday;i++) cells += `<div class="rota-day outside"></div>`;
+  days.forEach(dateStr=>{
+    const dayNum = parseInt(dateStr.slice(8,10),10);
+    const committed = state.dayNurse[dateStr];
+    const nid = committed || computeRotationNurse(dateStr);
+    const n = nid ? state.nurses.find(x=>x.id===nid) : null;
+    const previewCls = (!committed && nid) ? ' rota-preview' : '';
+    const bar = n ? `<div class="rota-bar${previewCls}" style="background:${escAttr(n.color||'#4f9d94')};"></div><div class="rota-bar-label">${escHtml(n.name)}</div>` : `<div class="rota-bar" style="background:transparent;"></div>`;
+    cells += `<div class="rota-day${dateStr===today?' today':''}" onclick="selectRotaDay('${dateStr}')"><div class="rota-daynum">${dayNum}</div>${bar}</div>`;
+  });
+  document.getElementById('rotaCalendar').innerHTML = `<div class="rota-grid">${['L','M','M','J','V','S','D'].map(w=>`<div class="rota-weekday">${w}</div>`).join('')}${cells}</div>`;
+}
+document.getElementById('rotaApplyMonth').addEventListener('click', ()=>{
+  const changed = applyRotaToMonth(rotaViewMonth);
+  renderRotaCalendar();
+  const planTab = document.getElementById('tab-planning');
+  if(planTab && planTab.style.display !== 'none') refreshPlanningViews();
+  if(!changed) alert("Rien à remplir : soit le cycle est vide, soit tous les jours de ce mois ont déjà un(e) infirmier(ère) affecté(e).");
+});
+function shiftRotaMonth(delta){
+  const [y,m] = rotaViewMonth.split('-').map(Number);
+  const d = new Date(y, m-1+delta, 1);
+  rotaViewMonth = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  document.getElementById('rotaDayEditor').style.display = 'none';
+  renderRotaCalendar();
+}
+document.getElementById('rotaPrevMonth').addEventListener('click', ()=> shiftRotaMonth(-1));
+document.getElementById('rotaNextMonth').addEventListener('click', ()=> shiftRotaMonth(1));
+function selectRotaDay(dateStr){
+  rotaSelectedDay = dateStr;
+  const editor = document.getElementById('rotaDayEditor');
+  const dLabel = new Date(dateStr+'T00:00:00').toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'});
+  const currentId = state.dayNurse[dateStr];
+  const buttons = state.nurses.map(n=>{
+    const color = n.color || '#4f9d94';
+    const active = n.id === currentId;
+    return `<button class="btn ${active?'':'secondary'}" style="${active?`background:${escAttr(color)};border-color:${escAttr(color)};`:`border-color:${escAttr(color)};color:${escAttr(color)};`}" onclick="setRotaDayNurse('${dateStr}','${n.id}')">${escHtml(n.name)}</button>`;
+  }).join(' ');
+  editor.innerHTML = `<div style="margin-bottom:8px;font-weight:700;">${dLabel.charAt(0).toUpperCase()+dLabel.slice(1)}</div>
+    <div class="row tight" style="flex-wrap:wrap;gap:6px;">${buttons}
+      <button class="btn danger" onclick="setRotaDayNurse('${dateStr}', null)">Effacer</button>
+    </div>
+    <p class="muted small" style="margin-top:8px;">Ce changement ne modifie que ce jour précis (remplacement ponctuel) — le reste du cycle continue normalement.</p>`;
+  editor.style.display = '';
+}
+function setRotaDayNurse(dateStr, nurseId){
+  if(nurseId) state.dayNurse[dateStr] = nurseId;
+  else delete state.dayNurse[dateStr];
+  scheduleAutosave();
+  renderRotaCalendar();
+  selectRotaDay(dateStr);
+  const planTab = document.getElementById('tab-planning');
+  if(planTab && planTab.style.display !== 'none') refreshPlanningViews();
+}
 
 // Construit un classeur "Facturation" détaillé : qui (infirmier) / quoi (chaque acte) / à qui (patient),
 // plus les récapitulatifs par patient, par infirmier(ère), et infirmier(ère)×patient (mêmes chiffres
@@ -2359,7 +2557,7 @@ function loadFromLocalStorage(key){
     state = Object.assign({
       version:1,nurses:[],patients:[],careTypes:[],planning:{},dayNurse:{},
       holidays:default2026Holidays(),tariffs:defaultTariffs(),monthlyDeclared:{},
-      ...defaultPractitionerState(),dmPrescriptions:[]
+      ...defaultPractitionerState(),dmPrescriptions:[],rotation:{sequence:[],startDate:''}
     }, data);
     return true;
   }catch(err){
@@ -2390,7 +2588,7 @@ async function loadStateFromCloudThenLocal(){
       state = Object.assign({
         version:1,nurses:[],patients:[],careTypes:[],planning:{},dayNurse:{},
         holidays:default2026Holidays(),tariffs:defaultTariffs(),monthlyDeclared:{},
-        ...defaultPractitionerState(),dmPrescriptions:[]
+        ...defaultPractitionerState(),dmPrescriptions:[],rotation:{sequence:[],startDate:''}
       }, data.data);
       saveToLocalStorage();
       lastCloudSaveOk = true;
