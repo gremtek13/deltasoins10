@@ -265,8 +265,7 @@
         <div style="font-weight:700;font-family:var(--font-heading);" id="rotaMonthLabel"></div>
         <button class="btn secondary" id="rotaNextMonth">›</button>
       </div>
-      <button class="btn" id="rotaApplyMonth" style="width:100%;margin-bottom:8px;">📌 Figer définitivement ce mois</button>
-      <p class="muted small" style="margin:-4px 0 8px;">Le roulement s'applique déjà tout seul (barre atténuée = calcul en direct, pas encore enregistré) — inutile de cliquer pour que ça fonctionne. Ce bouton fige les jours affichés pour de bon, pratique avant l'envoi à la facturière pour être sûr(e) que rien ne bouge même si vous modifiez le cycle plus tard.</p>
+      <p class="muted small" style="margin-top:-4px;">Le roulement s'applique déjà tout seul (barre atténuée = calcul en direct selon le cycle).</p>
       <div id="rotaCalendar"></div>
 
       <div id="rotaDayEditor" style="display:none;margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--accent-light);"></div>
@@ -947,18 +946,6 @@ function computeRotationNurse(dateStr){
 function dayDefaultNurseId(dateStr){
   return (state.dayNurse && state.dayNurse[dateStr]) || computeRotationNurse(dateStr) || null;
 }
-function applyRotaToMonth(month){
-  if(!month) return false;
-  let changed = false;
-  daysInMonth(month).forEach(d=>{
-    if(!state.dayNurse[d]){
-      const nid = computeRotationNurse(d);
-      if(nid){ state.dayNurse[d] = nid; changed = true; }
-    }
-  });
-  if(changed) scheduleAutosave();
-  return changed;
-}
 const ROTA_WEEKDAY_LABELS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 // Ramène n'importe quelle date au lundi de sa semaine : nécessaire pour que l'index 0 du cycle
 // corresponde toujours à "lundi semaine 1" dans la grille, quelle que soit la date cliquée.
@@ -1029,10 +1016,9 @@ function renderRotaLegend(){
   ).join('');
 }
 function renderRotaCalendar(){
-  // Ne commit PAS automatiquement ici (voir applyRotaToMonth) : tant qu'on construit encore le cycle,
-  // les jours vides affichent juste un aperçu en direct (barre atténuée), pas une valeur figée — sinon
-  // ajouter un 2e infirmier(ère) au cycle après le 1er ne changerait plus rien aux jours déjà "remplis"
-  // par erreur avec le cycle incomplet du 1er ajout. Le remplissage réel se fait via le bouton dédié.
+  // Un jour sans affectation explicite (state.dayNurse) affiche le calcul en direct du cycle (barre
+  // atténuée, "rota-preview") : rien n'est jamais écrit dans state.dayNurse ici, dayDefaultNurseId()
+  // s'en charge à la volée partout où c'est nécessaire (planning, facturation, exports).
   const days = daysInMonth(rotaViewMonth);
   const [y,m] = rotaViewMonth.split('-').map(Number);
   const monthLabel = new Date(y, m-1, 1).toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
@@ -1052,13 +1038,6 @@ function renderRotaCalendar(){
   });
   document.getElementById('rotaCalendar').innerHTML = `<div class="rota-grid">${['L','M','M','J','V','S','D'].map(w=>`<div class="rota-weekday">${w}</div>`).join('')}${cells}</div>`;
 }
-document.getElementById('rotaApplyMonth').addEventListener('click', ()=>{
-  const changed = applyRotaToMonth(rotaViewMonth);
-  renderRotaCalendar();
-  const planTab = document.getElementById('tab-planning');
-  if(planTab && planTab.style.display !== 'none') renderPlanning();
-  if(!changed) alert("Rien à figer : soit le cycle est vide, soit tous les jours de ce mois ont déjà un(e) infirmier(ère) affecté(e).");
-});
 function shiftRotaMonth(delta){
   const [y,m] = rotaViewMonth.split('-').map(Number);
   const d = new Date(y, m-1+delta, 1);
