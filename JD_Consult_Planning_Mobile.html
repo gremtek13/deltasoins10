@@ -276,7 +276,8 @@
 </header>
 
 <nav class="tabs">
-  <button data-tab="planning" class="active">📅 Planning mensuel</button>
+  <button data-tab="roulement" class="active">🗓️ Roulement</button>
+  <button data-tab="planning">📅 Planning mensuel</button>
   <button data-tab="billing">💶 Contrôle facturation</button>
   <button data-tab="patients">🧑‍🤝‍🧑 Patients</button>
   <button data-tab="ordonnances">💊 Ordonnances</button>
@@ -293,11 +294,43 @@
 
 <main>
 
+  <!-- ROULEMENT TAB (vue par défaut à la connexion) -->
+  <div class="tab-content" id="tab-roulement">
+    <div class="panel">
+      <div class="row" style="align-items:center;">
+        <h2 style="margin:0;">🗓️ Roulement</h2>
+        <span class="spacer"></span>
+        <button class="btn secondary" id="rotaToggleOptions">⚙️ Options</button>
+      </div>
+      <p class="muted small">Le planning se remplit tout seul en boucle selon le cycle défini dans les options, sans jamais écraser un jour déjà renseigné. Touchez un jour pour changer ponctuellement l'infirmier(ère) (remplacement).</p>
+
+      <div id="rotaOptionsPanel" style="display:none;margin-bottom:14px;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--accent-light);">
+        <h3 style="margin-top:0;">Cycle de rotation</h3>
+        <div class="row tight" id="rotaSequenceList" style="flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
+        <div class="field"><label>Ajouter au cycle</label><select id="rotaAddNurse"></select></div>
+        <button class="btn secondary" id="rotaAddBtn" style="width:100%;margin-bottom:10px;">+ Ajouter</button>
+        <div class="field"><label>Date de départ du cycle</label><input type="date" id="rotaStartDate"></div>
+      </div>
+
+      <div class="row tight" id="rotaLegend" style="flex-wrap:wrap;gap:10px;margin-bottom:10px;"></div>
+
+      <div class="row tight" style="justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <button class="btn secondary" id="rotaPrevMonth">‹</button>
+        <div style="font-weight:700;font-family:var(--font-heading);" id="rotaMonthLabel"></div>
+        <button class="btn secondary" id="rotaNextMonth">›</button>
+      </div>
+      <button class="btn" id="rotaApplyMonth" style="width:100%;margin-bottom:8px;">✅ Remplir ce mois selon le roulement</button>
+      <p class="muted small" style="margin:-4px 0 8px;">Les jours en aperçu (barre atténuée) ne sont pas encore enregistrés — touchez le bouton ci-dessus pour les valider.</p>
+      <div id="rotaCalendar"></div>
+
+      <div id="rotaDayEditor" style="display:none;margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--accent-light);"></div>
+    </div>
+  </div>
+
   <!-- PLANNING TAB -->
-  <div class="tab-content" id="tab-planning">
-    <div class="view-toggle">
-      <button id="viewToggleDay">📅 Vue jour</button>
-      <button id="viewToggleMonth" class="active">🗓️ Vue mois</button>
+  <div class="tab-content" id="tab-planning" style="display:none;">
+    <div class="row tight" style="margin-bottom:10px;">
+      <button class="btn secondary" id="viewToggleBtn" data-target="day" style="width:100%;">📅 Vue jour</button>
     </div>
 
     <!-- Vue JOUR : liste de cartes verticale, pensée pour l'usage au doigt sur iPhone (gardée en secours, la vue mois est la vue par défaut). -->
@@ -325,7 +358,6 @@
 
     <button class="btn secondary" id="btnExportExcel" style="width:100%;margin-top:12px;">📊 Exporter en Excel</button>
     <button class="btn secondary" id="btnExportPdf" style="width:100%;margin-top:8px;">🖨️ Exporter en PDF</button>
-    <button class="btn secondary" id="btnOpenRota" style="width:100%;margin-top:8px;">🗓️ Roulement</button>
   </div>
 
   <!-- BILLING TAB -->
@@ -531,37 +563,6 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="rotaModalOverlay" style="display:none;">
-  <div class="modal-box">
-    <h2>🗓️ Roulement</h2>
-    <p class="muted small">Définissez l'ordre de rotation de vos infirmier(ère)s (ex. Claire, Claire, Sophie, Claire, Sophie…) et une date de départ : le planning se remplit ensuite tout seul en boucle, jour après jour, sans écraser les jours déjà renseignés. Touchez un jour pour changer ponctuellement l'infirmier(ère) (remplacement).</p>
-
-    <h3>Cycle de rotation</h3>
-    <div class="row tight" id="rotaSequenceList" style="flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
-    <div class="field"><label>Ajouter au cycle</label><select id="rotaAddNurse"></select></div>
-    <button class="btn secondary" id="rotaAddBtn" style="width:100%;margin-bottom:10px;">+ Ajouter</button>
-    <div class="field"><label>Date de départ du cycle</label><input type="date" id="rotaStartDate"></div>
-
-    <div class="row tight" id="rotaLegend" style="flex-wrap:wrap;gap:10px;margin:10px 0;"></div>
-
-    <div class="row tight" style="justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <button class="btn secondary" id="rotaPrevMonth">‹</button>
-      <div style="font-weight:700;font-family:var(--font-heading);" id="rotaMonthLabel"></div>
-      <button class="btn secondary" id="rotaNextMonth">›</button>
-    </div>
-    <button class="btn" id="rotaApplyMonth" style="width:100%;margin-bottom:8px;">✅ Remplir ce mois selon le roulement</button>
-    <p class="muted small" style="margin:-4px 0 8px;">Les jours en aperçu (barre atténuée) ne sont pas encore enregistrés — touchez le bouton ci-dessus pour les valider. Un jour déjà rempli n'est jamais écrasé automatiquement.</p>
-    <div id="rotaCalendar"></div>
-
-    <div id="rotaDayEditor" style="display:none;margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--accent-light);"></div>
-
-    <hr>
-    <div class="row tight" style="justify-content:flex-end;">
-      <button class="btn" id="rotaClose" style="width:100%;">Fermer</button>
-    </div>
-  </div>
-</div>
-
 </div><!-- /appRoot -->
 
 <script>
@@ -723,6 +724,7 @@ function switchTab(tabName){
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tabName));
   document.querySelectorAll('.tab-content').forEach(t=>t.style.display='none');
   document.getElementById('tab-'+tabName).style.display='block';
+  if(tabName==='roulement') renderRotaTab();
   if(tabName==='planning') refreshPlanningViews();
   if(tabName==='billing') renderBilling();
   if(tabName==='patients') renderPatients();
@@ -1008,20 +1010,19 @@ function applyRotaToMonth(month){
   if(changed) scheduleAutosave();
   return changed;
 }
-function openRotaModal(){
+function renderRotaTab(){
   if(!state.rotation) state.rotation = {sequence:[], startDate:''};
   if(!rotaViewMonth) rotaViewMonth = getPlanMonth();
-  rotaSelectedDay = null;
-  document.getElementById('rotaDayEditor').style.display = 'none';
   document.getElementById('rotaStartDate').value = state.rotation.startDate || todayISO();
-  document.getElementById('rotaModalOverlay').style.display = 'flex';
   renderRotaAddNurseSelect();
   renderRotaSequence();
   renderRotaLegend();
   renderRotaCalendar();
 }
-document.getElementById('btnOpenRota').addEventListener('click', openRotaModal);
-document.getElementById('rotaClose').addEventListener('click', ()=>{ document.getElementById('rotaModalOverlay').style.display = 'none'; });
+document.getElementById('rotaToggleOptions').addEventListener('click', ()=>{
+  const panel = document.getElementById('rotaOptionsPanel');
+  panel.style.display = panel.style.display === 'none' ? '' : 'none';
+});
 function renderRotaAddNurseSelect(){
   document.getElementById('rotaAddNurse').innerHTML = state.nurses.length
     ? state.nurses.map(n=>`<option value="${n.id}">${escHtml(n.name)}</option>`).join('')
@@ -2096,14 +2097,16 @@ function changeDayView(deltaDays){
 document.getElementById('dayPrev').addEventListener('click', ()=>changeDayView(-1));
 document.getElementById('dayNext').addEventListener('click', ()=>changeDayView(1));
 document.getElementById('dayViewDate').addEventListener('change', renderDayView);
+// Un seul bouton (au lieu d'une barre à 2 boutons) qui bascule entre les deux vues : la vue mois est la
+// vue par défaut, la vue jour reste accessible d'un clic sur ce bouton — et inversement pour revenir.
 function setPlanningView(mode){
-  document.getElementById('viewToggleDay').classList.toggle('active', mode==='day');
-  document.getElementById('viewToggleMonth').classList.toggle('active', mode==='month');
   document.getElementById('dayView').style.display = mode==='day' ? 'block' : 'none';
   document.getElementById('monthView').style.display = mode==='month' ? 'block' : 'none';
+  const btn = document.getElementById('viewToggleBtn');
+  btn.textContent = mode==='month' ? '📅 Vue jour' : '🗓️ Vue mois';
+  btn.dataset.target = mode==='month' ? 'day' : 'month';
 }
-document.getElementById('viewToggleDay').addEventListener('click', ()=>setPlanningView('day'));
-document.getElementById('viewToggleMonth').addEventListener('click', ()=>setPlanningView('month'));
+document.getElementById('viewToggleBtn').addEventListener('click', (e)=> setPlanningView(e.target.dataset.target));
 
 function setDayDefaultNurse(dateStr, nurseId){
   state.dayNurse = state.dayNurse || {};
@@ -3131,6 +3134,7 @@ function renderAll(){
   shrinkOversizedSignatures();
   slimPrescriptionSignatures();
   renderStaff(); renderCareTypes(); renderPatients(); renderTariffs();
+  renderRotaTab();
   refreshPlanningViews(); renderBilling();
   scheduleAutosave();
 }
