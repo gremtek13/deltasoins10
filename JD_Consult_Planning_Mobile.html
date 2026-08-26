@@ -2409,9 +2409,16 @@ function renderBilling(){
   const {grandTotal, byPatient, byNurse, byNursePatient, nbActiveDays, dailyAverage} = bd;
 
   const declared = state.monthlyDeclared[month];
-  document.getElementById('billDeclared').value = declared !== undefined ? declared : '';
-  const declaredVal = parseFloat(document.getElementById('billDeclared').value);
+  const declaredInput = document.getElementById('billDeclared');
+  // On ne réinitialise le champ depuis l'état sauvegardé QUE s'il n'est pas en train d'être modifié : ce
+  // rendu est aussi appelé par le listener 'input' du champ lui-même à chaque frappe (voir plus bas), et
+  // le réécrire à ce moment-là effaçait ce que l'utilisateur venait de taper avant même de le sauvegarder.
+  if(document.activeElement !== declaredInput){
+    declaredInput.value = declared !== undefined ? declared : '';
+  }
+  const declaredVal = parseFloat(declaredInput.value);
   if(!isNaN(declaredVal)) state.monthlyDeclared[month] = declaredVal;
+  else if(declaredInput.value.trim()==='') delete state.monthlyDeclared[month];
 
   document.getElementById('billTheoretical').value = grandTotal.toFixed(2) + ' €';
   const diffEl = document.getElementById('billDiff');
