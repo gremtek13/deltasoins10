@@ -134,6 +134,10 @@
   .kpi .val{font-size:24px;font-weight:800;font-family:var(--font-heading);color:var(--accent-dark);}
   .kpi .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-top:2px;}
   .kpis{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px;}
+  .stats-nurse-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:10px;}
+  .stats-nurse-card{border:1px solid var(--border);border-radius:14px;padding:12px 14px;background:var(--bg);}
+  .stats-nurse-card h4{margin:0 0 6px;font-size:12.5px;color:var(--accent-dark);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .stats-nurse-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
   .note-box{background:#fffaf0;border:1px solid #f0d9a8;border-radius:14px;padding:10px 12px;font-size:12.5px;color:#7a5c1e;margin-bottom:14px;}
   .warn-box{background:#fdeaea;border:1px solid #f3b8b8;border-radius:14px;padding:10px 12px;font-size:12.5px;color:#8a1f1f;margin-bottom:14px;}
   .act-line{display:flex;gap:6px;align-items:center;margin-bottom:4px;}
@@ -313,7 +317,6 @@
       <div id="statsCabinetChart"></div>
       <h3>Facturation théorique par infirmier(ère) — 12 derniers mois</h3>
       <div id="statsNurseChart"></div>
-      <div class="row tight" id="statsNurseLegend" style="flex-wrap:wrap;gap:12px;margin-top:8px;"></div>
       <h3>Répartition par infirmier(ère) — mois sélectionné</h3>
       <div id="statsNurseMonthChart"></div>
     </div>
@@ -2331,33 +2334,6 @@ function renderBarChartSVG(items){
     ${bars}
   </svg>`;
 }
-// Graphique en barres empilées (une série par infirmier(ère), un segment par mois) — SVG pur.
-function renderStackedBarChartSVG(months, series){
-  const w = 640, h = 220, padL = 6, padR = 6, padT = 10, padB = 30;
-  const chartW = w - padL - padR, chartH = h - padT - padB;
-  const n = Math.max(months.length, 1);
-  const gap = 6;
-  const barW = Math.max(3, (chartW - gap*(n-1)) / n);
-  const totals = months.map((m,i)=> series.reduce((s,ser)=> s+(ser.values[i]||0), 0));
-  const maxVal = Math.max(1, ...totals);
-  let bars = '';
-  months.forEach((m,i)=>{
-    const x = padL + i*(barW+gap);
-    let yCursor = padT + chartH;
-    series.forEach(ser=>{
-      const val = ser.values[i] || 0;
-      if(val<=0) return;
-      const segH = (val/maxVal)*chartH;
-      yCursor -= segH;
-      bars += `<rect x="${x.toFixed(1)}" y="${yCursor.toFixed(1)}" width="${barW.toFixed(1)}" height="${segH.toFixed(1)}" style="fill:${ser.color};"><title>${escHtml(ser.name)} — ${escHtml(m.label)} : ${val.toFixed(2)} €</title></rect>`;
-    });
-    bars += `<text x="${(x+barW/2).toFixed(1)}" y="${(padT+chartH+14).toFixed(1)}" text-anchor="middle" font-size="9" style="fill:var(--muted);">${escHtml(m.label)}</text>`;
-  });
-  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block;">
-    <line x1="${padL}" y1="${padT+chartH}" x2="${w-padR}" y2="${padT+chartH}" style="stroke:var(--border);stroke-width:1;"/>
-    ${bars}
-  </svg>`;
-}
 function renderBillingStats(){
   const months = lastNMonths(12);
   const perMonth = months.map(m=>({...m, bd: computeBillingData(m.key)}));
@@ -2366,18 +2342,20 @@ function renderBillingStats(){
     perMonth.map(m=>({label:m.label, value:m.bd.grandTotal}))
   );
 
+  // Un graphique 12 mois par infirmier(ère), séparé plutôt qu'empilé dans un seul graphique commun — plus
+  // lisible pour suivre l'évolution individuelle de chacun(e) sans avoir à décoder des segments empilés.
   if(state.nurses.length){
-    const nurseSeries = state.nurses.map(n=>({
-      name: n.name, color: n.color || '#4f9d94',
-      values: perMonth.map(m=> (m.bd.byNurse[n.id]||{}).total || 0)
-    }));
-    document.getElementById('statsNurseChart').innerHTML = renderStackedBarChartSVG(months, nurseSeries);
-    document.getElementById('statsNurseLegend').innerHTML = state.nurses.map(n=>
-      `<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;"><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:${escAttr(n.color||'#4f9d94')};"></span>${escHtml(n.name)}</span>`
-    ).join('');
+    document.getElementById('statsNurseChart').innerHTML = '<div class="stats-nurse-grid">' +
+      state.nurses.map(n=>{
+        const color = n.color || 'var(--accent)';
+        const total12 = perMonth.reduce((s,m)=> s + ((m.bd.byNurse[n.id]||{}).total || 0), 0);
+        return `<div class="stats-nurse-card">
+            <h4><span class="stats-nurse-dot" style="background:${escAttr(color)};"></span>${escHtml(n.name)} <span class="muted" style="font-weight:400;">— ${total12.toFixed(2)} € / 12 mois</span></h4>
+            ${renderBarChartSVG(perMonth.map(m=>({label:m.label, value:(m.bd.byNurse[n.id]||{}).total || 0, color})))}
+          </div>`;
+      }).join('') + '</div>';
   } else {
     document.getElementById('statsNurseChart').innerHTML = '<p class="muted small">Aucun infirmier(ère) enregistré(e).</p>';
-    document.getElementById('statsNurseLegend').innerHTML = '';
   }
 
   const curBd = computeBillingData(getBillMonth());
