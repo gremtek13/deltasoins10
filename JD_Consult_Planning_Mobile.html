@@ -318,11 +318,7 @@
   <!-- ROULEMENT TAB (vue par défaut à la connexion) -->
   <div class="tab-content" id="tab-roulement">
     <div class="panel">
-      <div class="row" style="align-items:center;">
-        <h2 style="margin:0;">🗓️ Roulement</h2>
-        <span class="spacer"></span>
-        <button class="btn secondary" id="rotaToggleOptions">⚙️ Options</button>
-      </div>
+      <h2 style="margin:0;">🗓️ Roulement</h2>
       <p class="muted small">Une fois le cycle défini dans les options, il se répète tout seul en boucle sur tous les mois — pas besoin de le refaire chaque mois. Touchez un jour pour changer ponctuellement l'infirmier(ère) (remplacement) : ce jour ne suivra plus jamais le cycle automatiquement.</p>
 
       <div class="row tight" id="rotaLegend" style="flex-wrap:wrap;gap:10px;margin-bottom:10px;"></div>
@@ -337,7 +333,10 @@
 
       <div id="rotaDayEditor" style="display:none;margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--accent-light);"></div>
 
-      <div id="rotaOptionsPanel" style="display:none;margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--accent-light);">
+      <div class="row" style="align-items:center;margin-top:18px;">
+        <button class="btn secondary" id="rotaToggleOptions">⚙️ Options</button>
+      </div>
+      <div id="rotaOptionsPanel" style="display:none;margin-top:10px;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--accent-light);">
         <h3 style="margin-top:0;">Cycle de rotation (sur 2 semaines)</h3>
         <p class="muted small">Choisissez qui travaille chaque jour des semaines 1 et 2 — le cycle se répète ensuite en boucle. Laissez sur « — » un jour sans infirmier(ère) affecté(e).</p>
         <div id="rotaSequenceList" style="margin-bottom:12px;"></div>
