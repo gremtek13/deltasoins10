@@ -2346,12 +2346,16 @@ function computeBillingData(month){
   const byNursePatient = {}; // nurseId -> {patientId -> {name,total,count}}
   const activeDays = new Set(); // jours du mois ayant eu au moins un passage facturé
   const detailRows = []; // une entrée par ligne du détail théorique (date, patient, infirmier, acte, montant)
+  // Même filtre que la grille du planning : un patient désactivé (inactiveFromMonth <= month) ne doit
+  // plus compter dans le contrôle facturation à partir de son mois de désactivation, pour rester cohérent
+  // avec ce qui est affiché dans l'onglet Patients / Planning.
+  const activePatients = state.patients.filter(p=>isPatientActiveInMonth(p, month));
 
-  state.patients.forEach(p=> byPatient[p.id] = {name:p.name, total:0, count:0});
+  activePatients.forEach(p=> byPatient[p.id] = {name:p.name, total:0, count:0});
   state.nurses.forEach(n=>{ byNurse[n.id] = {name:n.name, total:0, count:0}; byNursePatient[n.id] = {}; });
 
   days.forEach(d=>{
-    state.patients.forEach(p=>{
+    activePatients.forEach(p=>{
       const calc = computeDayAmount(d,p);
       if(calc.hasNurse){
         grandTotal += calc.amount;
@@ -2399,7 +2403,7 @@ function renderBilling(){
   document.getElementById('billKpis').innerHTML = `
     <div class="kpi"><div class="val">${grandTotal.toFixed(2)} €</div><div class="lbl">Total théorique du mois</div></div>
     <div class="kpi"><div class="val">${dailyAverage.toFixed(2)} €</div><div class="lbl">Moyenne journalière de la tournée (${nbActiveDays} jour${nbActiveDays>1?'s':''} facturé${nbActiveDays>1?'s':''})</div></div>
-    <div class="kpi"><div class="val">${state.patients.length}</div><div class="lbl">Patients actifs</div></div>
+    <div class="kpi"><div class="val">${state.patients.filter(p=>isPatientActiveInMonth(p, month)).length}</div><div class="lbl">Patients actifs</div></div>
     <div class="kpi"><div class="val">${state.nurses.length}</div><div class="lbl">Infirmier(ère)s</div></div>
   `;
 
