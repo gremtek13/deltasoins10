@@ -240,6 +240,15 @@
   .ord-badge.soon{background:#fef3c7;color:#92400e;}
   .ord-badge.urgent{background:#fee2e2;color:#991b1b;}
   .ord-badge.ok{background:#dcfce7;color:#166534;}
+  .ord-summary-row{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--border);font-size:13px;}
+  .ord-summary-row:last-child{border-bottom:none;}
+  .ord-dot{width:11px;height:11px;min-width:11px;border-radius:50%;box-shadow:0 0 0 2px var(--panel) inset;}
+  .ord-dot.green{background:var(--ok);}
+  .ord-dot.yellow{background:var(--warn);}
+  .ord-dot.red{background:var(--bad);}
+  .ord-dot.gray{background:var(--muted);}
+  .ord-legend{display:flex;flex-wrap:wrap;gap:10px 14px;margin:8px 0 12px;font-size:11.5px;color:var(--muted);}
+  .ord-legend span{display:inline-flex;align-items:center;gap:5px;}
 </style>
 </head>
 <body>
@@ -419,6 +428,17 @@
 
   <!-- ORDONNANCES TAB -->
   <div class="tab-content" id="tab-ordonnances" style="display:none;">
+    <div class="panel" id="ordSummaryPanel">
+      <h2 style="margin:0 0 6px;">Vue d'ensemble</h2>
+      <p class="muted small">État de l'ordonnance en cours de chaque patient actif.</p>
+      <div class="ord-legend">
+        <span><span class="ord-dot green"></span> En cours</span>
+        <span><span class="ord-dot yellow"></span> ≤ 20 % restant</span>
+        <span><span class="ord-dot red"></span> Expirée</span>
+        <span><span class="ord-dot gray"></span> Aucune</span>
+      </div>
+      <div id="ordSummaryTable"><p class="muted small">Chargement…</p></div>
+    </div>
     <div class="panel">
       <h2 style="margin:0 0 6px;">Ordonnances</h2>
       <p class="muted small">Un email d'alerte est envoyé automatiquement à l'adresse de votre compte 30 jours avant la fin.</p>
@@ -2729,15 +2749,52 @@ async function renderOrdonnancesTab(){
 }
 async function loadOrdonnances(){
   const listEl = document.getElementById('ordonnancesList');
-  if(!currentUser){ listEl.innerHTML = '<p class="muted small">Connectez-vous pour voir vos ordonnances.</p>'; return; }
+  const sumEl = document.getElementById('ordSummaryTable');
+  if(!currentUser){
+    listEl.innerHTML = '<p class="muted small">Connectez-vous pour voir vos ordonnances.</p>';
+    if(sumEl) sumEl.innerHTML = '<p class="muted small">Connectez-vous pour voir vos ordonnances.</p>';
+    return;
+  }
   try{
     const { data, error } = await sb.from('ordonnances').select('*').eq('user_id', currentUser.id).order('date_fin', {ascending:true});
     if(error) throw error;
     ordonnancesCache = data || [];
     renderOrdonnancesList();
+    renderOrdonnancesSummary();
   }catch(err){
     listEl.innerHTML = '<p class="muted small">⚠️ Impossible de charger les ordonnances (' + escHtml(err.message||'erreur') + ').</p>';
+    if(sumEl) sumEl.innerHTML = '<p class="muted small">⚠️ Impossible de charger les ordonnances.</p>';
   }
+}
+// Statut de l'ordonnance la plus récente (date de fin la plus lointaine) d'un patient donné, exprimé en
+// % de la durée totale restant avant expiration — pas en jours fixes, contrairement au badge de la liste
+// détaillée ci-dessous : vert = large marge, jaune = il reste ≤20% de la durée prescrite, rouge = expirée,
+// gris = aucune ordonnance saisie pour ce patient.
+function computeOrdonnanceStatus(patientId){
+  const patientOrds = ordonnancesCache.filter(o=>o.patient_id===patientId);
+  if(!patientOrds.length) return {color:'gray', label:'Aucune ordonnance'};
+  const latest = patientOrds.reduce((a,b)=> (a.date_fin > b.date_fin ? a : b));
+  const today = todayISO();
+  const daysLeft = Math.round((new Date(latest.date_fin+'T00:00:00') - new Date(today+'T00:00:00')) / 86400000);
+  const pctLeft = latest.duree_jours > 0 ? (daysLeft / latest.duree_jours) * 100 : 0;
+  if(daysLeft <= 0) return {color:'red', label:'Expirée le ' + latest.date_fin};
+  if(pctLeft <= 20) return {color:'yellow', label:`${daysLeft} j restants`};
+  return {color:'green', label:`${daysLeft} j restants`};
+}
+function renderOrdonnancesSummary(){
+  const el = document.getElementById('ordSummaryTable');
+  if(!el) return;
+  const month = currentMonthStr();
+  const activePatients = state.patients.filter(p=>isPatientActiveInMonth(p, month));
+  if(!activePatients.length){ el.innerHTML = '<p class="muted small">Aucun patient actif.</p>'; return; }
+  const rank = {red:0, yellow:1, gray:2, green:3}; // les cas les plus urgents remontent en haut
+  const rows = activePatients.map(p=>({p, st:computeOrdonnanceStatus(p.id)}))
+    .sort((a,b)=> rank[a.st.color]-rank[b.st.color] || a.p.name.localeCompare(b.p.name));
+  el.innerHTML = rows.map(({p,st})=>`<div class="ord-summary-row">
+      <span class="ord-dot ${st.color}" title="${escAttr(st.label)}"></span>
+      <span style="flex:1;">${escHtml(p.name)}</span>
+      <span class="muted small">${escHtml(st.label)}</span>
+    </div>`).join('');
 }
 function renderOrdonnancesList(){
   const listEl = document.getElementById('ordonnancesList');
