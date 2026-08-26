@@ -266,13 +266,6 @@
       </div>
       <p class="muted small">Une fois le cycle défini dans les options, il se répète tout seul en boucle sur tous les mois — pas besoin de le refaire chaque mois. Cliquez sur un jour pour changer ponctuellement l'infirmier(ère) (remplacement) : ce jour ne suivra plus jamais le cycle automatiquement.</p>
 
-      <div id="rotaOptionsPanel" style="display:none;margin-bottom:14px;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--accent-light);">
-        <h3 style="margin-top:0;">Cycle de rotation (sur 2 semaines)</h3>
-        <p class="muted small">Choisissez qui travaille chaque jour des semaines 1 et 2 — le cycle se répète ensuite en boucle. Laissez sur « — » un jour sans infirmier(ère) affecté(e).</p>
-        <div id="rotaSequenceList" style="margin-bottom:12px;"></div>
-        <div class="field" style="max-width:220px;"><label>Date de départ (ramenée au lundi de la semaine)</label><input type="date" id="rotaStartDate"></div>
-      </div>
-
       <div class="row tight" id="rotaLegend" style="flex-wrap:wrap;gap:10px;margin-bottom:10px;"></div>
 
       <div class="row tight" style="justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -284,6 +277,13 @@
       <div id="rotaCalendar"></div>
 
       <div id="rotaDayEditor" style="display:none;margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--accent-light);"></div>
+
+      <div id="rotaOptionsPanel" style="display:none;margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--accent-light);">
+        <h3 style="margin-top:0;">Cycle de rotation (sur 2 semaines)</h3>
+        <p class="muted small">Choisissez qui travaille chaque jour des semaines 1 et 2 — le cycle se répète ensuite en boucle. Laissez sur « — » un jour sans infirmier(ère) affecté(e).</p>
+        <div id="rotaSequenceList" style="margin-bottom:12px;"></div>
+        <div class="field" style="max-width:220px;"><label>Date de départ (ramenée au lundi de la semaine)</label><input type="date" id="rotaStartDate"></div>
+      </div>
     </div>
   </div>
 
