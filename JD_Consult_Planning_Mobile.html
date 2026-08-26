@@ -307,6 +307,7 @@
 
 <div id="userBadge" class="user-badge"></div>
 <div id="autosaveStatus" class="small muted" style="text-align:center;padding:4px 10px;background:var(--panel);border-bottom:1px solid var(--border);"></div>
+<div style="text-align:center;padding:0 10px;"><button class="btn danger" id="btnForceCloudSave" style="display:none;padding:5px 10px;font-size:11px;margin-bottom:6px;">⚠️ Forcer la sauvegarde en ligne</button></div>
 
 <main>
 
@@ -2597,20 +2598,46 @@ function loadFromLocalStorage(key){
     return false;
   }
 }
-async function saveStateToCloud(){
+// Garde-fou anti-écrasement : mémorise le dernier effectif patients/infirmiers/types de prise en charge
+// confirmé comme réellement enregistré en ligne. Si un appareil tente d'écraser un compte qui en avait
+// avec un état local qui vient de tout perdre d'un coup (copie locale vide/périmée, onglet resté ouvert
+// avant la vraie synchro, etc.), on bloque l'envoi au lieu de laisser saveStateToCloud écraser silencieusement
+// les vraies données — c'est exactement le scénario qui a effacé des patients par le passé.
+let lastKnownCloudCounts = null;
+let cloudSaveBlocked = false;
+function refreshKnownCloudCounts(){
+  lastKnownCloudCounts = {patients:(state.patients||[]).length, nurses:(state.nurses||[]).length, careTypes:(state.careTypes||[]).length};
+}
+async function saveStateToCloud(force){
   if(!currentUser) return;
+  if(!force && lastKnownCloudCounts && (
+       (lastKnownCloudCounts.patients>0 && state.patients.length===0) ||
+       (lastKnownCloudCounts.nurses>0 && state.nurses.length===0) ||
+       (lastKnownCloudCounts.careTypes>0 && state.careTypes.length===0)
+     )){
+    cloudSaveBlocked = true;
+    lastCloudSaveOk = false;
+    updateAutosaveStatus();
+    return;
+  }
+  cloudSaveBlocked = false;
   try{
     const { error } = await sb.from('app_state').upsert({
       user_id: currentUser.id, data: state, updated_at: new Date().toISOString()
     });
     if(error) throw error;
     lastCloudSaveOk = true;
+    refreshKnownCloudCounts();
   }catch(err){
     lastCloudSaveOk = false;
     console.error('Sauvegarde en ligne impossible :', err);
   }
   updateAutosaveStatus();
 }
+document.getElementById('btnForceCloudSave').addEventListener('click', ()=>{
+  if(!confirm(`Vous êtes sur le point de remplacer les données en ligne par l'état actuel de cet appareil (${state.patients.length} patient(s), ${state.nurses.length} infirmier(ère)(s)).\n\nSi vous n'êtes pas sûr(e) que c'est volontaire, annulez et rechargez la page sans rien modifier.\n\nConfirmer l'écrasement ?`)) return;
+  saveStateToCloud(true);
+});
 let lastCloudSaveOk = null;
 async function loadStateFromCloudThenLocal(){
   try{
@@ -2622,6 +2649,7 @@ async function loadStateFromCloudThenLocal(){
         holidays:default2026Holidays(),tariffs:defaultTariffs(),monthlyDeclared:{},
         ...defaultPractitionerState(),dmPrescriptions:[],rotation:{sequence:[],startDate:''}
       }, data.data);
+      refreshKnownCloudCounts();
       saveToLocalStorage();
       lastCloudSaveOk = true;
     } else {
@@ -2637,7 +2665,16 @@ async function loadStateFromCloudThenLocal(){
 function updateAutosaveStatus(){
   const el = document.getElementById('autosaveStatus');
   if(!el) return;
+  const btnForce = document.getElementById('btnForceCloudSave');
   const now = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  if(cloudSaveBlocked){
+    el.textContent = "⛔ Sauvegarde bloquée : cet appareil est sur le point d'effacer tous vos patients/infirmiers en ligne. Si erreur → RECHARGEZ sans rien modifier. Si volontaire →";
+    el.style.color = 'var(--bad)';
+    if(btnForce) btnForce.style.display = '';
+    return;
+  }
+  if(btnForce) btnForce.style.display = 'none';
+  el.style.color = '';
   if(lastCloudSaveOk === false && !autosaveAvailable){
     el.textContent = '⚠️ Sauvegarde indisponible (ni en ligne, ni locale).';
   } else if(lastCloudSaveOk === false){
