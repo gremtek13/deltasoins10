@@ -2244,6 +2244,24 @@ function computeBillingData(month){
   return {month, days, grandTotal, byPatient, byNurse, byNursePatient, nbActiveDays, dailyAverage, detailRows};
 }
 
+// Chiffre d'affaires théorique moyen par jour sur les 7 derniers jours (aujourd'hui inclus), tous
+// patients actifs confondus — contrairement à la "Moyenne journalière" ci-dessous (qui ne porte que sur
+// le mois affiché et divise par les seuls jours réellement facturés), ceci donne un pouls en temps réel
+// de la tournée en cours sur une fenêtre glissante de 7 jours calendaires, quel que soit le mois consulté.
+function computeLast7DaysAverage(){
+  const today = new Date();
+  let total = 0;
+  for(let i=0;i<7;i++){
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate()-i);
+    const dateStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const dayMonth = dateStr.slice(0,7);
+    state.patients.filter(p=>isPatientActiveInMonth(p, dayMonth)).forEach(p=>{
+      const calc = computeDayAmount(dateStr, p);
+      if(calc.hasNurse) total += calc.amount;
+    });
+  }
+  return total/7;
+}
 function renderBilling(){
   scheduleAutosave();
   const month = getBillMonth();
@@ -2270,9 +2288,11 @@ function renderBilling(){
     diffEl.style.color = Math.abs(diff) < 0.01 ? '' : (diff < 0 ? 'var(--bad)' : 'var(--warn)');
   } else diffEl.value = '';
 
+  const last7Avg = computeLast7DaysAverage();
   document.getElementById('billKpis').innerHTML = `
     <div class="kpi"><div class="val">${grandTotal.toFixed(2)} €</div><div class="lbl">Total théorique du mois</div></div>
     <div class="kpi"><div class="val">${dailyAverage.toFixed(2)} €</div><div class="lbl">Moyenne journalière de la tournée (${nbActiveDays} jour${nbActiveDays>1?'s':''} facturé${nbActiveDays>1?'s':''})</div></div>
+    <div class="kpi"><div class="val">${last7Avg.toFixed(2)} €</div><div class="lbl">CA moyen / jour (7 derniers jours)</div></div>
     <div class="kpi"><div class="val">${state.patients.filter(p=>isPatientActiveInMonth(p, month)).length}</div><div class="lbl">Patients actifs</div></div>
     <div class="kpi"><div class="val">${state.nurses.length}</div><div class="lbl">Infirmier(ère)s</div></div>
   `;
