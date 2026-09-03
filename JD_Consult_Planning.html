@@ -65,6 +65,10 @@
   .rota-weekcell-label{font-size:9.5px;color:var(--muted);margin-bottom:2px;}
   .rota-weekcell select{font-size:11px;padding:5px 2px;}
   .app-menu-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:6px 12px 2px;}
+  .app-menu-field{padding:2px 12px 8px;}
+  .app-menu-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;}
+  .app-menu-field input{width:100%;padding:6px 9px;border:1.5px solid var(--border);border-radius:8px;background:var(--panel);color:var(--text);font-size:13px;font-family:inherit;white-space:normal;}
+  .app-menu-field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light);}
   .logo-mark{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));display:inline-flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;box-shadow:var(--shadow-sm);vertical-align:middle;}
   header h1{font-size:16px;margin:0;white-space:nowrap;font-weight:700;display:flex;align-items:center;gap:10px;}
   header .sub{color:var(--muted);font-size:12px;}
@@ -236,6 +240,12 @@
   <div class="app-title-wrap" id="appTitleWrap">
     <h1><span class="logo-mark">🩺</span> JD Factu — Planning & Contrôle facturation</h1>
     <div class="app-menu" id="appMenu">
+      <div class="app-menu-label">Accueil</div>
+      <div class="app-menu-field">
+        <label for="accountNameInput">Nom affiché sur l'accueil</label>
+        <input type="text" id="accountNameInput" placeholder="Ex. Darnis" maxlength="40">
+      </div>
+      <hr class="app-menu-sep">
       <div class="app-menu-label">Apparence</div>
       <button class="app-menu-item" data-theme-choice="light">☀️ Mode clair</button>
       <button class="app-menu-item" data-theme-choice="dark">🌙 Mode sombre</button>
@@ -754,11 +764,22 @@ function renderHomeGrid(){
     </button>`).join('');
   el.querySelectorAll('.home-icon').forEach(btn=> btn.addEventListener('click', ()=> switchTab(btn.dataset.tab)));
 }
-// Sous-titre personnalisé façon "Ton espace pour DARNIS" : reprend le nom du profil professionnel actif
-// (onglet Prescriptions DM) quand il est renseigné, sinon une phrase générique.
+// Sous-titre personnalisé façon "Ton espace pour DARNIS" : priorité au nom personnalisé dans le menu
+// (☰ en haut à gauche → Accueil), sinon repli sur le nom du profil professionnel actif (onglet
+// Prescriptions DM), sinon une phrase générique.
 function renderHomeGreeting(){
   const el = document.getElementById('homeSubgreeting');
+  const nameInput = document.getElementById('accountNameInput');
+  // Ne réinitialise pas le champ pendant que l'utilisateur y tape (même piège que pour "Montant déclaré").
+  if(nameInput && document.activeElement !== nameInput){
+    nameInput.value = state.accountDisplayName || '';
+  }
   if(!el) return;
+  const customName = (state.accountDisplayName || '').trim();
+  if(customName){
+    el.textContent = 'Ton espace pour ' + customName;
+    return;
+  }
   const profile = getActiveProfile();
   const nom = (profile && profile.nom || '').trim();
   if(nom){
@@ -768,6 +789,11 @@ function renderHomeGreeting(){
     el.textContent = 'Planning & facturation infirmière';
   }
 }
+document.getElementById('accountNameInput').addEventListener('input', (e)=>{
+  state.accountDisplayName = e.target.value;
+  renderHomeGreeting();
+  scheduleAutosave();
+});
 // Depuis le planning, clic sur le nom d'un patient : bascule sur l'onglet Patients et défile jusqu'à sa fiche.
 function goToPatient(patientId){
   switchTab('patients');
