@@ -153,16 +153,22 @@
   .patient-toggle-arrow{color:var(--accent-dark);font-size:11px;width:10px;flex-shrink:0;}
   .patient-card-name{font-weight:700;font-family:var(--font-heading);}
   .patient-card-body{border-top:1px solid var(--border);padding:14px;}
-  /* --home-icon (taille des pictos) et --home-gap (espacement des lignes) sont recalculés en JS
-     (fitHomeScreen) pour que toute la grille tienne dans la hauteur d'écran dispo, sans avoir à
-     monter/descendre — les valeurs ci-dessous ne servent que de repli avant ce calcul. */
-  .home-hero{text-align:center;padding:18px 8px 6px;display:flex;flex-direction:column;justify-content:center;box-sizing:border-box;}
-  .home-greeting{margin:0;font-size:26px;font-weight:800;font-family:var(--font-heading);}
-  .home-subgreeting{margin:5px 0 22px;color:var(--muted);font-size:13px;}
-  .home-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--home-gap,24px) 6px;justify-items:center;}
+  /* Verrouille la page à la hauteur exacte de l'écran pendant qu'on est sur l'accueil (classe posée/retirée
+     par switchTab), pour que la grille d'icônes tienne pile dedans sans rien à faire défiler : chaîne flex
+     du haut en bas jusqu'à .home-hero, qui devient elle-même un conteneur de taille (container-type:size) —
+     les pictos utilisent ensuite des unités cqh pour suivre automatiquement la hauteur réellement dispo,
+     sans calcul JS à recaler à chaque redimensionnement/rotation. Sur les autres sections, page normale. */
+  body.home-view{height:100dvh;overflow:hidden;display:flex;flex-direction:column;}
+  body.home-view main{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+  body.home-view #tab-home{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+  .home-hero{text-align:center;padding:18px 8px 6px;box-sizing:border-box;}
+  body.home-view .home-hero{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;container-type:size;}
+  .home-greeting{margin:0;font-size:clamp(20px, 7cqh, 26px);font-weight:800;font-family:var(--font-heading);}
+  .home-subgreeting{margin:clamp(3px,1cqh,5px) 0 clamp(10px,4cqh,22px);color:var(--muted);font-size:clamp(11px, 3cqh, 13px);}
+  .home-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(8px, 3.2cqh, 24px) 6px;justify-items:center;}
   .home-icon{background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:2px;font-family:inherit;width:100%;max-width:90px;}
-  .home-icon-glyph{width:var(--home-icon,68px);height:var(--home-icon,68px);border-radius:20px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg, var(--hue), color-mix(in srgb, var(--hue) 70%, black));box-shadow:0 3px 9px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.22);transition:transform .12s ease,box-shadow .12s ease;}
-  .home-icon-glyph svg{width:calc(var(--home-icon,68px) * .42);height:calc(var(--home-icon,68px) * .42);}
+  .home-icon-glyph{width:clamp(40px, 9.5cqh, 68px);height:clamp(40px, 9.5cqh, 68px);border-radius:20px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg, var(--hue), color-mix(in srgb, var(--hue) 70%, black));box-shadow:0 3px 9px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.22);transition:transform .12s ease,box-shadow .12s ease;}
+  .home-icon-glyph svg{width:42%;height:42%;}
   .home-icon:active .home-icon-glyph{transform:scale(.92);transition:transform .05s ease;}
   .home-icon-label{font-size:11px;font-weight:600;color:var(--text);text-align:center;line-height:1.2;}
   .note-box{background:#fffaf0;border:1px solid #f0d9a8;border-radius:14px;padding:10px 12px;font-size:12.5px;color:#7a5c1e;margin-bottom:14px;}
@@ -277,7 +283,7 @@
   .ord-legend span{display:inline-flex;align-items:center;gap:5px;}
 </style>
 </head>
-<body>
+<body class="home-view">
 
 <!-- ÉCRAN DE CONNEXION / INSCRIPTION -->
 <div id="authOverlay">
@@ -796,7 +802,10 @@ function switchTab(tabName){
   // Le pied de page ajouterait de la hauteur sous l'accueil calé pile sur l'écran, et le ferait déborder.
   const pageFooter = document.querySelector('footer');
   if(pageFooter) pageFooter.style.display = (tabName==='home') ? 'none' : '';
-  if(tabName==='home'){ renderHomeGreeting(); fitHomeScreen(); }
+  // body.home-view verrouille la page en CSS à la hauteur exacte de l'écran pendant qu'on est sur l'accueil
+  // (voir le CSS) — pour toutes les autres sections, la page retrouve son défilement normal habituel.
+  document.body.classList.toggle('home-view', tabName==='home');
+  if(tabName==='home') renderHomeGreeting();
   if(tabName==='roulement') renderRotaTab();
   if(tabName==='planning') refreshPlanningViews();
   if(tabName==='billing') renderBilling();
@@ -862,55 +871,9 @@ document.getElementById('accountNameInput').addEventListener('input', (e)=>{
   renderHomeGreeting();
   scheduleAutosave();
 });
-// Fait tenir l'accueil exactement dans la hauteur d'écran dispo (sous l'en-tête/bandeau de compte, avant
-// le bas de l'écran), pour qu'il n'y ait rien à faire défiler, façon vrai écran d'accueil de téléphone.
-// Recalculé à chaque ouverture de l'accueil et à chaque redimensionnement (rotation, barre d'adresse du
-// navigateur qui se réduit/s'agrandit en scrollant, clavier...).
-function fitHomeScreen(){
-  const hero = document.querySelector('#tab-home .home-hero');
-  const grid = document.getElementById('homeGrid');
-  const greet = document.querySelector('#tab-home .home-greeting');
-  const sub = document.getElementById('homeSubgreeting');
-  if(!hero || !grid || !greet || !sub || !HOME_SECTIONS.length) return;
-  hero.style.minHeight = '';
-  const viewportH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  const top = hero.getBoundingClientRect().top;
-  // <main> réserve une marge basse confortable pour le scroll sur les autres onglets (contenu long), et
-  // <body> réserve la zone sûre en bas (encoche/barre d'accueil iPhone) — aucune des deux ne doit être
-  // comptée comme espace utilisable, sous peine de faire déborder l'accueil calé pile sur l'écran.
-  const mainEl = document.querySelector('main');
-  const mainPadB = mainEl ? parseFloat(getComputedStyle(mainEl).paddingBottom) || 0 : 0;
-  const bodyPadB = parseFloat(getComputedStyle(document.body).paddingBottom) || 0;
-  const available = Math.max(320, viewportH - top - mainPadB - bodyPadB - 12);
-  hero.style.minHeight = available + 'px';
-
-  const heroStyle = getComputedStyle(hero);
-  const heroPadV = parseFloat(heroStyle.paddingTop) + parseFloat(heroStyle.paddingBottom);
-  const greetH = greet.offsetHeight;
-  const subMB = parseFloat(getComputedStyle(sub).marginBottom) || 0;
-  const subH = sub.offsetHeight + subMB;
-  const cols = 3;
-  const rows = Math.ceil(HOME_SECTIONS.length / cols);
-  const availableForGrid = available - heroPadV - greetH - subH;
-
-  // Taille de picto qui fait tenir toutes les lignes dans l'espace dispo, entre 40px (zone tactile
-  // minimale) et 68px (taille normale) ; l'espacement entre lignes se resserre d'abord, avant l'icône.
-  const labelBlockH = 26; // libellé + son espacement au-dessus de l'icône
-  const maxGap = 24, minGap = 8;
-  let gap = maxGap;
-  let iconSize = Math.floor((availableForGrid - rows*labelBlockH - (rows-1)*gap) / rows);
-  if(iconSize < 68){
-    gap = minGap;
-    iconSize = Math.floor((availableForGrid - rows*labelBlockH - (rows-1)*gap) / rows);
-  }
-  iconSize = Math.max(40, Math.min(68, iconSize));
-  grid.style.setProperty('--home-icon', iconSize+'px');
-  grid.style.setProperty('--home-gap', gap+'px');
-}
-window.addEventListener('resize', ()=>{ if(document.getElementById('tab-home').style.display!=='none') fitHomeScreen(); });
-window.addEventListener('orientationchange', ()=> setTimeout(fitHomeScreen, 150));
-if(window.visualViewport) window.visualViewport.addEventListener('resize', ()=>{ if(document.getElementById('tab-home').style.display!=='none') fitHomeScreen(); });
-if(document.fonts && document.fonts.ready) document.fonts.ready.then(fitHomeScreen);
+// L'accueil qui tient pile dans l'écran (voir body.home-view / .home-hero plus haut dans le CSS) est géré
+// entièrement en CSS via container queries — la taille des pictos suit la hauteur réellement disponible
+// (cqh), sans calcul JS approximatif à recaler à chaque redimensionnement.
 // Depuis le planning, clic sur le nom d'un patient : bascule sur l'onglet Patients et défile jusqu'à sa fiche.
 function goToPatient(patientId){
   switchTab('patients');
@@ -3412,7 +3375,7 @@ function renderAll(){
   renderStaff(); renderCareTypes(); renderPatients(); renderTariffs();
   renderRotaTab();
   refreshPlanningViews(); renderBilling();
-  renderHomeGrid(); renderHomeGreeting(); fitHomeScreen();
+  renderHomeGrid(); renderHomeGreeting();
   scheduleAutosave();
 }
 document.getElementById('planMonth').value = currentMonthStr();
