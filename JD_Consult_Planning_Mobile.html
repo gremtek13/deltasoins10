@@ -149,11 +149,11 @@
   .patient-toggle-arrow{color:var(--accent-dark);font-size:11px;width:10px;flex-shrink:0;}
   .patient-card-name{font-weight:700;font-family:var(--font-heading);}
   .patient-card-body{border-top:1px solid var(--border);padding:14px;}
-  .home-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px 8px;justify-items:center;}
-  .home-icon{background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:2px;font-family:inherit;width:100%;max-width:80px;}
-  .home-icon-glyph{width:54px;height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;line-height:1;background:linear-gradient(135deg,var(--ic1),var(--ic2));box-shadow:0 3px 8px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.28);transition:transform .12s ease,box-shadow .12s ease;}
+  .home-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:30px 6px;justify-items:center;padding:8px 0 4px;}
+  .home-icon{background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;padding:2px;font-family:inherit;width:100%;max-width:82px;}
+  .home-icon-glyph{width:66px;height:66px;border-radius:19px;display:flex;align-items:center;justify-content:center;font-size:30px;line-height:1;background:linear-gradient(135deg,var(--ic1),var(--ic2));box-shadow:0 3px 9px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.28);transition:transform .12s ease,box-shadow .12s ease;}
   .home-icon:active .home-icon-glyph{transform:scale(.92);transition:transform .05s ease;}
-  .home-icon-label{font-size:10.5px;font-weight:600;color:var(--text);text-align:center;line-height:1.2;}
+  .home-icon-label{font-size:11px;font-weight:600;color:var(--text);text-align:center;line-height:1.2;}
   .note-box{background:#fffaf0;border:1px solid #f0d9a8;border-radius:14px;padding:10px 12px;font-size:12.5px;color:#7a5c1e;margin-bottom:14px;}
   .warn-box{background:#fdeaea;border:1px solid #f3b8b8;border-radius:14px;padding:10px 12px;font-size:12.5px;color:#8a1f1f;margin-bottom:14px;}
   .act-line{display:flex;gap:6px;align-items:center;margin-bottom:4px;}
@@ -306,7 +306,7 @@
   <input type="file" id="fileImport" class="file-input-hidden" accept="application/json">
 </header>
 
-<nav class="tabs">
+<nav class="tabs" style="display:none;">
   <button data-tab="home" class="active">🏠 Accueil</button>
   <button data-tab="roulement">🗓️ Roulement</button>
   <button data-tab="planning">📅 Planning mensuel</button>
@@ -784,6 +784,9 @@ function switchTab(tabName){
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tabName));
   document.querySelectorAll('.tab-content').forEach(t=>t.style.display='none');
   document.getElementById('tab-'+tabName).style.display='block';
+  // Sur l'accueil, la grille d'icônes fait déjà office de navigation : la barre d'onglets classique juste
+  // en dessous ferait doublon. Elle ne réapparaît qu'une fois entré dans une section.
+  document.querySelector('nav.tabs').style.display = (tabName==='home') ? 'none' : '';
   if(tabName==='roulement') renderRotaTab();
   if(tabName==='planning') refreshPlanningViews();
   if(tabName==='billing') renderBilling();
