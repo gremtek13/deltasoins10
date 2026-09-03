@@ -144,12 +144,16 @@
   .patient-toggle-arrow{color:var(--accent-dark);font-size:11px;width:10px;flex-shrink:0;}
   .patient-card-name{font-weight:700;font-family:var(--font-heading);}
   .patient-card-body{border-top:1px solid var(--border);padding:16px;}
-  .home-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:36px 16px;justify-items:center;padding:10px 4px 6px;}
-  .home-icon{background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:9px;padding:2px;font-family:inherit;width:100%;max-width:116px;}
-  .home-icon-glyph{width:78px;height:78px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:36px;line-height:1;background:linear-gradient(135deg,var(--ic1),var(--ic2));box-shadow:0 4px 10px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.28);transition:transform .12s ease,box-shadow .12s ease;}
-  .home-icon:hover .home-icon-glyph{transform:translateY(-3px);box-shadow:0 10px 18px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.28);}
+  .home-hero{text-align:center;padding:28px 18px 10px;}
+  .home-greeting{margin:0;font-size:36px;font-weight:800;font-family:var(--font-heading);}
+  .home-subgreeting{margin:6px 0 32px;color:var(--muted);font-size:14.5px;}
+  .home-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:32px 14px;justify-items:center;max-width:600px;margin:0 auto;}
+  .home-icon{background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:9px;padding:2px;font-family:inherit;width:100%;max-width:120px;}
+  .home-icon-glyph{width:76px;height:76px;border-radius:22px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-dark));box-shadow:0 4px 10px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.22);transition:transform .12s ease,box-shadow .12s ease;}
+  .home-icon-glyph svg{width:32px;height:32px;}
+  .home-icon:hover .home-icon-glyph{transform:translateY(-3px);box-shadow:0 10px 18px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.22);}
   .home-icon:active .home-icon-glyph{transform:scale(.92);transition:transform .05s ease;}
-  .home-icon-label{font-size:13px;font-weight:600;color:var(--text);text-align:center;line-height:1.25;}
+  .home-icon-label{font-size:12.5px;font-weight:600;color:var(--text);text-align:center;line-height:1.25;}
   .note-box{background:#fffaf0;border:1px solid #f0d9a8;border-radius:14px;padding:10px 12px;font-size:12.5px;color:#7a5c1e;margin-bottom:14px;}
   .warn-box{background:#fdeaea;border:1px solid #f3b8b8;border-radius:14px;padding:10px 12px;font-size:12.5px;color:#8a1f1f;margin-bottom:14px;}
   .act-line{display:flex;gap:6px;align-items:center;margin-bottom:4px;}
@@ -271,21 +275,10 @@
 
   <!-- HOME TAB (vue par défaut à la connexion) -->
   <div class="tab-content" id="tab-home">
-    <div class="panel">
-      <h2 style="margin:0 0 2px;">👋 Bonjour</h2>
-      <p class="muted small" style="margin:0 0 18px;">Choisissez une section.</p>
-      <div class="home-grid">
-        <button class="home-icon" data-tab="roulement" style="--ic1:#6366f1;--ic2:#4f46e5;"><span class="home-icon-glyph">🗓️</span><span class="home-icon-label">Roulement</span></button>
-        <button class="home-icon" data-tab="planning" style="--ic1:#0ea5e9;--ic2:#0284c7;"><span class="home-icon-glyph">📅</span><span class="home-icon-label">Planning mensuel</span></button>
-        <button class="home-icon" data-tab="billing" style="--ic1:var(--accent);--ic2:var(--accent-dark);"><span class="home-icon-glyph">💶</span><span class="home-icon-label">Contrôle facturation</span></button>
-        <button class="home-icon" data-tab="patients" style="--ic1:#fb7185;--ic2:#e11d48;"><span class="home-icon-glyph">🧑‍🤝‍🧑</span><span class="home-icon-label">Patients</span></button>
-        <button class="home-icon" data-tab="ordonnances" style="--ic1:#f59e0b;--ic2:#d97706;"><span class="home-icon-glyph">💊</span><span class="home-icon-label">Ordonnances</span></button>
-        <button class="home-icon" data-tab="prescriptions" style="--ic1:#a78bfa;--ic2:#7c3aed;"><span class="home-icon-glyph">🩹</span><span class="home-icon-label">Prescriptions DM</span></button>
-        <button class="home-icon" data-tab="staff" style="--ic1:#22d3ee;--ic2:#0891b2;"><span class="home-icon-glyph">👩‍⚕️</span><span class="home-icon-label">Personnel</span></button>
-        <button class="home-icon" data-tab="caretypes" style="--ic1:#94a3b8;--ic2:#64748b;"><span class="home-icon-glyph">🗂️</span><span class="home-icon-label">Types de prise en charge</span></button>
-        <button class="home-icon" data-tab="tariffs" style="--ic1:#397a72;--ic2:#2d5f59;"><span class="home-icon-glyph">⚙️</span><span class="home-icon-label">Tarifs</span></button>
-        <button class="home-icon" data-tab="help" style="--ic1:#a1a1aa;--ic2:#71717a;"><span class="home-icon-glyph">ℹ️</span><span class="home-icon-label">Aide</span></button>
-      </div>
+    <div class="panel home-hero">
+      <h1 class="home-greeting">Bonjour 👋</h1>
+      <p class="home-subgreeting" id="homeSubgreeting">Planning &amp; facturation infirmière</p>
+      <div class="home-grid" id="homeGrid"></div>
     </div>
   </div>
 
@@ -725,6 +718,7 @@ function switchTab(tabName){
   // Sur l'accueil, la grille d'icônes fait déjà office de navigation : la barre d'onglets classique juste
   // en dessous ferait doublon. Elle ne réapparaît qu'une fois entré dans une section.
   document.querySelector('nav.tabs').style.display = (tabName==='home') ? 'none' : '';
+  if(tabName==='home') renderHomeGreeting();
   if(tabName==='roulement') renderRotaTab();
   if(tabName==='planning') renderPlanning();
   if(tabName==='billing') renderBilling();
@@ -736,9 +730,44 @@ function switchTab(tabName){
 document.querySelectorAll('nav.tabs button').forEach(btn=>{
   btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
 });
-document.querySelectorAll('.home-icon').forEach(btn=>{
-  btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
-});
+// Icônes de l'accueil, façon écran d'accueil iOS : une seule couleur (la teinte de l'appli) pour toutes,
+// glyphes en traits simples plutôt qu'en emoji multicolores, pour un rendu sobre et pro plutôt que "pack
+// d'icônes IA". Générées en JS pour garder tous les tracés SVG au même endroit.
+const HOME_SECTIONS = [
+  {tab:'roulement', label:'Roulement', icon:'<path d="M4 12a8 8 0 0 1 14.5-4.5M20 12a8 8 0 0 1-14.5 4.5"/><path d="M18.5 3v4.5H14"/><path d="M5.5 21v-4.5H10"/>'},
+  {tab:'planning', label:'Planning mensuel', icon:'<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17"/><path d="M8 3v4M16 3v4"/><path d="M7.5 13h2M11 13h2M14.5 13h2M7.5 16.5h2M11 16.5h2"/>'},
+  {tab:'billing', label:'Contrôle facturation', icon:'<path d="M6 3.5h12v17l-2.5-1.5L13 20.5l-2.5-1.5L8 20.5l-2-1.5V3.5Z"/><path d="M8.5 8h7M8.5 11.5h7M8.5 15h4.5"/>'},
+  {tab:'patients', label:'Patients', icon:'<circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><circle cx="17" cy="7.5" r="2.3"/><path d="M15.2 14.7c2.7.2 4.8 2.3 4.8 5.3"/>'},
+  {tab:'ordonnances', label:'Ordonnances', icon:'<rect x="2.8" y="9.2" width="18.4" height="5.6" rx="2.8" transform="rotate(-40 12 12)"/><path d="M12 8.6 12 15.4" transform="rotate(-40 12 12)"/>'},
+  {tab:'prescriptions', label:'Prescriptions DM', icon:'<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/>'},
+  {tab:'staff', label:'Personnel', icon:'<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="12" cy="10.3" r="2.3"/><path d="M8 17c0-2.2 1.8-3.5 4-3.5s4 1.3 4 3.5"/>'},
+  {tab:'caretypes', label:'Types de prise en charge', icon:'<path d="M3.5 7a1.5 1.5 0 0 1 1.5-1.5h4l2 2.2h8A1.5 1.5 0 0 1 20.5 9v8a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 17V7Z"/>'},
+  {tab:'tariffs', label:'Tarifs', icon:'<path d="M12.3 3.5h5.2a1.5 1.5 0 0 1 1.5 1.5v5.2a1.5 1.5 0 0 1-.44 1.06l-8 8a1.5 1.5 0 0 1-2.12 0l-5.7-5.7a1.5 1.5 0 0 1 0-2.12l8-8A1.5 1.5 0 0 1 12.3 3.5Z"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" stroke="none"/>'},
+  {tab:'help', label:'Aide', icon:'<circle cx="12" cy="12" r="8.5"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.7 2.2c-.9.5-1.2 1-1.2 2"/><path d="M12 17v.01" stroke-width="2.4"/>'},
+];
+function renderHomeGrid(){
+  const el = document.getElementById('homeGrid');
+  if(!el) return;
+  el.innerHTML = HOME_SECTIONS.map(s=>`<button class="home-icon" data-tab="${s.tab}">
+      <span class="home-icon-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${s.icon}</svg></span>
+      <span class="home-icon-label">${escHtml(s.label)}</span>
+    </button>`).join('');
+  el.querySelectorAll('.home-icon').forEach(btn=> btn.addEventListener('click', ()=> switchTab(btn.dataset.tab)));
+}
+// Sous-titre personnalisé façon "Ton espace pour DARNIS" : reprend le nom du profil professionnel actif
+// (onglet Prescriptions DM) quand il est renseigné, sinon une phrase générique.
+function renderHomeGreeting(){
+  const el = document.getElementById('homeSubgreeting');
+  if(!el) return;
+  const profile = getActiveProfile();
+  const nom = (profile && profile.nom || '').trim();
+  if(nom){
+    const parts = nom.split(/\s+/);
+    el.textContent = 'Ton espace pour ' + parts[parts.length-1].toUpperCase();
+  } else {
+    el.textContent = 'Planning & facturation infirmière';
+  }
+}
 // Depuis le planning, clic sur le nom d'un patient : bascule sur l'onglet Patients et défile jusqu'à sa fiche.
 function goToPatient(patientId){
   switchTab('patients');
@@ -3149,6 +3178,7 @@ function renderAll(){
   renderStaff(); renderCareTypes(); renderPatients(); renderTariffs();
   renderRotaTab();
   renderPlanning(); renderBilling();
+  renderHomeGrid(); renderHomeGreeting();
   scheduleAutosave();
 }
 document.getElementById('planMonth').value = currentMonthStr();
