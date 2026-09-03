@@ -153,24 +153,20 @@
   .patient-toggle-arrow{color:var(--accent-dark);font-size:11px;width:10px;flex-shrink:0;}
   .patient-card-name{font-weight:700;font-family:var(--font-heading);}
   .patient-card-body{border-top:1px solid var(--border);padding:14px;}
-  /* Verrouille la page à la hauteur exacte de l'écran pendant qu'on est sur l'accueil (classe posée/retirée
-     par switchTab), pour que la grille d'icônes tienne pile dedans sans rien à faire défiler : chaîne flex
-     du haut en bas jusqu'à .home-hero, qui devient elle-même un conteneur de taille (container-type:size) —
-     les pictos utilisent ensuite des unités cqh pour suivre automatiquement la hauteur réellement dispo,
-     sans calcul JS à recaler à chaque redimensionnement/rotation. Sur les autres sections, page normale. */
-  body.home-view{height:100dvh;overflow:hidden;display:flex;flex-direction:column;}
-  body.home-view main{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
-  body.home-view #tab-home{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
-  .home-hero{text-align:center;padding:18px 8px 6px;box-sizing:border-box;}
-  body.home-view .home-hero{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;container-type:size;}
-  .home-greeting{margin:0;font-size:clamp(20px, 7cqh, 26px);font-weight:800;font-family:var(--font-heading);}
-  .home-subgreeting{margin:clamp(3px,1cqh,5px) 0 clamp(10px,4cqh,22px);color:var(--muted);font-size:clamp(11px, 3cqh, 13px);}
-  .home-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(8px, 3.2cqh, 24px) 6px;justify-items:center;}
-  .home-icon{background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:2px;font-family:inherit;width:100%;max-width:90px;}
-  .home-icon-glyph{width:clamp(40px, 9.5cqh, 68px);height:clamp(40px, 9.5cqh, 68px);border-radius:20px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg, var(--hue), color-mix(in srgb, var(--hue) 70%, black));box-shadow:0 3px 9px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.22);transition:transform .12s ease,box-shadow .12s ease;}
-  .home-icon-glyph svg{width:42%;height:42%;}
+  /* Tailles fixes et volontairement modestes pour que les 10 icônes tiennent, dans la grande majorité des
+     cas, sans défiler — sans mécanique CSS avancée (container queries) qui s'est révélée peu fiable sur
+     certains téléphones (grille qui s'interrompait après quelques icônes). min-height cale le panneau sur
+     la hauteur d'écran dispo (estimation ; pas un calcul exact) et centre le contenu dedans ; si un
+     appareil est vraiment très court, un léger défilement reste possible plutôt que de casser l'affichage. */
+  .home-hero{text-align:center;padding:18px 8px 10px;box-sizing:border-box;min-height:calc(100dvh - 132px);display:flex;flex-direction:column;justify-content:center;}
+  .home-greeting{margin:0;font-size:24px;font-weight:800;font-family:var(--font-heading);}
+  .home-subgreeting{margin:4px 0 18px;color:var(--muted);font-size:12.5px;}
+  .home-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 6px;justify-items:center;}
+  .home-icon{background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:2px;font-family:inherit;width:100%;max-width:86px;}
+  .home-icon-glyph{width:56px;height:56px;border-radius:17px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg, var(--hue), color-mix(in srgb, var(--hue) 70%, black));box-shadow:0 3px 9px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.22);transition:transform .12s ease,box-shadow .12s ease;}
+  .home-icon-glyph svg{width:24px;height:24px;}
   .home-icon:active .home-icon-glyph{transform:scale(.92);transition:transform .05s ease;}
-  .home-icon-label{font-size:11px;font-weight:600;color:var(--text);text-align:center;line-height:1.2;}
+  .home-icon-label{font-size:10.5px;font-weight:600;color:var(--text);text-align:center;line-height:1.2;}
   .note-box{background:#fffaf0;border:1px solid #f0d9a8;border-radius:14px;padding:10px 12px;font-size:12.5px;color:#7a5c1e;margin-bottom:14px;}
   .warn-box{background:#fdeaea;border:1px solid #f3b8b8;border-radius:14px;padding:10px 12px;font-size:12.5px;color:#8a1f1f;margin-bottom:14px;}
   .act-line{display:flex;gap:6px;align-items:center;margin-bottom:4px;}
@@ -283,7 +279,7 @@
   .ord-legend span{display:inline-flex;align-items:center;gap:5px;}
 </style>
 </head>
-<body class="home-view">
+<body>
 
 <!-- ÉCRAN DE CONNEXION / INSCRIPTION -->
 <div id="authOverlay">
@@ -799,12 +795,9 @@ function switchTab(tabName){
   // Sur l'accueil, la grille d'icônes fait déjà office de navigation : la barre d'onglets classique juste
   // en dessous ferait doublon. Elle ne réapparaît qu'une fois entré dans une section.
   document.querySelector('nav.tabs').style.display = (tabName==='home') ? 'none' : '';
-  // Le pied de page ajouterait de la hauteur sous l'accueil calé pile sur l'écran, et le ferait déborder.
+  // Le pied de page ajouterait de la hauteur sous l'accueil, mieux vaut le masquer pendant qu'on y est.
   const pageFooter = document.querySelector('footer');
   if(pageFooter) pageFooter.style.display = (tabName==='home') ? 'none' : '';
-  // body.home-view verrouille la page en CSS à la hauteur exacte de l'écran pendant qu'on est sur l'accueil
-  // (voir le CSS) — pour toutes les autres sections, la page retrouve son défilement normal habituel.
-  document.body.classList.toggle('home-view', tabName==='home');
   if(tabName==='home') renderHomeGreeting();
   if(tabName==='roulement') renderRotaTab();
   if(tabName==='planning') refreshPlanningViews();
@@ -871,9 +864,9 @@ document.getElementById('accountNameInput').addEventListener('input', (e)=>{
   renderHomeGreeting();
   scheduleAutosave();
 });
-// L'accueil qui tient pile dans l'écran (voir body.home-view / .home-hero plus haut dans le CSS) est géré
-// entièrement en CSS via container queries — la taille des pictos suit la hauteur réellement disponible
-// (cqh), sans calcul JS approximatif à recaler à chaque redimensionnement.
+// La mise en page de l'accueil (tailles de pictos, hauteur du panneau) est en CSS pur (voir .home-hero
+// et consorts) — volontairement simple et statique après deux tentatives plus élaborées peu fiables
+// (calcul JS puis container queries) qui ont chacune cassé l'affichage sur certains téléphones.
 // Depuis le planning, clic sur le nom d'un patient : bascule sur l'onglet Patients et défile jusqu'à sa fiche.
 function goToPatient(patientId){
   switchTab('patients');
