@@ -5,9 +5,7 @@ import { formatDate, dateRelative, comptesParMois } from '../lib/format'
 import type { Piece } from '../lib/types'
 import KpiTile from '../components/widgets/KpiTile'
 import Widget from '../components/widgets/Widget'
-import Avatar from '../components/widgets/Avatar'
 import ProgressRing from '../components/widgets/ProgressRing'
-import Sparkline from '../components/widgets/Sparkline'
 import { IconCamera, IconDocuments, IconInformations, IconEstimation } from '../components/icons'
 
 export default function ClientHome() {
@@ -45,7 +43,6 @@ export default function ClientHome() {
   }
 
   const piecesAnnee = pieces.filter((p) => new Date(p.created_at).getFullYear() === new Date().getFullYear())
-  const piecesValidees = piecesAnnee.filter((p) => p.statut === 'validee').length
   const piecesEnCours = piecesAnnee.filter((p) => p.statut === 'a_valider').length
 
   const datesCreation = pieces.map((p) => p.created_at)

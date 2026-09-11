@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import Sparkline from './Sparkline'
 
 export type KpiStatut = 'ok' | 'warning' | 'danger'
