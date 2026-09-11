@@ -15,9 +15,14 @@ export default function Layout() {
             </NavLink>
           )}
           {role === 'client' && (
-            <NavLink to="/mes-pieces" className={({ isActive }) => (isActive ? 'active' : '')}>
-              Mes pièces
-            </NavLink>
+            <>
+              <NavLink to="/accueil" className={({ isActive }) => (isActive ? 'active' : '')}>
+                Accueil
+              </NavLink>
+              <NavLink to="/mes-pieces" className={({ isActive }) => (isActive ? 'active' : '')}>
+                Mes pièces
+              </NavLink>
+            </>
           )}
         </nav>
         <button className="btn btn-outline btn-sm" onClick={signOut}>Déconnexion</button>

@@ -1,13 +1,16 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import type { Dossier } from '../lib/types'
 
 type Role = 'cabinet' | 'client' | null
 
 interface AuthState {
   session: Session | null
+  user: any | null
   role: Role
-  dossierIds: string[] // dossiers accessibles (pertinent seulement pour role === 'client')
+  dossierIds: string[]
+  dossierActif: Dossier | null
   loading: boolean
   signOut: () => Promise<void>
 }
@@ -16,8 +19,10 @@ const AuthContext = createContext<AuthState | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
+  const [user, setUser] = useState<any | null>(null)
   const [role, setRole] = useState<Role>(null)
   const [dossierIds, setDossierIds] = useState<string[]>([])
+  const [dossierActif, setDossierActif] = useState<Dossier | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -32,11 +37,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function resolveRole() {
       if (!session) {
         setRole(null)
+        setUser(null)
         setDossierIds([])
+        setDossierActif(null)
         setLoading(false)
         return
       }
       setLoading(true)
+      setUser(session.user)
 
       const { data: adminRow } = await supabase
         .from('cabinet_admins')
@@ -49,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (adminRow) {
         setRole('cabinet')
         setDossierIds([])
+        setDossierActif(null)
         setLoading(false)
         return
       }
@@ -60,7 +69,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (cancelled) return
       setRole('client')
-      setDossierIds((memberships ?? []).map((m) => m.dossier_id))
+      const ids = (memberships ?? []).map((m) => m.dossier_id)
+      setDossierIds(ids)
+
+      // Load first dossier if available
+      if (ids.length > 0) {
+        const { data: dossier } = await supabase
+          .from('dossiers')
+          .select('*')
+          .eq('id', ids[0])
+          .maybeSingle()
+        if (!cancelled) setDossierActif(dossier)
+      }
       setLoading(false)
     }
 
@@ -75,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ session, role, dossierIds, loading, signOut }}>
+    <AuthContext.Provider value={{ session, user, role, dossierIds, dossierActif, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   )
