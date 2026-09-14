@@ -1120,6 +1120,7 @@ function setRotaSeqSlot(idx, nurseId){
   state.rotation.sequence[idx] = nurseId || null;
   scheduleAutosave();
   renderRotaCalendar();
+  refreshPlanningIfVisible();
 }
 document.getElementById('rotaStartDate').addEventListener('change', (e)=>{
   const snapped = mondayOfWeek(e.target.value);
@@ -1127,6 +1128,7 @@ document.getElementById('rotaStartDate').addEventListener('change', (e)=>{
   state.rotation.startDate = snapped;
   scheduleAutosave();
   renderRotaCalendar();
+  refreshPlanningIfVisible();
 });
 function renderRotaLegend(){
   document.getElementById('rotaLegend').innerHTML = state.nurses.map(n=>
@@ -1182,14 +1184,21 @@ function selectRotaDay(dateStr){
     <p class="muted small" style="margin-top:8px;">Ce changement ne modifie que ce jour précis (remplacement ponctuel) — le reste du cycle continue normalement.</p>`;
   editor.style.display = '';
 }
+// Le planning recalcule déjà l'infirmier(ère) de chaque jour à la volée depuis le roulement
+// (dayDefaultNurseId → computeRotationNurse) : il n'y a donc rien à recopier. On rafraîchit juste son
+// affichage tout de suite s'il est déjà ouvert à l'écran, pour que l'effet d'un changement fait ici
+// (remplacement ponctuel ou cycle) soit immédiatement visible sans avoir à changer d'onglet et revenir.
+function refreshPlanningIfVisible(){
+  const planTab = document.getElementById('tab-planning');
+  if(planTab && planTab.style.display !== 'none') renderPlanning();
+}
 function setRotaDayNurse(dateStr, nurseId){
   if(nurseId) state.dayNurse[dateStr] = nurseId;
   else delete state.dayNurse[dateStr];
   scheduleAutosave();
   renderRotaCalendar();
   selectRotaDay(dateStr);
-  const planTab = document.getElementById('tab-planning');
-  if(planTab && planTab.style.display !== 'none') renderPlanning();
+  refreshPlanningIfVisible();
 }
 
 // Construit un classeur "Facturation" détaillé : qui (infirmier) / quoi (chaque acte) / à qui (patient),

@@ -1295,11 +1295,20 @@ function renderRotaSequence(){
     ? weeksHtml
     : '<p class="muted small">Ajoutez au moins un(e) infirmier(ère) dans l\'onglet Personnel pour construire le cycle.</p>';
 }
+// Le planning recalcule déjà l'infirmier(ère) de chaque jour à la volée depuis le roulement
+// (dayDefaultNurseId → computeRotationNurse) : il n'y a donc rien à recopier. On rafraîchit juste son
+// affichage tout de suite s'il est déjà ouvert à l'écran, pour que l'effet d'un changement fait ici
+// (remplacement ponctuel ou cycle) soit immédiatement visible sans avoir à changer d'onglet et revenir.
+function refreshPlanningIfVisible(){
+  const planTab = document.getElementById('tab-planning');
+  if(planTab && planTab.style.display !== 'none') refreshPlanningViews();
+}
 function setRotaSeqSlot(idx, nurseId){
   normalizeRotaSequence();
   state.rotation.sequence[idx] = nurseId || null;
   scheduleAutosave();
   renderRotaCalendar();
+  refreshPlanningIfVisible();
 }
 document.getElementById('rotaStartDate').addEventListener('change', (e)=>{
   const snapped = mondayOfWeek(e.target.value);
@@ -1307,6 +1316,7 @@ document.getElementById('rotaStartDate').addEventListener('change', (e)=>{
   state.rotation.startDate = snapped;
   scheduleAutosave();
   renderRotaCalendar();
+  refreshPlanningIfVisible();
 });
 function renderRotaLegend(){
   document.getElementById('rotaLegend').innerHTML = state.nurses.map(n=>
@@ -1363,8 +1373,7 @@ function setRotaDayNurse(dateStr, nurseId){
   scheduleAutosave();
   renderRotaCalendar();
   selectRotaDay(dateStr);
-  const planTab = document.getElementById('tab-planning');
-  if(planTab && planTab.style.display !== 'none') refreshPlanningViews();
+  refreshPlanningIfVisible();
 }
 
 // Construit un classeur "Facturation" détaillé : qui (infirmier) / quoi (chaque acte) / à qui (patient),
