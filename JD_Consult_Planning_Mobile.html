@@ -191,6 +191,13 @@
   .hero-value{font-family:var(--font-heading);font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;}
   .hero-sub{font-size:11px;opacity:.85;margin-top:4px;}
 
+  /* Widgets cliquables de l'accueil : petit chevron discret en haut à droite + retour tactile à la pression. */
+  .home-link{position:relative;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;}
+  .home-link:active{transform:scale(.97);}
+  .home-link:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .home-link-arrow{position:absolute;top:8px;right:11px;font-size:16px;line-height:1;color:var(--muted);opacity:.7;pointer-events:none;}
+  .hero-card .home-link-arrow{color:#fff;top:12px;right:14px;font-size:18px;}
+  .counter .home-link-arrow{top:6px;right:9px;font-size:14px;}
   .widget-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
   .widget-card{background:var(--panel);border:1px solid var(--border-soft);border-radius:16px;padding:12px 13px;box-shadow:var(--shadow-sm);}
   .widget-title{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin-bottom:6px;}
@@ -387,27 +394,31 @@
       <h1 class="home-greeting">Bonjour 👋</h1>
       <p class="home-subgreeting" id="homeSubgreeting">Planning &amp; facturation infirmière</p>
 
-      <div class="hero-card">
+      <!-- Chaque widget est cliquable et ouvre la section correspondante (data-goto = onglet cible). -->
+      <div class="hero-card home-link" data-goto="billing" role="button" tabindex="0" aria-label="Ouvrir le contrôle facturation">
         <div class="hero-label">CA moyen / jour (7 derniers jours)</div>
         <div class="hero-value" id="homeHeroValue">— €</div>
         <div class="hero-sub" id="homeHeroSub"></div>
+        <span class="home-link-arrow" aria-hidden="true">›</span>
       </div>
 
       <div class="widget-row">
-        <div class="widget-card">
+        <div class="widget-card home-link" data-goto="today" role="button" tabindex="0" aria-label="Ouvrir le planning du jour">
           <div class="widget-title">Aujourd'hui</div>
           <div class="widget-main" id="homeTodayNurse">—</div>
+          <span class="home-link-arrow" aria-hidden="true">›</span>
         </div>
-        <div class="widget-card">
+        <div class="widget-card home-link" data-goto="ordonnances" role="button" tabindex="0" aria-label="Ouvrir les ordonnances">
           <div class="widget-title">Ordonnances</div>
           <div class="widget-main" id="homeOrdAlert">—</div>
           <div class="widget-foot" id="homeOrdFoot"></div>
+          <span class="home-link-arrow" aria-hidden="true">›</span>
         </div>
       </div>
 
       <div class="counters-row">
-        <div class="counter"><b id="homeCountPatients">0</b><span>Patients actifs</span></div>
-        <div class="counter"><b id="homeCountNurses">0</b><span>Infirmier(ère)s</span></div>
+        <div class="counter home-link" data-goto="patients" role="button" tabindex="0" aria-label="Ouvrir les patients"><b id="homeCountPatients">0</b><span>Patients actifs</span></div>
+        <div class="counter home-link" data-goto="staff" role="button" tabindex="0" aria-label="Ouvrir le personnel"><b id="homeCountNurses">0</b><span>Infirmier(ère)s</span></div>
       </div>
 
       <p class="quick-title">Plus</p>
@@ -863,6 +874,22 @@ function switchTab(tabName){
   if(tabName==='ordonnances') renderOrdonnancesTab();
   if(tabName==='prescriptions') renderPrescriptionsTab();
 }
+// Widgets cliquables de l'accueil : chaque carte ouvre la section qui lui correspond. Le widget
+// « Aujourd'hui » ouvre le planning directement en vue jour, calé sur la date du jour.
+function openHomeLink(target){
+  if(target==='today'){
+    switchTab('planning');
+    document.getElementById('dayViewDate').value = todayISO();
+    setPlanningView('day');
+    renderDayView();
+    return;
+  }
+  if(document.getElementById('tab-'+target)) switchTab(target);
+}
+document.querySelectorAll('.home-link[data-goto]').forEach(el=>{
+  el.addEventListener('click', ()=>openHomeLink(el.dataset.goto));
+  el.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); openHomeLink(el.dataset.goto); } });
+});
 // Icônes de l'accueil, façon écran d'accueil iOS : une seule couleur (la teinte de l'appli) pour toutes,
 // glyphes en traits simples plutôt qu'en emoji multicolores, pour un rendu sobre et pro plutôt que "pack
 // d'icônes IA". Générées en JS pour garder tous les tracés SVG au même endroit.
