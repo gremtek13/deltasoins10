@@ -1592,7 +1592,14 @@ function renderPatientCard(p){
       <span class="spacer"></span>
       <span class="muted small">${cotation.amount.toFixed(2)} € / jour type</span>
     </div>
-    <div class="patient-card-body" id="patient-body-${p.id}" style="${expanded?'':'display:none;'}">
+    ${expanded ? renderPatientCardBody(p, isActive, cotation) : ''}
+  </div>`;
+}
+// Le corps de la fiche (une trentaine de champs) n'est généré QUE pour les fiches dépliées : avec une
+// vingtaine de patients, garder ~600 champs cachés dans la page alourdit inutilement la page et faisait
+// ramer la saisie sur iPhone (Safari passe en revue tous les champs à chaque frappe pour l'auto-remplissage).
+function renderPatientCardBody(p, isActive, cotation){
+  return `<div class="patient-card-body" id="patient-body-${p.id}">
     <div class="row">
       <div class="field"><label>Nom du patient</label>
         <input type="text" value="${escAttr(p.name)}" onchange="updatePatient('${p.id}','name',this.value)"></div>
@@ -1680,8 +1687,7 @@ function renderPatientCard(p){
       </div>
     </div>
     <div class="field"><label>Note</label><textarea rows="2" onchange="updatePatient('${p.id}','note',this.value)">${escHtml(p.note||'')}</textarea></div>
-    </div>
-  </div>`;
+    </div>`;
 }
 function updatePatient(id, field, val){ const p = state.patients.find(x=>x.id===id); if(p){ p[field]=val; renderPatients(); renderPlanning(); } }
 // Un patient est visible dans le planning du mois "month" (format AAAA-MM) s'il n'a jamais été

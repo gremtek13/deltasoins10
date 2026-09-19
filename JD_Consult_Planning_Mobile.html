@@ -47,7 +47,7 @@
   *{box-sizing:border-box;}
   body{margin:0;font-family:var(--font-body);background:radial-gradient(900px 420px at 50% -180px, var(--accent-light), transparent 62%) no-repeat, var(--bg);color:var(--text);font-size:14px;line-height:1.45;transition:background .2s ease,color .2s ease;}
   h1,h2,h3{font-family:var(--font-heading);}
-  @keyframes tabIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  @keyframes tabIn{from{opacity:0;}to{opacity:1;}}
   .tab-content{animation:tabIn .22s ease-out;}
   @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
   ::-webkit-scrollbar{width:10px;height:10px;}
@@ -55,9 +55,9 @@
   ::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:10px;border:2px solid var(--bg);background-clip:padding-box;}
   ::-webkit-scrollbar-thumb:hover{background:var(--accent);background-clip:padding-box;}
   .logo-mark{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));display:inline-flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;box-shadow:var(--shadow-sm);vertical-align:middle;}
-  /* Flou volontairement léger (pas de saturate) : sur iPhone, deux barres floutées au-dessus d'une page
-     longue (planning) coûtent cher en mémoire GPU ; on garde l'effet verre sans faire ramer le défilement. */
-  .sticky-top{position:sticky;top:0;z-index:60;background:var(--panel-glass);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--border-soft);}
+  /* Pas de flou d'arrière-plan (backdrop-filter) sur mobile : sur iPhone, une barre floutée fixe au-dessus
+     d'une page longue est recomposée à chaque frappe clavier et fait ramer la saisie. Fond quasi opaque. */
+  .sticky-top{position:sticky;top:0;z-index:60;background:color-mix(in srgb, var(--panel) 96%, transparent);border-bottom:1px solid var(--border-soft);}
   header{background:transparent;padding:10px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
   header h1{font-size:16px;margin:0;white-space:nowrap;display:flex;align-items:center;gap:8px;}
   header .sub{color:var(--muted);font-size:12px;}
@@ -97,7 +97,7 @@
   .spacer{flex:1;}
   /* Barre de navigation fixe en bas (façon Binance) : présente sur toutes les sections, pas seulement
      l'accueil — remplace l'ancienne barre d'onglets horizontale en haut. */
-  .bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;background:var(--panel-glass);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:1px solid var(--border-soft);box-shadow:0 -4px 18px rgba(63,110,105,.06);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));}
+  .bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;background:color-mix(in srgb, var(--panel) 97%, transparent);border-top:1px solid var(--border-soft);box-shadow:0 -4px 18px rgba(63,110,105,.06);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));}
   .bottom-nav button{flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-family:var(--font-body);font-size:10px;font-weight:600;padding:2px 0 4px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:color .15s ease;}
   .bottom-nav button svg{display:block;width:21px;height:21px;box-sizing:content-box;padding:4px 12px;border-radius:999px;transition:background .18s ease,transform .18s ease;}
   .bottom-nav button.active{color:var(--accent-dark);}
@@ -1815,7 +1815,14 @@ function renderPatientCard(p){
       <span class="spacer"></span>
       <span class="muted small">${cotation.amount.toFixed(2)} € / jour type</span>
     </div>
-    <div class="patient-card-body" id="patient-body-${p.id}" style="${expanded?'':'display:none;'}">
+    ${expanded ? renderPatientCardBody(p, isActive, cotation) : ''}
+  </div>`;
+}
+// Le corps de la fiche (une trentaine de champs) n'est généré QUE pour les fiches dépliées : avec une
+// vingtaine de patients, garder ~600 champs cachés dans la page faisait ramer la saisie sur iPhone
+// (Safari passe en revue tous les champs de la page à chaque frappe pour le remplissage automatique).
+function renderPatientCardBody(p, isActive, cotation){
+  return `<div class="patient-card-body" id="patient-body-${p.id}">
     <div class="row">
       <div class="field"><label>Nom du patient</label>
         <input type="text" value="${escAttr(p.name)}" onchange="updatePatient('${p.id}','name',this.value)"></div>
@@ -1903,8 +1910,7 @@ function renderPatientCard(p){
       </div>
     </div>
     <div class="field"><label>Note</label><textarea rows="2" onchange="updatePatient('${p.id}','note',this.value)">${escHtml(p.note||'')}</textarea></div>
-    </div>
-  </div>`;
+    </div>`;
 }
 function updatePatient(id, field, val){ const p = state.patients.find(x=>x.id===id); if(p){ p[field]=val; renderPatients(); refreshPlanningViews(); } }
 // Un patient est visible dans le planning du mois "month" (format AAAA-MM) s'il n'a jamais été
