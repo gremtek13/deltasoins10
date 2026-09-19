@@ -869,7 +869,7 @@ function switchTab(tabName){
   document.getElementById('tab-'+tabName).style.display='block';
   if(tabName==='home'){ renderHomeGreeting(); renderHomeWidgets(); }
   if(tabName==='roulement') renderRotaTab();
-  if(tabName==='planning') refreshPlanningViews();
+  if(tabName==='planning') refreshPlanningViews(); else clearPlanningDom(); // grille lourde : générée seulement quand elle est à l'écran
   if(tabName==='billing') renderBilling();
   if(tabName==='patients') renderPatients();
   if(tabName==='caretypes') renderPatientAssignList();
@@ -2350,10 +2350,26 @@ function renderPlanning(){
 }
 
 /* ============================= VUE JOUR (mobile) ============================= */
-// Rafraîchit les DEUX vues du planning (grille du mois + liste du jour) à chaque changement, qu'elle
-// soit visible ou non à l'écran : ça garantit qu'on ne voit jamais de données périmées en basculant de
-// vue, quelle que soit la fonction de mutation qui a déclenché le rafraîchissement.
+// Rafraîchit les DEUX vues du planning (grille du mois + liste du jour) à chaque changement — mais
+// UNIQUEMENT si l'onglet Planning est affiché. La grille du mois représente ~3 000 champs de formulaire
+// (cases, listes, boutons) : la garder générée en permanence, même cachée, faisait ramer la saisie sur
+// iPhone (Safari passe en revue tous les champs de la page à chaque frappe) et alourdissait la mémoire au
+// point de provoquer des rechargements de page. Onglet masqué : on vide la grille, elle sera regénérée à
+// l'ouverture de l'onglet par switchTab() — donc jamais de données périmées à l'écran.
+function planningTabVisible(){
+  const tab = document.getElementById('tab-planning');
+  return !!tab && tab.style.display !== 'none';
+}
+function clearPlanningDom(){
+  const t = document.getElementById('planningTable'); if(t && t.innerHTML) t.innerHTML = '';
+  const l = document.getElementById('dayViewList'); if(l && l.innerHTML) l.innerHTML = '';
+}
 function refreshPlanningViews(){
+  if(!planningTabVisible()){
+    clearPlanningDom();
+    scheduleAutosave(); // renderPlanning() l'aurait fait : on garde la sauvegarde de la modification à l'origine de l'appel
+    return;
+  }
   renderPlanning();
   if(document.getElementById('dayView')) renderDayView();
 }
