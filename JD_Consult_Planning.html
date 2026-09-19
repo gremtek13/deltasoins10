@@ -37,7 +37,7 @@
   *{box-sizing:border-box;}
   body{margin:0;font-family:var(--font-body);color:var(--text);font-size:14px;line-height:1.45;transition:color .2s ease;
     /* Léger halo vert en haut de page pour donner de la profondeur au fond, sans changer la teinte de base. */
-    background:radial-gradient(1200px 520px at 50% -220px, var(--accent-light), transparent 62%) fixed, var(--bg);}
+    background:radial-gradient(1200px 520px at 50% -220px, var(--accent-light), transparent 62%) no-repeat, var(--bg);}
   h1,h2,h3{font-family:var(--font-heading);}
   @keyframes tabIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
   .tab-content{animation:tabIn .22s ease-out;}
@@ -2556,14 +2556,22 @@ let currentAutosaveKey = null;
 let autosaveTimer = null;
 let autosaveAvailable = true;
 
+// Dernier état effectivement envoyé en ligne (sérialisé) : beaucoup d'affichages déclenchent une
+// sauvegarde par sécurité, mais renvoyer tout le fichier alors que rien n'a changé (simple changement
+// d'onglet) gaspille de la connexion et fait ramer le mobile. On ne renvoie donc que si ça a bougé.
+let lastSavedJson = null;
 function scheduleAutosave(){
   clearTimeout(autosaveTimer);
-  autosaveTimer = setTimeout(()=>{ saveToLocalStorage(); saveStateToCloud(); }, 700);
+  autosaveTimer = setTimeout(()=>{
+    const json = JSON.stringify(state);
+    saveToLocalStorage(json);
+    if(json !== lastSavedJson) saveStateToCloud(false, json);
+  }, 700);
 }
-function saveToLocalStorage(){
+function saveToLocalStorage(json){
   if(!currentAutosaveKey) return;
   try{
-    localStorage.setItem(currentAutosaveKey, JSON.stringify(state));
+    localStorage.setItem(currentAutosaveKey, json || JSON.stringify(state));
     autosaveAvailable = true;
   }catch(err){
     autosaveAvailable = false;
@@ -2597,7 +2605,7 @@ let cloudSaveBlocked = false;
 function refreshKnownCloudCounts(){
   lastKnownCloudCounts = {patients:(state.patients||[]).length, nurses:(state.nurses||[]).length, careTypes:(state.careTypes||[]).length};
 }
-async function saveStateToCloud(force){
+async function saveStateToCloud(force, json){
   if(!currentUser) return;
   if(!force && lastKnownCloudCounts && (
        (lastKnownCloudCounts.patients>0 && state.patients.length===0) ||
@@ -2616,6 +2624,7 @@ async function saveStateToCloud(force){
     });
     if(error) throw error;
     lastCloudSaveOk = true;
+    lastSavedJson = json || JSON.stringify(state);
     refreshKnownCloudCounts();
   }catch(err){
     lastCloudSaveOk = false;
@@ -2977,13 +2986,24 @@ function compressSignatureImage(img, maxWidth){
   const h = Math.max(1, Math.round(img.height * scale));
   const canvas = document.createElement('canvas');
   canvas.width = w; canvas.height = h;
-  canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-  return canvas.toDataURL('image/png');
+  const ctx = canvas.getContext('2d');
+  // Fond blanc + JPEG : une signature scannée/photographiée pèse ~5 à 8 fois moins qu'en PNG, pour un
+  // rendu identique une fois imprimée sur un document blanc. Le PNG gardait tout le "bruit" du scan.
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(img, 0, 0, w, h);
+  return canvas.toDataURL('image/jpeg', 0.82);
 }
 // Repasse automatiquement en compression les signatures déjà enregistrées avant l'ajout de ce
 // redimensionnement (import passé en taille "brute"), sans action requise de l'utilisateur.
 function shrinkOversizedSignatures(){
   if(!state.practitionerProfiles) return;
+  // L'ancien format mono-profil (state.practitioner) a déjà été recopié dans practitionerProfiles par
+  // migratePractitionerProfiles() : sa signature "brute" (souvent ~1 Mo) restait pourtant embarquée dans
+  // CHAQUE sauvegarde, ce qui alourdissait l'appli et faisait ramer/planter la version mobile.
+  if(state.practitioner && state.practitionerProfiles.length){
+    delete state.practitioner;
+    scheduleAutosave();
+  }
   state.practitionerProfiles.forEach(prof=>{
     if(!prof.signatureDataUrl || prof.signatureDataUrl.length < 150000) return;
     loadImageFromDataUrl(prof.signatureDataUrl).then(img=>{

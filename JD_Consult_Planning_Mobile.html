@@ -45,7 +45,7 @@
     --shadow-lg:0 4px 10px rgba(0,0,0,.30), 0 24px 56px rgba(0,0,0,.46);
   }
   *{box-sizing:border-box;}
-  body{margin:0;font-family:var(--font-body);background:radial-gradient(900px 420px at 50% -180px, var(--accent-light), transparent 62%) fixed, var(--bg);color:var(--text);font-size:14px;line-height:1.45;transition:background .2s ease,color .2s ease;}
+  body{margin:0;font-family:var(--font-body);background:radial-gradient(900px 420px at 50% -180px, var(--accent-light), transparent 62%) no-repeat, var(--bg);color:var(--text);font-size:14px;line-height:1.45;transition:background .2s ease,color .2s ease;}
   h1,h2,h3{font-family:var(--font-heading);}
   @keyframes tabIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
   .tab-content{animation:tabIn .22s ease-out;}
@@ -55,7 +55,9 @@
   ::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:10px;border:2px solid var(--bg);background-clip:padding-box;}
   ::-webkit-scrollbar-thumb:hover{background:var(--accent);background-clip:padding-box;}
   .logo-mark{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));display:inline-flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;box-shadow:var(--shadow-sm);vertical-align:middle;}
-  .sticky-top{position:sticky;top:0;z-index:60;background:var(--panel-glass);-webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3);border-bottom:1px solid var(--border-soft);}
+  /* Flou volontairement léger (pas de saturate) : sur iPhone, deux barres floutées au-dessus d'une page
+     longue (planning) coûtent cher en mémoire GPU ; on garde l'effet verre sans faire ramer le défilement. */
+  .sticky-top{position:sticky;top:0;z-index:60;background:var(--panel-glass);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--border-soft);}
   header{background:transparent;padding:10px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
   header h1{font-size:16px;margin:0;white-space:nowrap;display:flex;align-items:center;gap:8px;}
   header .sub{color:var(--muted);font-size:12px;}
@@ -95,7 +97,7 @@
   .spacer{flex:1;}
   /* Barre de navigation fixe en bas (façon Binance) : présente sur toutes les sections, pas seulement
      l'accueil — remplace l'ancienne barre d'onglets horizontale en haut. */
-  .bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;background:var(--panel-glass);-webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);border-top:1px solid var(--border-soft);box-shadow:0 -4px 18px rgba(63,110,105,.06);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));}
+  .bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;background:var(--panel-glass);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:1px solid var(--border-soft);box-shadow:0 -4px 18px rgba(63,110,105,.06);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));}
   .bottom-nav button{flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-family:var(--font-body);font-size:10px;font-weight:600;padding:2px 0 4px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:color .15s ease;}
   .bottom-nav button svg{display:block;width:21px;height:21px;box-sizing:content-box;padding:4px 12px;border-radius:999px;transition:background .18s ease,transform .18s ease;}
   .bottom-nav button.active{color:var(--accent-dark);}
@@ -2879,14 +2881,22 @@ let currentAutosaveKey = null;
 let autosaveTimer = null;
 let autosaveAvailable = true;
 
+// Dernier état effectivement envoyé en ligne (sérialisé) : beaucoup d'affichages déclenchent une
+// sauvegarde par sécurité, mais renvoyer tout le fichier alors que rien n'a changé (simple changement
+// d'onglet) gaspille de la connexion et fait ramer le mobile. On ne renvoie donc que si ça a bougé.
+let lastSavedJson = null;
 function scheduleAutosave(){
   clearTimeout(autosaveTimer);
-  autosaveTimer = setTimeout(()=>{ saveToLocalStorage(); saveStateToCloud(); }, 700);
+  autosaveTimer = setTimeout(()=>{
+    const json = JSON.stringify(state);
+    saveToLocalStorage(json);
+    if(json !== lastSavedJson) saveStateToCloud(false, json);
+  }, 700);
 }
-function saveToLocalStorage(){
+function saveToLocalStorage(json){
   if(!currentAutosaveKey) return;
   try{
-    localStorage.setItem(currentAutosaveKey, JSON.stringify(state));
+    localStorage.setItem(currentAutosaveKey, json || JSON.stringify(state));
     autosaveAvailable = true;
   }catch(err){
     autosaveAvailable = false;
@@ -2920,7 +2930,7 @@ let cloudSaveBlocked = false;
 function refreshKnownCloudCounts(){
   lastKnownCloudCounts = {patients:(state.patients||[]).length, nurses:(state.nurses||[]).length, careTypes:(state.careTypes||[]).length};
 }
-async function saveStateToCloud(force){
+async function saveStateToCloud(force, json){
   if(!currentUser) return;
   if(!force && lastKnownCloudCounts && (
        (lastKnownCloudCounts.patients>0 && state.patients.length===0) ||
@@ -2939,6 +2949,7 @@ async function saveStateToCloud(force){
     });
     if(error) throw error;
     lastCloudSaveOk = true;
+    lastSavedJson = json || JSON.stringify(state);
     refreshKnownCloudCounts();
   }catch(err){
     lastCloudSaveOk = false;
@@ -3295,13 +3306,24 @@ function compressSignatureImage(img, maxWidth){
   const h = Math.max(1, Math.round(img.height * scale));
   const canvas = document.createElement('canvas');
   canvas.width = w; canvas.height = h;
-  canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-  return canvas.toDataURL('image/png');
+  const ctx = canvas.getContext('2d');
+  // Fond blanc + JPEG : une signature scannée/photographiée pèse ~5 à 8 fois moins qu'en PNG, pour un
+  // rendu identique une fois imprimée sur un document blanc. Le PNG gardait tout le "bruit" du scan.
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(img, 0, 0, w, h);
+  return canvas.toDataURL('image/jpeg', 0.82);
 }
 // Repasse automatiquement en compression les signatures déjà enregistrées avant l'ajout de ce
 // redimensionnement (import passé en taille "brute"), sans action requise de l'utilisateur.
 function shrinkOversizedSignatures(){
   if(!state.practitionerProfiles) return;
+  // L'ancien format mono-profil (state.practitioner) a déjà été recopié dans practitionerProfiles par
+  // migratePractitionerProfiles() : sa signature "brute" (souvent ~1 Mo) restait pourtant embarquée dans
+  // CHAQUE sauvegarde, ce qui alourdissait l'appli et faisait ramer/planter la version mobile.
+  if(state.practitioner && state.practitionerProfiles.length){
+    delete state.practitioner;
+    scheduleAutosave();
+  }
   state.practitionerProfiles.forEach(prof=>{
     if(!prof.signatureDataUrl || prof.signatureDataUrl.length < 150000) return;
     loadImageFromDataUrl(prof.signatureDataUrl).then(img=>{
