@@ -471,7 +471,9 @@
       <div class="row"><h2 style="margin:0;">Nouvelle prescription</h2><span class="spacer"></span></div>
       <div class="row tight" style="flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:10px;">
         <div class="field" style="max-width:130px;"><label>Civilité</label><select id="pxCivilite"><option value="">—</option><option value="Monsieur">Monsieur</option><option value="Madame">Madame</option></select></div>
-        <div class="field" style="min-width:220px;"><label>Patient</label><input type="text" id="pxPatient" list="pxPatientDatalist" placeholder="Nom du patient (liste ou saisie libre)"><datalist id="pxPatientDatalist"></datalist></div>
+        <!-- Saisie libre sans suggestions : les patients de l'appli sont enregistrés sous un nom abrégé (RGPD),
+             alors que la prescription exige le nom et prénom complets. -->
+        <div class="field" style="min-width:220px;"><label>Patient (nom et prénom)</label><input type="text" id="pxPatient" placeholder="Ex. Marie Dupont" autocomplete="off"></div>
         <div class="field"><label>Date</label><input type="date" id="pxDate"></div>
       </div>
       <div id="pxItemsList"></div>
@@ -2950,7 +2952,6 @@ function renderPrescriptionsTab(){
   document.getElementById('pxTelephone').value = prof.telephone || '';
   document.getElementById('pxAdeli').value = prof.adeli || '';
   renderSignaturePreview();
-  document.getElementById('pxPatientDatalist').innerHTML = state.patients.map(p=>`<option value="${escAttr(p.name)}"></option>`).join('');
   if(!document.getElementById('pxDate').value) document.getElementById('pxDate').value = todayISO();
   if(!pxItemsDraft.length) pxItemsDraft = [{catalogId:'', designation:'', description:'', qty:''}];
   renderPxItemsDraft();

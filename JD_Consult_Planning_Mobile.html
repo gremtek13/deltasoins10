@@ -595,12 +595,10 @@
     <div class="panel">
       <h2 style="margin:0 0 6px;">Nouvelle prescription</h2>
       <div class="field"><label>Civilité</label><select id="pxCivilite"><option value="">—</option><option value="Monsieur">Monsieur</option><option value="Madame">Madame</option></select></div>
-      <!-- Liste déroulante + champ libre optionnel, plutôt qu'un champ texte avec suggestions (datalist) :
-           sur iPhone, Safari gère très mal les datalist (saisie qui rame, voire page qui se recharge). -->
-      <div class="field"><label>Patient</label>
-        <select id="pxPatientSelect"></select>
-        <input type="text" id="pxPatient" placeholder="Nom du patient (saisie libre)" style="display:none;margin-top:6px;" autocomplete="off">
-      </div>
+      <!-- Champ texte simple, sans suggestions (datalist) ni liste déroulante : sur iPhone, Safari gère très
+           mal les datalist (saisie qui rame, voire page qui se recharge), et les patients de l'appli sont
+           enregistrés sous un nom abrégé (RGPD) alors que la prescription exige le nom et prénom complets. -->
+      <div class="field"><label>Patient (nom et prénom)</label><input type="text" id="pxPatient" placeholder="Ex. Marie Dupont" autocomplete="off" autocapitalize="words"></div>
       <div class="field"><label>Date</label><input type="date" id="pxDate"></div>
       <div id="pxItemsList"></div>
       <button class="btn secondary" id="btnAddPxItem" style="width:100%;margin-top:4px;">+ Ajouter un dispositif</button>
@@ -3291,41 +3289,11 @@ function renderPrescriptionsTab(){
   document.getElementById('pxTelephone').value = prof.telephone || '';
   document.getElementById('pxAdeli').value = prof.adeli || '';
   renderSignaturePreview();
-  renderPxPatientSelect();
   if(!document.getElementById('pxDate').value) document.getElementById('pxDate').value = todayISO();
   if(!pxItemsDraft.length) pxItemsDraft = [{catalogId:'', designation:'', description:'', qty:''}];
   renderPxItemsDraft();
   renderPxHistory();
 }
-// Sélecteur du patient de la prescription : patients actifs d'abord, puis les inactifs, puis « Autre »
-// qui dévoile un champ de saisie libre. La valeur retenue est toujours lue dans #pxPatient (texte),
-// comme avant, pour ne rien changer à la génération du document.
-const PX_OTHER_PATIENT = '__autre__';
-function renderPxPatientSelect(){
-  const sel = document.getElementById('pxPatientSelect');
-  const txt = document.getElementById('pxPatient');
-  if(!sel || !txt) return;
-  const month = currentMonthStr();
-  const sorted = [...state.patients].sort((a,b)=>{
-    const aa = isPatientActiveInMonth(a, month) ? 0 : 1, bb = isPatientActiveInMonth(b, month) ? 0 : 1;
-    return aa - bb || a.name.localeCompare(b.name);
-  });
-  const current = txt.value.trim();
-  const known = sorted.some(p=>p.name===current);
-  sel.innerHTML = '<option value="">— Choisir un patient —</option>'
-    + sorted.map(p=>`<option value="${escAttr(p.name)}">${escHtml(p.name)}${isPatientActiveInMonth(p, month)?'':' (inactif)'}</option>`).join('')
-    + `<option value="${PX_OTHER_PATIENT}">Autre patient (saisie libre)…</option>`;
-  sel.value = current ? (known ? current : PX_OTHER_PATIENT) : '';
-  txt.style.display = (sel.value===PX_OTHER_PATIENT) ? '' : 'none';
-}
-document.getElementById('pxPatientSelect').addEventListener('change', (e)=>{
-  const txt = document.getElementById('pxPatient');
-  if(e.target.value===PX_OTHER_PATIENT){
-    txt.value = ''; txt.style.display = ''; txt.focus();
-  } else {
-    txt.value = e.target.value; txt.style.display = 'none';
-  }
-});
 function renderSignaturePreview(){
   const prof = getActiveProfile();
   const img = document.getElementById('pxSignaturePreview');
