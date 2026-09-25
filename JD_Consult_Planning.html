@@ -106,10 +106,10 @@
   table:not(.plan) tr:last-child td{border-bottom:none;}
   table:not(.plan) tr:nth-child(even){background:var(--row-alt);}
   table:not(.plan) tr:hover{background:var(--accent-light);}
-  input[type=text],input[type=number],input[type=date],select,textarea{
+  input[type=text],input[type=number],input[type=date],input[type=time],select,textarea{
     font:inherit;padding:6px 9px;border:1.5px solid var(--border);border-radius:10px;background:var(--panel);color:var(--text);width:100%;transition:border-color .15s ease,box-shadow .15s ease;
   }
-  input[type=text]:focus,input[type=number]:focus,input[type=date]:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light);}
+  input[type=text]:focus,input[type=number]:focus,input[type=date]:focus,input[type=time]:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light);}
   textarea{resize:vertical;}
   button.btn{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;border:none;padding:8px 16px;border-radius:999px;cursor:pointer;font-size:13px;font-weight:700;font-family:var(--font-heading);box-shadow:var(--shadow-sm);transition:transform .15s ease,filter .15s ease,box-shadow .15s ease,background .15s ease;}
   button.btn:hover{filter:brightness(1.06);transform:translateY(-1px);box-shadow:var(--shadow-md);}
@@ -198,6 +198,29 @@
   .passage-block .row{margin-bottom:6px;}
   .detail-btn{border:1px solid var(--border);background:var(--panel);border-radius:6px;font-size:9px;padding:0 4px;cursor:pointer;color:var(--accent-dark);margin-left:2px;}
   .detail-btn.has-detail{background:var(--accent-light);border-color:var(--accent);}
+  /* ---- Bilans biologiques (sous-page de Prescriptions DM) ---- */
+  .bb-entry{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--panel);border:1px solid var(--border-soft);border-radius:20px;padding:16px 20px;margin-bottom:16px;box-shadow:var(--shadow-sm);cursor:pointer;font:inherit;color:var(--text);transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;}
+  .bb-entry:hover{border-color:var(--accent);box-shadow:var(--shadow-md);transform:translateY(-1px);}
+  .bb-entry:active{transform:scale(.99);}
+  .bb-entry-icon{width:48px;height:48px;border-radius:15px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#ef4444,color-mix(in srgb,#ef4444 70%,black));box-shadow:0 3px 9px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.22);}
+  .bb-entry-icon svg{width:24px;height:24px;}
+  .bb-entry-text{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .bb-entry-text b{font-family:var(--font-heading);font-size:16px;}
+  .bb-entry-text span{font-size:12.5px;color:var(--muted);}
+  .bb-entry-arrow{font-size:26px;line-height:1;color:var(--muted);}
+  .bb-cat{margin:14px 0 7px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;}
+  .bb-chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .bb-chip{border:1.5px solid var(--border);background:var(--panel);color:var(--text);border-radius:999px;padding:6px 13px;font:inherit;font-size:13px;line-height:1.25;cursor:pointer;transition:background .12s ease,border-color .12s ease,color .12s ease,transform .12s ease;}
+  .bb-chip:hover{border-color:var(--accent);}
+  .bb-chip:active{transform:scale(.96);}
+  .bb-chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;}
+  .bb-chip[aria-pressed="true"]::before{content:'✓ ';}
+  .bb-chip.bb-preset{background:var(--accent-light);border-color:transparent;color:var(--accent-dark);font-weight:700;}
+  .bb-chip.bb-preset:hover{border-color:var(--accent);}
+  .bb-count{display:flex;align-items:center;gap:12px;margin-top:10px;font-size:12.5px;color:var(--muted);}
+  .bb-link{background:none;border:none;padding:0;font:inherit;font-size:12.5px;color:var(--accent-dark);text-decoration:underline;cursor:pointer;}
+  .bb-check{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--text);margin:7px 0;cursor:pointer;}
+  .bb-check input{width:17px;height:17px;margin:0;flex-shrink:0;accent-color:var(--accent);}
   /* ---- Authentification ---- */
   #authOverlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;overflow:hidden;}
   #authOverlay::before,#authOverlay::after{content:'';position:absolute;border-radius:50%;z-index:0;}
@@ -437,6 +460,11 @@
 
   <!-- PRESCRIPTIONS DM TAB -->
   <div class="tab-content" id="tab-prescriptions" style="display:none;">
+    <button type="button" class="bb-entry" id="btnOpenBilans">
+      <span class="bb-entry-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h8"/><path d="M8 3.5v12.5a2.5 2.5 0 0 0 5 0V3.5"/><path d="M8 11h5"/><path d="M18 6.5s2 2.2 2 3.6a2 2 0 0 1-4 0c0-1.4 2-3.6 2-3.6Z"/></svg></span>
+      <span class="bb-entry-text"><b>Bilans biologiques</b><span>Fiche de prélèvement ou ordonnance d'examens, avec votre signature</span></span>
+      <span class="bb-entry-arrow" aria-hidden="true">›</span>
+    </button>
     <div class="warn-box">
       Cette liste de dispositifs est <b>indicative et non exhaustive</b>. Avant de valider, vérifiez que chaque dispositif prescrit entre bien dans le champ de compétence propre de l'infirmier(ère) (article L. 4311-1 du Code de la santé publique — arrêté du 20 mars 2012). Ce document ne constitue pas un conseil juridique.
     </div>
@@ -486,6 +514,69 @@
     <div class="panel">
       <h2>Historique des prescriptions</h2>
       <div id="pxHistoryList"><p class="muted small">Aucune prescription enregistrée.</p></div>
+    </div>
+  </div>
+
+  <!-- BILANS BIOLOGIQUES (sous-page ouverte depuis l'onglet Prescriptions DM) -->
+  <div class="tab-content" id="tab-bilans" style="display:none;">
+    <div class="row tight" style="margin-bottom:14px;"><button class="btn secondary" id="btnBackToPx">← Retour aux prescriptions DM</button></div>
+    <div class="panel">
+      <h2>🧪 Bilan biologique</h2>
+      <div class="grid-2">
+        <div class="field"><label>Type de document</label>
+          <select id="bbMode">
+            <option value="prelevement">Fiche de prélèvement</option>
+            <option value="ordonnance">Ordonnance infirmière</option>
+          </select>
+        </div>
+        <div class="field"><label>Infirmier(ère)</label><select id="bbProfile"></select></div>
+      </div>
+      <p class="muted small" id="bbModeHint" style="margin:0;"></p>
+      <div class="warn-box" id="bbProfileWarn" style="display:none;margin:10px 0 0;">Complétez le nom et le N° AM de ce profil dans l'onglet Prescriptions DM avant de générer le document.</div>
+    </div>
+    <div class="grid-2" style="gap:16px;align-items:start;">
+      <div class="panel">
+        <h2>Patient</h2>
+        <p class="muted small" style="margin:0 0 10px;">Ces informations servent uniquement à imprimer le document : elles ne sont enregistrées nulle part (RGPD).</p>
+        <div class="row tight" style="gap:10px;align-items:flex-end;">
+          <div class="field" style="max-width:130px;"><label>Civilité</label><select id="bbCivilite"><option value="">—</option><option value="Monsieur">Monsieur</option><option value="Madame">Madame</option></select></div>
+          <div class="field" style="flex:1;"><label>Nom et prénom</label><input type="text" id="bbPatient" placeholder="Ex. Marie Dupont" autocomplete="off"></div>
+        </div>
+        <div class="field" style="max-width:220px;"><label>Date de naissance</label><input type="date" id="bbNaissance"></div>
+      </div>
+      <div class="panel">
+        <h2 id="bbPrelevTitle">Prélèvement</h2>
+        <div class="grid-2">
+          <div class="field"><label id="bbDateLabel">Date du prélèvement</label><input type="date" id="bbDate"></div>
+          <div class="field bb-only-prelevement"><label>Heure du prélèvement</label><input type="time" id="bbHeure"></div>
+          <div class="field"><label>À jeun</label><select id="bbJeun"><option value="">Non précisé</option><option value="oui">Oui</option><option value="non">Non</option></select></div>
+          <div class="field bb-only-prelevement"><label>Médecin prescripteur</label><input type="text" id="bbPrescripteur" placeholder="Ex. Dr Martin" autocomplete="off"></div>
+          <div class="field bb-only-prelevement"><label>Date de l'ordonnance médicale</label><input type="date" id="bbDateOrdo"></div>
+        </div>
+        <label class="bb-check"><input type="checkbox" id="bbDomicile" checked> Prélèvement à domicile</label>
+      </div>
+    </div>
+    <div class="panel">
+      <h2 style="margin-bottom:2px;">Examens</h2>
+      <div class="bb-cat">Raccourcis</div>
+      <div class="bb-chips" id="bbPresets"></div>
+      <div id="bbTests"></div>
+      <div class="field" style="margin-top:14px;"><label>Autres examens (préciser)</label><textarea id="bbAutres" rows="2" placeholder="Ex. Sérologie hépatite C, lithémie…"></textarea></div>
+      <div class="bb-count"><span id="bbCount"></span><button type="button" class="bb-link" id="bbClear">Tout décocher</button></div>
+    </div>
+    <div class="panel">
+      <h2>Informations complémentaires</h2>
+      <div class="field"><label>Renseignements cliniques / traitement en cours</label><textarea id="bbClinique" rows="2" placeholder="Ex. Traitement anticoagulant en cours, INR cible entre 2 et 3"></textarea></div>
+      <label style="margin-top:6px;">Résultats à transmettre à</label>
+      <div class="row tight" style="gap:22px;flex-wrap:wrap;">
+        <label class="bb-check"><input type="checkbox" id="bbCopieMedecin" checked> Médecin prescripteur / traitant</label>
+        <label class="bb-check"><input type="checkbox" id="bbCopiePatient" checked> Patient</label>
+        <label class="bb-check"><input type="checkbox" id="bbCopieIde"> Infirmier(ère)</label>
+      </div>
+    </div>
+    <div class="row tight" style="justify-content:flex-end;gap:8px;">
+      <button class="btn secondary" id="btnResetBilan">↺ Nouveau bilan</button>
+      <button class="btn" id="btnGenerateBilan">🖨️ Générer / Imprimer le PDF</button>
     </div>
   </div>
 
@@ -745,7 +836,9 @@ function currentMonthStr(){ const d=new Date(); return d.toISOString().slice(0,7
 
 /* ============================= TAB SWITCHING ============================= */
 function switchTab(tabName){
-  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tabName));
+  // « bilans » est une sous-page de Prescriptions DM : on garde cet onglet surligné dans la barre.
+  const navTab = (tabName==='bilans') ? 'prescriptions' : tabName;
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===navTab));
   document.querySelectorAll('.tab-content').forEach(t=>t.style.display='none');
   document.getElementById('tab-'+tabName).style.display='block';
   // Sur l'accueil, la grille d'icônes fait déjà office de navigation : la barre d'onglets classique juste
@@ -759,6 +852,7 @@ function switchTab(tabName){
   if(tabName==='caretypes') renderPatientAssignList();
   if(tabName==='ordonnances') renderOrdonnancesTab();
   if(tabName==='prescriptions') renderPrescriptionsTab();
+  if(tabName==='bilans') renderBilanTab();
 }
 document.querySelectorAll('nav.tabs button').forEach(btn=>{
   btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
@@ -3250,6 +3344,276 @@ function openPrescriptionPrintWindow(entry){
   } else {
     setTimeout(doPrint, 150);
   }
+}
+
+/* ---------- Bilans biologiques (sous-page ouverte depuis l'onglet Prescriptions DM) ---------- */
+// Catalogue indicatif des examens courants, regroupés comme sur un bon de demande de laboratoire
+// (`full` = libellé complet imprimé sur le document quand le libellé du bouton est abrégé).
+// RGPD : rien de ce qui concerne le patient (identité, date de naissance, renseignements cliniques)
+// n'est enregistré — ni dans `state`, ni en ligne, ni dans le navigateur. Les patients de l'appli sont
+// volontairement saisis sous un nom abrégé ; ces informations ne servent qu'à imprimer le document.
+const BILAN_CATALOG = [
+  {cat:'Hématologie', tests:[
+    {id:'nfs', label:'NFS – plaquettes', full:'NFS – plaquettes (hémogramme)'},
+    {id:'retic', label:'Réticulocytes'},
+    {id:'vs', label:'Vitesse de sédimentation'},
+    {id:'groupe', label:'Groupe sanguin ABO-Rhésus'},
+    {id:'rai', label:'RAI', full:'RAI (recherche d\'agglutinines irrégulières)'}
+  ]},
+  {cat:'Hémostase', tests:[
+    {id:'inr', label:'TP / INR'},
+    {id:'tca', label:'TCA'},
+    {id:'fibri', label:'Fibrinogène'},
+    {id:'ddim', label:'D-dimères'},
+    {id:'antixa', label:'Activité anti-Xa'}
+  ]},
+  {cat:'Biochimie', tests:[
+    {id:'iono', label:'Ionogramme sanguin'},
+    {id:'uree', label:'Urée'},
+    {id:'creat', label:'Créatinine + DFG', full:'Créatinine + DFG estimé'},
+    {id:'gly', label:'Glycémie'},
+    {id:'hba1c', label:'HbA1c', full:'HbA1c (hémoglobine glyquée)'},
+    {id:'ca', label:'Calcémie'},
+    {id:'phos', label:'Phosphorémie'},
+    {id:'mg', label:'Magnésémie'},
+    {id:'prot', label:'Protidémie'},
+    {id:'alb', label:'Albumine'},
+    {id:'uric', label:'Uricémie'},
+    {id:'crp', label:'CRP'},
+    {id:'lipides', label:'Bilan lipidique', full:'Bilan lipidique (cholestérol total, HDL, LDL, triglycérides)'}
+  ]},
+  {cat:'Bilan hépatique et pancréatique', tests:[
+    {id:'transa', label:'ASAT / ALAT', full:'Transaminases (ASAT, ALAT)'},
+    {id:'ggt', label:'Gamma-GT'},
+    {id:'pal', label:'Phosphatases alcalines'},
+    {id:'bili', label:'Bilirubine', full:'Bilirubine totale et conjuguée'},
+    {id:'lipase', label:'Lipasémie'}
+  ]},
+  {cat:'Fer et vitamines', tests:[
+    {id:'ferritine', label:'Ferritine'},
+    {id:'fer', label:'Fer sérique + CST', full:'Fer sérique + coefficient de saturation de la transferrine'},
+    {id:'b12', label:'Vitamine B12'},
+    {id:'b9', label:'Folates (B9)', full:'Folates (vitamine B9)'},
+    {id:'vitd', label:'Vitamine D', full:'Vitamine D (25-OH)'}
+  ]},
+  {cat:'Hormones et marqueurs', tests:[
+    {id:'tsh', label:'TSH'},
+    {id:'t4', label:'T4 libre'},
+    {id:'psa', label:'PSA total'},
+    {id:'bnp', label:'BNP / NT-proBNP'},
+    {id:'hcg', label:'β-hCG'}
+  ]},
+  {cat:'Urines', tests:[
+    {id:'ecbu', label:'ECBU', full:'ECBU (examen cytobactériologique des urines)'},
+    {id:'prot24', label:'Protéinurie des 24 h'},
+    {id:'microalb', label:'Albumine / créatinine urinaire', full:'Rapport albumine / créatinine urinaire'},
+    {id:'ionou', label:'Ionogramme urinaire'}
+  ]}
+];
+// Raccourcis : cochent d'un geste les examens d'un bilan courant (on peut ensuite en retirer).
+const BILAN_PRESETS = [
+  {label:'INR', tests:['inr']},
+  {label:'Bilan rénal', tests:['iono','uree','creat']},
+  {label:'Bilan hépatique', tests:['transa','ggt','pal','bili']},
+  {label:'Bilan lipidique', tests:['lipides']},
+  {label:'Diabète', tests:['gly','hba1c']},
+  {label:'Bilan martial', tests:['ferritine','fer']},
+  {label:'Thyroïde', tests:['tsh']},
+  {label:'Inflammation', tests:['nfs','crp']}
+];
+let bilanSelected = new Set(); // en mémoire seulement (jamais sauvegardé)
+
+function renderBilanTab(){
+  migratePractitionerProfiles();
+  const sel = document.getElementById('bbProfile');
+  sel.innerHTML = state.practitionerProfiles.map(p=>`<option value="${escAttr(p.id)}" ${p.id===state.activePractitionerProfileId?'selected':''}>${escHtml(p.nom || '(sans nom)')}</option>`).join('');
+  const prof = getActiveProfile();
+  document.getElementById('bbProfileWarn').style.display = (prof.nom && prof.adeli) ? 'none' : '';
+  if(!document.getElementById('bbDate').value) document.getElementById('bbDate').value = todayISO();
+  const presetsEl = document.getElementById('bbPresets');
+  if(!presetsEl.childElementCount){
+    presetsEl.innerHTML = BILAN_PRESETS.map((p,i)=>`<button type="button" class="bb-chip bb-preset" data-preset="${i}">+ ${escHtml(p.label)}</button>`).join('');
+  }
+  renderBilanTests();
+  updateBilanMode();
+}
+function renderBilanTests(){
+  document.getElementById('bbTests').innerHTML = BILAN_CATALOG.map(g=>`
+    <div class="bb-cat">${escHtml(g.cat)}</div>
+    <div class="bb-chips">${g.tests.map(t=>`<button type="button" class="bb-chip" data-test="${t.id}" aria-pressed="${bilanSelected.has(t.id)}">${escHtml(t.label)}</button>`).join('')}</div>`).join('');
+  updateBilanCount();
+}
+function updateBilanCount(){
+  const n = bilanSelected.size;
+  document.getElementById('bbCount').textContent = n ? `${n} examen${n>1?'s':''} sélectionné${n>1?'s':''}` : 'Aucun examen sélectionné';
+  document.getElementById('bbClear').style.display = n ? '' : 'none';
+}
+function updateBilanMode(){
+  const ordonnance = document.getElementById('bbMode').value === 'ordonnance';
+  document.querySelectorAll('#tab-bilans .bb-only-prelevement').forEach(el=>{ el.style.display = ordonnance ? 'none' : ''; });
+  document.getElementById('bbPrelevTitle').textContent = ordonnance ? 'Date et conditions' : 'Prélèvement';
+  document.getElementById('bbDateLabel').textContent = ordonnance ? "Date de l'ordonnance" : 'Date du prélèvement';
+  document.getElementById('bbModeHint').textContent = ordonnance
+    ? "À n'utiliser que pour des examens entrant dans votre champ de prescription d'infirmier(ère). Vérifiez-le avant de signer : ce document ne constitue pas un conseil juridique."
+    : "Pour un bilan prescrit par le médecin : la fiche accompagne les tubes et l'ordonnance médicale jusqu'au laboratoire.";
+}
+document.getElementById('bbMode').addEventListener('change', updateBilanMode);
+document.getElementById('bbProfile').addEventListener('change', (e)=>{
+  state.activePractitionerProfileId = e.target.value; // profil partagé avec l'onglet Prescriptions DM
+  scheduleAutosave();
+  renderBilanTab();
+});
+document.getElementById('bbTests').addEventListener('click', (e)=>{
+  const chip = e.target.closest('.bb-chip'); if(!chip) return;
+  const id = chip.dataset.test;
+  if(bilanSelected.has(id)) bilanSelected.delete(id); else bilanSelected.add(id);
+  chip.setAttribute('aria-pressed', String(bilanSelected.has(id)));
+  updateBilanCount();
+});
+document.getElementById('bbPresets').addEventListener('click', (e)=>{
+  const chip = e.target.closest('.bb-preset'); if(!chip) return;
+  const preset = BILAN_PRESETS[parseInt(chip.dataset.preset, 10)];
+  if(preset) preset.tests.forEach(id=>bilanSelected.add(id));
+  renderBilanTests();
+});
+document.getElementById('bbClear').addEventListener('click', ()=>{ bilanSelected.clear(); renderBilanTests(); });
+document.getElementById('btnOpenBilans').addEventListener('click', ()=>{ switchTab('bilans'); window.scrollTo(0,0); });
+document.getElementById('btnBackToPx').addEventListener('click', ()=>{ switchTab('prescriptions'); window.scrollTo(0,0); });
+
+function resetBilanForm(){
+  ['bbPatient','bbNaissance','bbHeure','bbPrescripteur','bbDateOrdo','bbAutres','bbClinique'].forEach(id=>{ document.getElementById(id).value = ''; });
+  document.getElementById('bbCivilite').value = '';
+  document.getElementById('bbJeun').value = '';
+  document.getElementById('bbDomicile').checked = true;
+  document.getElementById('bbCopieMedecin').checked = true;
+  document.getElementById('bbCopiePatient').checked = true;
+  document.getElementById('bbCopieIde').checked = false;
+  document.getElementById('bbDate').value = todayISO();
+  bilanSelected.clear();
+  renderBilanTests();
+}
+document.getElementById('btnResetBilan').addEventListener('click', ()=>{
+  if(confirm('Effacer ce bilan et en commencer un nouveau ?')) resetBilanForm();
+});
+
+// Le formulaire n'est PAS vidé après impression : rien n'étant enregistré, c'est ce qui permet de
+// relancer l'impression (impression annulée, deuxième exemplaire…). « Nouveau bilan » le vide.
+document.getElementById('btnGenerateBilan').addEventListener('click', ()=>{
+  const prof = getActiveProfile();
+  if(!prof.nom || !prof.adeli){
+    alert("Merci de renseigner le nom et le N° AM du profil actif (onglet Prescriptions DM) avant de générer le document.");
+    return;
+  }
+  const v = id => document.getElementById(id).value.trim();
+  const b = {
+    mode: document.getElementById('bbMode').value,
+    civilite: v('bbCivilite'), patientNom: v('bbPatient'), naissance: v('bbNaissance'),
+    date: v('bbDate'), heure: v('bbHeure'), jeun: v('bbJeun'), domicile: document.getElementById('bbDomicile').checked,
+    prescripteur: v('bbPrescripteur'), dateOrdo: v('bbDateOrdo'),
+    autres: v('bbAutres'), clinique: v('bbClinique'),
+    copies: [
+      document.getElementById('bbCopieMedecin').checked ? 'Médecin prescripteur / traitant' : '',
+      document.getElementById('bbCopiePatient').checked ? 'Patient' : '',
+      document.getElementById('bbCopieIde').checked ? 'Infirmier(ère)' : ''
+    ].filter(Boolean),
+    groups: BILAN_CATALOG.map(g=>({cat:g.cat, tests:g.tests.filter(t=>bilanSelected.has(t.id))})).filter(g=>g.tests.length)
+  };
+  if(!b.patientNom || !b.date){ alert('Merci de renseigner le nom et prénom du patient et une date.'); return; }
+  if(!b.groups.length && !b.autres){ alert('Sélectionnez au moins un examen (ou précisez-le dans « Autres examens »).'); return; }
+  openBilanPrintWindow(b, prof);
+});
+
+function openBilanPrintWindow(b, prof){
+  const ordonnance = b.mode === 'ordonnance';
+  const fmtDate = iso => iso ? new Date(iso+'T00:00:00').toLocaleDateString('fr-FR') : '';
+  const cpVille = [prof.codePostal, prof.ville].filter(Boolean).join(' ');
+  const sig = prof.signatureDataUrl || '';
+  const dateLongue = new Date(b.date+'T00:00:00').toLocaleDateString('fr-FR', {day:'2-digit',month:'long',year:'numeric'});
+  const ne = b.civilite==='Madame' ? 'Née le' : (b.civilite==='Monsieur' ? 'Né le' : 'Né(e) le');
+  const rows = [];
+  rows.push(['Patient', escHtml([b.civilite, b.patientNom].filter(Boolean).join(' ')) + (b.naissance ? ` — ${ne} ${escHtml(fmtDate(b.naissance))}` : '')]);
+  const cond = [];
+  if(!ordonnance) cond.push(`Le ${escHtml(fmtDate(b.date))}${b.heure ? ' à '+escHtml(b.heure.replace(':','h')) : ''}`);
+  if(b.domicile) cond.push('Prélèvement à domicile');
+  if(b.jeun) cond.push('À jeun : ' + (b.jeun==='oui' ? 'oui' : 'non'));
+  if(cond.length) rows.push([ordonnance ? 'Conditions' : 'Prélèvement', cond.join(' · ')]);
+  if(!ordonnance && (b.prescripteur || b.dateOrdo)){
+    rows.push(['Prescription médicale', escHtml([b.prescripteur, b.dateOrdo ? 'ordonnance du '+fmtDate(b.dateOrdo) : ''].filter(Boolean).join(' — '))]);
+  }
+  const rowsHtml = rows.map(([k,val])=>`<tr><th>${k}</th><td>${val}</td></tr>`).join('');
+  const groupsHtml = b.groups.map(g=>`
+      <div class="bb-group">
+        <div class="bb-group-title">${escHtml(g.cat)}</div>
+        <ul>${g.tests.map(t=>`<li>${escHtml(t.full || t.label)}</li>`).join('')}</ul>
+      </div>`).join('');
+  const autresHtml = b.autres ? `<div class="bb-group bb-autres"><div class="bb-group-title">Autres examens</div><div class="bb-text">${escHtml(b.autres)}</div></div>` : '';
+  const title = ordonnance ? 'Ordonnance' : 'Bilan biologique';
+  const subtitle = ordonnance ? 'Examens de biologie médicale' : 'Fiche de prélèvement';
+  const signLabel = ordonnance ? 'Signature du prescripteur :' : "Signature de l'infirmier(ère) préleveur :";
+  const footer = ordonnance
+    ? 'Ordonnance à présenter au laboratoire de biologie médicale.'
+    : "Fiche à joindre aux prélèvements, avec l'ordonnance médicale, pour le laboratoire de biologie médicale.";
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escHtml(title)} — ${escHtml(b.patientNom)}</title>
+  <style>
+    body{font-family:'Nunito',Arial,sans-serif;color:#222;padding:36px 46px;max-width:720px;margin:0 auto;font-size:13px;border-top:6px solid #4f9d94;}
+    .px-header .name{font-size:16px;font-weight:800;color:#2f6b63;}
+    .px-header .role{font-size:12px;color:#444;margin-top:2px;}
+    .px-header .addr{font-size:12px;color:#444;}
+    .px-date{text-align:right;margin:22px 0 14px;}
+    .px-title{text-align:center;margin:10px 0 22px;padding-bottom:12px;border-bottom:2px solid #a9d8d1;}
+    .px-title h1{font-size:19px;letter-spacing:.06em;margin:0;text-transform:uppercase;color:#2f6b63;}
+    .px-title .subtitle{font-size:13px;margin-top:6px;}
+    table.bb-info{width:100%;border-collapse:collapse;margin-bottom:20px;}
+    table.bb-info th{text-align:left;width:170px;font-size:12px;color:#2f6b63;font-weight:700;padding:6px 10px 6px 0;vertical-align:top;border-bottom:1px solid #e3ede9;}
+    table.bb-info td{padding:6px 0;border-bottom:1px solid #e3ede9;}
+    .bb-section{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#2f6b63;margin:18px 0 8px;}
+    .bb-groups{margin-bottom:6px;}
+    .bb-groups.cols{columns:2;column-gap:34px;}
+    .bb-group{break-inside:avoid;page-break-inside:avoid;margin-bottom:12px;}
+    .bb-group-title{font-size:11.5px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;}
+    .bb-group ul{margin:0;padding:0;list-style:none;}
+    .bb-group li{padding:2px 0 2px 20px;position:relative;font-size:13px;}
+    .bb-group li::before{content:'☑';position:absolute;left:0;top:1px;color:#2f6b63;}
+    .bb-text{white-space:pre-wrap;font-size:13px;}
+    .bb-autres{column-span:all;margin-top:8px;}
+    .px-sign{margin-top:44px;text-align:right;}
+    .px-sign .label{font-size:12px;margin-bottom:2px;color:#2f6b63;font-weight:600;}
+    .px-sign img{max-height:70px;max-width:220px;display:block;margin-left:auto;}
+    .px-footer{margin-top:34px;font-size:10.5px;color:#666;text-align:center;}
+    .no-print{margin-bottom:20px;}
+    @media (max-width:560px){ body{padding:20px 18px;} .bb-groups.cols{columns:1;} table.bb-info th{width:120px;} }
+    @media print{ body{padding:14mm 18mm;} .no-print{display:none !important;} }
+  </style></head>
+  <body>
+    <div class="no-print"><button onclick="window.close()" style="font:inherit;font-weight:700;background:#4f9d94;color:#fff;border:none;border-radius:999px;padding:8px 18px;cursor:pointer;">← Fermer cet onglet</button></div>
+    <div class="px-header">
+      <div class="name">${escHtml(prof.nom||'')}</div>
+      ${prof.titre ? `<div class="role">${escHtml(prof.titre)}</div>` : ''}
+      ${prof.adresse ? `<div class="addr">${escHtml(prof.adresse)}</div>` : ''}
+      ${(cpVille || prof.telephone) ? `<div class="addr">${escHtml(cpVille)}${cpVille && prof.telephone ? ' — ' : ''}${prof.telephone ? 'Tél. : '+escHtml(prof.telephone) : ''}</div>` : ''}
+      ${prof.adeli ? `<div class="addr">N° AM : ${escHtml(prof.adeli)}</div>` : ''}
+    </div>
+    <div class="px-date">${prof.ville ? escHtml(prof.ville)+', ' : ''}le ${escHtml(dateLongue)}</div>
+    <div class="px-title"><h1>${escHtml(title)}</h1><div class="subtitle">${escHtml(subtitle)}</div></div>
+    <table class="bb-info">${rowsHtml}</table>
+    <div class="bb-section">Examens demandés</div>
+    <div class="bb-groups${b.groups.length >= 3 ? ' cols' : ''}">${groupsHtml}${autresHtml}</div>
+    ${b.clinique ? `<div class="bb-section">Renseignements cliniques</div><div class="bb-text">${escHtml(b.clinique)}</div>` : ''}
+    ${b.copies.length ? `<div class="bb-section">Résultats à transmettre à</div><div>${escHtml(b.copies.join(' · '))}</div>` : ''}
+    <div class="px-sign">
+      <div class="label">${escHtml(signLabel)}</div>
+      ${sig ? `<img src="${sig}" alt="Signature">` : ''}
+    </div>
+    <div class="px-footer">${escHtml(footer)}</div>
+  </body></html>`;
+  const w = window.open('', '_blank');
+  if(!w){ alert("Merci d'autoriser les fenêtres pop-up pour générer le PDF."); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+  const doPrint = ()=>{ try{ w.focus(); w.print(); }catch(err){} };
+  const imgEl = sig ? w.document.querySelector('.px-sign img') : null;
+  if(imgEl && !imgEl.complete){ imgEl.addEventListener('load', doPrint); imgEl.addEventListener('error', doPrint); }
+  else setTimeout(doPrint, sig ? 200 : 150);
 }
 
 /* ============================= INIT ============================= */
