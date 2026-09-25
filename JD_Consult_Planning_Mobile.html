@@ -321,6 +321,7 @@
   .bb-chip.bb-pending{border-style:dashed;}
   .bb-chip[aria-pressed="true"].bb-pending{background:color-mix(in srgb, var(--warn) 18%, var(--panel));border-color:var(--warn);color:var(--text);}
   .bb-chip[aria-pressed="true"].bb-pending::after{content:'à renseigner';margin-left:6px;font-size:10.5px;font-weight:700;opacity:1;color:color-mix(in srgb, var(--warn) 75%, var(--text));}
+  .bb-req{color:var(--bad);font-weight:700;font-size:11px;}
   .bb-legend{font-size:11.5px;color:var(--muted);margin:10px 0 0;}
   .bb-modal-actions{display:flex;gap:8px;justify-content:space-between;margin-top:6px;}
   .bb-modal-actions .btn{flex:1;}
@@ -3781,7 +3782,7 @@ const BILAN_INFO_FIELDS = {
     {id:'injection', label:'Heure de la dernière injection', type:'time'}
   ],
   gly:[
-    {id:'moment', label:'Moment du prélèvement', type:'select', options:['','À jeun','Post-prandial (2 h après le repas)','Sans condition de jeûne']},
+    {id:'moment', label:'Contexte du prélèvement', type:'select', required:true, options:['','À jeun','Post-prandial (2 h après le repas)','Sans condition de jeûne (aléatoire)']},
     {id:'repas', label:'Heure du dernier repas', type:'time'}
   ],
   creat:[{id:'poids', label:'Poids (kg)', type:'number'}],
@@ -3816,8 +3817,15 @@ const BILAN_INFO_FIELDS = {
 let bilanInfo = {}; // { examId: { champ: valeur, note: '...' } } — en mémoire seulement
 let bilanInfoCurrent = null;
 function bilanInfoFilled(id){
-  const info = bilanInfo[id]; if(!info) return false;
+  const info = bilanInfo[id] || {};
+  const required = (BILAN_INFO_FIELDS[id]||[]).filter(f=>f.required);
+  // Examen avec un champ obligatoire (ex. contexte de la glycémie) : complet seulement s'il est rempli.
+  if(required.length) return required.every(f=>String(info[f.id]||'').trim());
   return Object.values(info).some(v=>String(v||'').trim());
+}
+function bilanMissingRequired(id){
+  const info = bilanInfo[id] || {};
+  return (BILAN_INFO_FIELDS[id]||[]).filter(f=>f.required && !String(info[f.id]||'').trim());
 }
 function openBilanInfo(id){
   const test = BILAN_CATALOG.flatMap(g=>g.tests).find(t=>t.id===id); if(!test) return;
@@ -3829,7 +3837,7 @@ function openBilanInfo(id){
     const input = f.type==='select'
       ? `<select data-info="${f.id}">${f.options.map(o=>`<option value="${escAttr(o)}" ${o===val?'selected':''}>${escHtml(o || '—')}</option>`).join('')}</select>`
       : `<input type="${f.type}" data-info="${f.id}" value="${escAttr(val)}" placeholder="${escAttr(f.placeholder||'')}" autocomplete="off"${f.type==='number'?' inputmode="decimal"':''}>`;
-    return `<div class="field"><label>${escHtml(f.label)}</label>${input}</div>`;
+    return `<div class="field"><label>${escHtml(f.label)}${f.required ? ' <b class="bb-req">(obligatoire)</b>' : ''}</label>${input}</div>`;
   }).join('');
   document.getElementById('bbInfoNote').value = info.note || '';
   document.getElementById('bbInfoModal').style.display = 'flex';
@@ -3846,7 +3854,11 @@ function closeBilanInfo(save){
   document.getElementById('bbInfoModal').style.display = 'none';
   renderBilanTests();
 }
-document.getElementById('bbInfoSave').addEventListener('click', ()=> closeBilanInfo(true));
+document.getElementById('bbInfoSave').addEventListener('click', ()=>{
+  const missing = (BILAN_INFO_FIELDS[bilanInfoCurrent]||[]).filter(f=>f.required && !document.querySelector(`#bbInfoFields [data-info="${f.id}"]`).value.trim());
+  if(missing.length){ alert('Merci de renseigner : ' + missing.map(f=>f.label).join(', ') + ' (obligatoire).'); return; }
+  closeBilanInfo(true);
+});
 document.getElementById('bbInfoRemove').addEventListener('click', ()=>{
   if(bilanInfoCurrent){ bilanSelected.delete(bilanInfoCurrent); delete bilanInfo[bilanInfoCurrent]; }
   closeBilanInfo(false);
@@ -3992,6 +4004,13 @@ document.getElementById('btnGenerateBilan').addEventListener('click', ()=>{
   };
   if(!b.patientNom || !b.date){ alert('Merci de renseigner le nom et prénom du patient et une date.'); return; }
   if(!b.groups.length && !b.autres){ alert('Sélectionnez au moins un examen (ou précisez-le dans « Autres examens »).'); return; }
+  const blocking = [...bilanSelected].filter(id=>bilanMissingRequired(id).length);
+  if(blocking.length){
+    const first = blocking[0];
+    alert(`Renseignement obligatoire manquant : ${bilanMissingRequired(first).map(f=>f.label).join(', ')} (${(BILAN_CATALOG.flatMap(g=>g.tests).find(t=>t.id===first)||{}).label}).`);
+    openBilanInfo(first);
+    return;
+  }
   const pending = [...bilanSelected].filter(id=>BILAN_INFO_FIELDS[id] && !bilanInfoFilled(id));
   if(pending.length){
     const names = pending.map(id=>(BILAN_CATALOG.flatMap(g=>g.tests).find(t=>t.id===id)||{}).label).join(', ');
