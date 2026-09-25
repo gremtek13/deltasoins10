@@ -569,9 +569,9 @@
       <div class="field"><label>Renseignements cliniques / traitement en cours</label><textarea id="bbClinique" rows="2" placeholder="Ex. Traitement anticoagulant en cours, INR cible entre 2 et 3"></textarea></div>
       <label style="margin-top:6px;">Résultats à transmettre à</label>
       <div class="row tight" style="gap:22px;flex-wrap:wrap;">
-        <label class="bb-check"><input type="checkbox" id="bbCopieMedecin" checked> Médecin prescripteur / traitant</label>
+        <label class="bb-check"><input type="checkbox" id="bbCopieMedecin" checked> <span id="bbCopieMedecinLbl">Médecin prescripteur / traitant</span></label>
         <label class="bb-check"><input type="checkbox" id="bbCopiePatient" checked> Patient</label>
-        <label class="bb-check"><input type="checkbox" id="bbCopieIde"> Infirmier(ère)</label>
+        <label class="bb-check"><input type="checkbox" id="bbCopieIde"> <span id="bbCopieIdeLbl">Infirmier(ère)</span></label>
       </div>
     </div>
     <div class="row tight" style="justify-content:flex-end;gap:8px;">
@@ -3456,8 +3456,20 @@ function updateBilanMode(){
   document.getElementById('bbModeHint').textContent = ordonnance
     ? "À n'utiliser que pour des examens entrant dans votre champ de prescription d'infirmier(ère). Vérifiez-le avant de signer : ce document ne constitue pas un conseil juridique."
     : "Pour un bilan prescrit par le médecin : la fiche accompagne les tubes et l'ordonnance médicale jusqu'au laboratoire.";
+  // En mode ordonnance, c'est l'infirmier(ère) qui prescrit : les destinataires des résultats changent de libellé.
+  document.getElementById('bbCopieMedecinLbl').textContent = bilanCopyLabels(ordonnance).medecin;
+  document.getElementById('bbCopieIdeLbl').textContent = bilanCopyLabels(ordonnance).ide;
 }
-document.getElementById('bbMode').addEventListener('change', updateBilanMode);
+function bilanCopyLabels(ordonnance){
+  return ordonnance
+    ? {medecin:'Médecin traitant', ide:'Infirmier(ère) prescripteur'}
+    : {medecin:'Médecin prescripteur / traitant', ide:'Infirmier(ère)'};
+}
+document.getElementById('bbMode').addEventListener('change', ()=>{
+  // Passage en ordonnance infirmière : le prescripteur reçoit normalement les résultats.
+  if(document.getElementById('bbMode').value === 'ordonnance') document.getElementById('bbCopieIde').checked = true;
+  updateBilanMode();
+});
 document.getElementById('bbProfile').addEventListener('change', (e)=>{
   state.activePractitionerProfileId = e.target.value; // profil partagé avec l'onglet Prescriptions DM
   scheduleAutosave();
@@ -3512,9 +3524,9 @@ document.getElementById('btnGenerateBilan').addEventListener('click', ()=>{
     prescripteur: v('bbPrescripteur'), dateOrdo: v('bbDateOrdo'),
     autres: v('bbAutres'), clinique: v('bbClinique'),
     copies: [
-      document.getElementById('bbCopieMedecin').checked ? 'Médecin prescripteur / traitant' : '',
+      document.getElementById('bbCopieMedecin').checked ? bilanCopyLabels(document.getElementById('bbMode').value==='ordonnance').medecin : '',
       document.getElementById('bbCopiePatient').checked ? 'Patient' : '',
-      document.getElementById('bbCopieIde').checked ? 'Infirmier(ère)' : ''
+      document.getElementById('bbCopieIde').checked ? bilanCopyLabels(document.getElementById('bbMode').value==='ordonnance').ide : ''
     ].filter(Boolean),
     groups: BILAN_CATALOG.map(g=>({cat:g.cat, tests:g.tests.filter(t=>bilanSelected.has(t.id))})).filter(g=>g.tests.length)
   };
