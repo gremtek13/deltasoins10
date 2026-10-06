@@ -1227,68 +1227,106 @@ const XL_BASE_STYLES = `
   <Style ss:ID="head"><Font ss:Bold="1" ss:Color="#1F2933"/><Interior ss:Color="#EAF5F3" ss:Pattern="Solid"/><Alignment ss:Vertical="Center" ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#9AA5B1"/></Borders></Style>`;
 const XL_BORDER = `<Borders><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E3EDE9"/><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E3EDE9"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E3EDE9"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E3EDE9"/></Borders>`;
 
-// Construit un classeur "Planning" visuel et coloré : qui travaille, quel jour, pour quel patient.
-function buildPlanningWorkbookXML(month){
+// Données communes aux exports Excel et PDF du planning, sur le modèle de la feuille « Facturation patient » :
+// une colonne Patient (nom, types de prise en charge, nombre de passages / jour), une colonne par jour du
+// mois, une ligne par passage avec un X les jours où le passage a lieu, et le total de passages du mois.
+function buildPlanningSheetData(month){
   const days = daysInMonth(month);
-  const monthLabel = new Date(month+'-01T00:00:00').toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
-  const nCols = days.length + 1;
-
-  // Un style de fond pastel par infirmier(ère), dérivé de sa couleur (onglet Personnel).
-  const nurseStyleId = {};
-  const nurseStylesXml = state.nurses.map((n,i)=>{
-    nurseStyleId[n.id] = 'nurse'+i;
-    const bg = lightenHex(n.color||'#4f9d94', 0.78);
-    return `<Style ss:ID="nurse${i}"><Font ss:Size="9"/><Interior ss:Color="${bg}" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>${XL_BORDER}</Style>`;
-  }).join('');
-
-  const styles = XL_BASE_STYLES + `
-  <Style ss:ID="headPatientCol"><Font ss:Bold="1"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/>${XL_BORDER}</Style>
-  <Style ss:ID="headDay"><Font ss:Bold="1" ss:Size="9"/><Interior ss:Color="#EAF5F3" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>${XL_BORDER}</Style>
-  <Style ss:ID="headDaySunday"><Font ss:Bold="1" ss:Size="9"/><Interior ss:Color="#FDECE4" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>${XL_BORDER}</Style>
-  <Style ss:ID="tourneeLabel"><Font ss:Bold="1" ss:Italic="1" ss:Size="9"/><Interior ss:Color="#F1F7F5" ss:Pattern="Solid"/>${XL_BORDER}</Style>
-  <Style ss:ID="patientName"><Font ss:Bold="1" ss:Size="10"/><Interior ss:Color="#FAFCFB" ss:Pattern="Solid"/><Alignment ss:Horizontal="Left" ss:Vertical="Center" ss:WrapText="1"/>${XL_BORDER}</Style>
-  <Style ss:ID="emptyCell"><Alignment ss:Horizontal="Center" ss:Vertical="Center"/>${XL_BORDER}</Style>
-  ${nurseStylesXml}`;
-
-  const titleRow = xlRow(`<Cell ss:StyleID="title" ss:MergeAcross="${nCols-1}"><Data ss:Type="String">🩺 JD Factu — Planning ${xmlEsc(monthLabel)}</Data></Cell>`, 22);
-
-  let dayHeadCells = xlCell('Patient', {styleId:'headPatientCol'});
-  days.forEach(d=>{
-    const sunday = isSunday(d), ferie = isHoliday(d);
-    const wd = WEEKDAYS[(new Date(d+'T00:00:00').getDay()+6)%7];
-    const label = d.slice(8,10) + '\n' + wd + (ferie?' 🔴':'');
-    dayHeadCells += xlCell(label, {styleId: (sunday||ferie) ? 'headDaySunday' : 'headDay'});
-  });
-  const dayHeadRow = xlRow(dayHeadCells, 28);
-
-  let tourneeCells = `<Cell ss:StyleID="tourneeLabel"><Data ss:Type="String">🌐 Tournée du jour</Data></Cell>`;
-  days.forEach(d=>{
-    const nurseId = dayDefaultNurseId(d);
-    const nurse = nurseId ? state.nurses.find(n=>n.id===nurseId) : null;
-    tourneeCells += nurse ? xlCell(nurse.name, {styleId:nurseStyleId[nurse.id]||'emptyCell'}) : xlCell('', {styleId:'emptyCell'});
-  });
-  const tourneeRow = xlRow(tourneeCells, 18);
-
-  const patientRows = state.patients.filter(p=>isPatientActiveInMonth(p, month)).map(p=>{
-    let cells = xlCell(p.name + (p.hasCancer?' 🎗️':''), {styleId:'patientName'});
-    days.forEach(d=>{
-      const calc = computeDayAmount(d,p);
-      if(calc.hasNurse){
-        const nurse = state.nurses.find(n=>n.id===calc.nurseId);
-        const label = nurse ? nurse.name : '?';
-        cells += xlCell(label, {styleId: nurse ? (nurseStyleId[nurse.id]||'emptyCell') : 'emptyCell'});
-      } else {
-        cells += xlCell('', {styleId:'emptyCell'});
-      }
+  const monthRaw = new Date(month+'-01T00:00:00').toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+  const monthLabel = monthRaw.charAt(0).toUpperCase() + monthRaw.slice(1);
+  const LETTERS = ['D','L','M','M','J','V','S'];
+  const dayInfo = days.map(d=>({d, num: String(parseInt(d.slice(8,10),10)), letter: LETTERS[new Date(d+'T00:00:00').getDay()], off: isSunday(d) || isHoliday(d)}));
+  const patients = state.patients.filter(p=>isPatientActiveInMonth(p, month)).map(p=>{
+    const defaultCount = Math.max(1, getPatientDefaultPassages(p, []).length);
+    // Pour chaque jour : nombre de passages réalisés et infirmier(ère) du jour (0 = pas de passage).
+    const perDay = days.map(d=>{
+      const calc = computeDayAmount(d, p);
+      if(!calc.hasNurse) return {count:0, nurse:null};
+      return {count: Math.max(1, getDayPassages(d, p).length), nurse: state.nurses.find(n=>n.id===calc.nurseId) || null};
     });
-    return xlRow(cells, 26);
+    const rows = Math.max(defaultCount, ...perDay.map(x=>x.count), 1);
+    const careNames = patientCareTypeIds(p).map(id=>(state.careTypes.find(c=>c.id===id)||{}).name).filter(Boolean);
+    return {
+      name: p.name + (p.hasCancer ? ' 🎗️' : ''),
+      careNames,
+      passagesLabel: `${defaultCount} passage${defaultCount>1?'s':''} / jour`,
+      rows, perDay,
+      total: perDay.reduce((s,x)=>s + x.count, 0)
+    };
+  });
+  return {days: dayInfo, monthLabel, patients};
+}
+
+// Construit le classeur Excel du planning (format XML Excel 2003, lisible par Excel / Numbers / LibreOffice).
+function buildPlanningWorkbookXML(month){
+  const data = buildPlanningSheetData(month);
+  const nDays = data.days.length;
+  const LINE = '#C9D6D2', BLOCK = '#397A72';
+  const border = (top)=> `<Borders><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="${top?2:1}" ss:Color="${top?BLOCK:LINE}"/><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="${LINE}"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="${LINE}"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="${LINE}"/></Borders>`;
+  const center = '<Alignment ss:Horizontal="Center" ss:Vertical="Center"/>';
+  // Styles « X » : fond pastel + X de la couleur de l'infirmier(ère) ; variante « top » = début d'un bloc patient.
+  const nurseStyles = state.nurses.map((n,i)=>{
+    const c = n.color || '#4f9d94', bg = lightenHex(c, 0.8);
+    return [0,1].map(top=>`<Style ss:ID="x${i}${top?'t':''}"><Font ss:Bold="1" ss:Size="10" ss:Color="${xmlEsc(c)}"/><Interior ss:Color="${bg}" ss:Pattern="Solid"/>${center}${border(top)}</Style>`).join('');
+  }).join('');
+  const nurseIdx = {}; state.nurses.forEach((n,i)=>{ nurseIdx[n.id] = i; });
+  const styles = XL_BASE_STYLES + `
+  <Style ss:ID="sub"><Font ss:Size="10" ss:Color="#52606D"/></Style>
+  <Style ss:ID="hPatient"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#397A72" ss:Pattern="Solid"/><Alignment ss:Horizontal="Left" ss:Vertical="Center"/>${border(false)}</Style>
+  <Style ss:ID="hDay"><Font ss:Bold="1" ss:Size="9" ss:Color="#FFFFFF"/><Interior ss:Color="#4F9D94" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>${border(false)}</Style>
+  <Style ss:ID="hDayOff"><Font ss:Bold="1" ss:Size="9" ss:Color="#9A3412"/><Interior ss:Color="#FBD9C9" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>${border(false)}</Style>
+  <Style ss:ID="hTotal"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#397A72" ss:Pattern="Solid"/>${center}${border(false)}</Style>
+  <Style ss:ID="patient"><Font ss:Bold="1" ss:Size="10" ss:Color="#1F2933"/><Interior ss:Color="#EAF5F3" ss:Pattern="Solid"/><Alignment ss:Horizontal="Left" ss:Vertical="Top" ss:WrapText="1"/>${border(true)}</Style>
+  <Style ss:ID="total"><Font ss:Bold="1" ss:Size="12" ss:Color="#397A72"/><Interior ss:Color="#EAF5F3" ss:Pattern="Solid"/>${center}${border(true)}</Style>
+  <Style ss:ID="e"><Interior ss:Color="#FFFFFF" ss:Pattern="Solid"/>${center}${border(false)}</Style>
+  <Style ss:ID="et"><Interior ss:Color="#FFFFFF" ss:Pattern="Solid"/>${center}${border(true)}</Style>
+  <Style ss:ID="eo"><Interior ss:Color="#FDF1EB" ss:Pattern="Solid"/>${center}${border(false)}</Style>
+  <Style ss:ID="eot"><Interior ss:Color="#FDF1EB" ss:Pattern="Solid"/>${center}${border(true)}</Style>
+  <Style ss:ID="xq"><Font ss:Bold="1" ss:Size="10"/><Interior ss:Color="#F1F1F1" ss:Pattern="Solid"/>${center}${border(false)}</Style>
+  <Style ss:ID="xqt"><Font ss:Bold="1" ss:Size="10"/><Interior ss:Color="#F1F1F1" ss:Pattern="Solid"/>${center}${border(true)}</Style>
+  <Style ss:ID="legend"><Font ss:Bold="1" ss:Size="10"/></Style>
+  ${nurseStyles}`;
+
+  const out = [];
+  out.push(xlRow(`<Cell ss:StyleID="title" ss:MergeAcross="${nDays+1}"><Data ss:Type="String">Planning des passages — ${xmlEsc(data.monthLabel)}</Data></Cell>`, 24));
+  out.push(xlRow(`<Cell ss:StyleID="sub" ss:MergeAcross="${nDays+1}"><Data ss:Type="String">X = passage réalisé (couleur de l'infirmier(ère) du jour) · colonnes orangées = dimanches et jours fériés</Data></Cell>`, 16));
+  let head = xlCell('PATIENT', {styleId:'hPatient'});
+  data.days.forEach(x=>{ head += xlCell(`${x.num}\n${x.letter}`, {styleId: x.off ? 'hDayOff' : 'hDay'}); });
+  head += xlCell('Total', {styleId:'hTotal'});
+  out.push(xlRow(head, 28));
+
+  data.patients.forEach(pt=>{
+    const label = [pt.name, ...pt.careNames, pt.passagesLabel].join('\n');
+    for(let r=0; r<pt.rows; r++){
+      const top = r===0;
+      let cells = '';
+      if(top){
+        cells += `<Cell ss:StyleID="patient"${pt.rows>1?` ss:MergeDown="${pt.rows-1}"`:''}><Data ss:Type="String">${xmlEscNL(label)}</Data></Cell>`;
+      }
+      pt.perDay.forEach((x,di)=>{
+        const idx = (!top && di===0) ? ' ss:Index="2"' : '';
+        let style;
+        if(x.count > r){
+          const ni = x.nurse ? nurseIdx[x.nurse.id] : undefined;
+          style = (ni!==undefined ? 'x'+ni : 'xq') + (top ? 't' : '');
+          cells += `<Cell${idx} ss:StyleID="${style}"><Data ss:Type="String">X</Data></Cell>`;
+        } else {
+          style = (data.days[di].off ? 'eo' : 'e') + (top ? 't' : '');
+          cells += `<Cell${idx} ss:StyleID="${style}"/>`;
+        }
+      });
+      if(top) cells += `<Cell ss:StyleID="total"${pt.rows>1?` ss:MergeDown="${pt.rows-1}"`:''}><Data ss:Type="Number">${pt.total}</Data></Cell>`;
+      // Hauteur : la première ligne laisse la place au nom + types de prise en charge.
+      const lines = 2 + pt.careNames.length;
+      out.push(xlRow(cells, pt.rows===1 ? Math.max(22, lines*13) : (top ? 20 : Math.max(20, Math.ceil((lines*13 - 20)/(pt.rows-1))))));
+    }
   });
 
-  const legendRows = [xlRow(''), xlRow(`<Cell ss:StyleID="bold"><Data ss:Type="String">Légende infirmier(ère)s</Data></Cell>`)]
-    .concat(state.nurses.map((n,i)=> xlRow(xlCell(n.name, {styleId:nurseStyleId[n.id]}))));
+  out.push(xlRow(''));
+  out.push(xlRow(`<Cell ss:StyleID="legend"><Data ss:Type="String">Infirmier(ère)s</Data></Cell>`));
+  state.nurses.forEach((n,i)=>{ out.push(xlRow(xlCell('X', {styleId:'x'+i}) + xlCell(n.name, {}), 18)); });
 
-  const colDefs = `<Column ss:Width="150"/>` + days.map(()=>'<Column ss:Width="46"/>').join('');
-
+  const colDefs = `<Column ss:Width="150"/>` + data.days.map(()=>'<Column ss:Width="22"/>').join('') + '<Column ss:Width="42"/>';
   return `<?xml version="1.0"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
@@ -1300,13 +1338,12 @@ function buildPlanningWorkbookXML(month){
  <Worksheet ss:Name="${xmlEsc('Planning ' + month)}">
   <Table>
    ${colDefs}
-${titleRow}
-${dayHeadRow}
-${tourneeRow}
-${patientRows.join('\n')}
-${legendRows.join('\n')}
+${out.join('\n')}
   </Table>
   <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+   <PageSetup><Layout x:Orientation="Landscape"/><PageMargins x:Bottom="0.4" x:Left="0.3" x:Right="0.3" x:Top="0.4"/></PageSetup>
+   <FitToPage/>
+   <Print><FitWidth>1</FitWidth><FitHeight>0</FitHeight><PaperSizeIndex>9</PaperSizeIndex></Print>
    <FreezePanes/>
    <FrozenNoSplit/>
    <SplitHorizontal>3</SplitHorizontal>
@@ -1323,65 +1360,77 @@ function downloadPlanningExcel(month){
   const blob = new Blob([xml], {type:'application/vnd.ms-excel'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `jd-factu_${month}.xls`;
+  a.href = url; a.download = `jd-factu_planning_${month}.xls`;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 document.getElementById('btnExportExcel').addEventListener('click', ()=> downloadPlanningExcel(getPlanMonth()));
 
-/* ---------- Export planning en PDF (fenêtre d'impression) ---------- */
+/* ---------- Export planning en PDF (fenêtre d'impression, A4 paysage) ---------- */
 function buildPlanningPrintHTML(month){
-  const days = daysInMonth(month);
-  const monthLabel = new Date(month+'-01T00:00:00').toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
-  const headCells = days.map(d=>{
-    const sunday = isSunday(d), ferie = isHoliday(d);
-    const cls = (sunday||ferie) ? ' class="off"' : '';
-    return `<th${cls}>${d.slice(8,10)}</th>`;
-  }).join('');
-  const tourneeCells = days.map(d=>{
-    const nurseId = dayDefaultNurseId(d);
-    const nurse = nurseId ? state.nurses.find(n=>n.id===nurseId) : null;
-    return nurse ? `<td style="background:${lightenHex(nurse.color||'#4f9d94',0.78)};">${escHtml(nurse.name)}</td>` : '<td></td>';
-  }).join('');
-  const patientRows = state.patients.filter(p=>isPatientActiveInMonth(p, month)).map(p=>{
-    const cells = days.map(d=>{
-      const calc = computeDayAmount(d,p);
-      if(calc.hasNurse){
-        const nurse = state.nurses.find(n=>n.id===calc.nurseId);
-        const bg = nurse ? lightenHex(nurse.color||'#4f9d94',0.78) : '#f1f1f1';
-        return `<td style="background:${bg};">${escHtml(nurse?nurse.name:'?')}</td>`;
+  const data = buildPlanningSheetData(month);
+  const headCells = data.days.map(x=>`<th class="day${x.off?' off':''}">${x.num}<span>${x.letter}</span></th>`).join('');
+  // Un <tbody> par patient : le bloc n'est jamais coupé entre deux pages, et l'en-tête se répète.
+  const blocks = data.patients.map(pt=>{
+    let html = '';
+    for(let r=0; r<pt.rows; r++){
+      let row = '';
+      if(r===0){
+        row += `<td class="patient" rowspan="${pt.rows}"><b>${escHtml(pt.name)}</b>${pt.careNames.map(n=>`<div class="ct">${escHtml(n)}</div>`).join('')}<div class="pp">${escHtml(pt.passagesLabel)}</div></td>`;
       }
-      return '<td></td>';
-    }).join('');
-    return `<tr><td class="patient-col">${escHtml(p.name)}${p.hasCancer?' 🎗️':''}</td>${cells}</tr>`;
+      row += pt.perDay.map((x,di)=>{
+        const off = data.days[di].off ? ' off' : '';
+        if(x.count > r){
+          const c = (x.nurse && x.nurse.color) || '#4f9d94';
+          return `<td class="x${off}" style="background:${lightenHex(c,0.8)};color:${escAttr(c)};">X</td>`;
+        }
+        return `<td class="e${off}"></td>`;
+      }).join('');
+      if(r===0) row += `<td class="total" rowspan="${pt.rows}">${pt.total}</td>`;
+      html += `<tr${r===0?' class="first"':''}>${row}</tr>`;
+    }
+    return `<tbody>${html}</tbody>`;
   }).join('');
-  const legend = state.nurses.map(n=>`<span class="legend-item"><span class="swatch" style="background:${lightenHex(n.color||'#4f9d94',0.78)};border-color:${escAttr(n.color||'#4f9d94')};"></span>${escHtml(n.name)}</span>`).join('');
-  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Planning — ${escHtml(monthLabel)}</title>
+  const legend = state.nurses.map(n=>{
+    const c = n.color || '#4f9d94';
+    return `<span class="legend-item"><span class="swatch" style="background:${lightenHex(c,0.8)};color:${escAttr(c)};">X</span>${escHtml(n.name)}</span>`;
+  }).join('');
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Planning — ${escHtml(data.monthLabel)}</title>
   <style>
-    body{font-family:'Nunito',Arial,sans-serif;color:#222;padding:16px 20px;}
-    h1{font-size:16px;margin:0 0 12px;color:#397a72;}
-    table{border-collapse:collapse;width:100%;font-size:10px;}
-    th,td{border:1px solid #ccc;padding:3px 4px;text-align:center;white-space:nowrap;}
-    th{background:#eaf5f3;color:#397a72;}
-    th.off,td.off{background:#fdece4;}
-    td.patient-col,th.patient-col{text-align:left;font-weight:700;white-space:normal;min-width:110px;}
-    .legend{margin-top:14px;font-size:10.5px;}
-    .legend-item{display:inline-flex;align-items:center;gap:5px;margin-right:16px;}
-    .swatch{display:inline-block;width:11px;height:11px;border-radius:3px;border:1px solid;}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    body{font-family:Arial,'Helvetica Neue',sans-serif;color:#1f2933;padding:16px 20px;margin:0;}
+    .top{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 10px;font-family:Arial,sans-serif;}
+    h1{font-size:15px;margin:0;color:#397a72;}
+    .legend{font-size:10.5px;}
+    .legend-item{display:inline-flex;align-items:center;gap:5px;margin-left:14px;}
+    .swatch{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;font-weight:700;font-size:10px;border:1px solid #c9d6d2;}
+    table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:12px;}
+    th,td{border:1px solid #9fb3ae;text-align:center;padding:0;}
+    thead th{background:#4f9d94;color:#fff;font-weight:700;font-size:11px;height:30px;}
+    thead th.patient-h{background:#397a72;text-align:left;padding-left:6px;width:150px;font-size:12px;}
+    thead th.total-h{background:#397a72;width:40px;}
+    thead th.day span{display:block;font-size:8.5px;font-weight:400;opacity:.85;}
+    thead th.off{background:#fbd9c9;color:#9a3412;}
+    td.e{height:22px;}
+    td.e.off{background:#fdf1eb;}
+    td.x{height:22px;font-weight:700;font-size:12.5px;}
+    td.patient{background:#eaf5f3;text-align:left;vertical-align:top;padding:4px 6px;font-size:11.5px;line-height:1.35;}
+    td.patient b{font-size:12.5px;display:block;margin-bottom:2px;}
+    td.patient .ct{font-weight:700;color:#397a72;}
+    td.patient .pp{font-weight:700;}
+    td.total{background:#eaf5f3;font-weight:700;font-size:14px;color:#397a72;}
+    tbody{break-inside:avoid;page-break-inside:avoid;}
+    tr.first td{border-top:2px solid #397a72;}
     .no-print{margin-bottom:14px;}
-    @media print{ @page{ size:landscape; margin:10mm; } .no-print{display:none !important;} }
+    @media print{ @page{ size:A4 landscape; margin:9mm; } body{padding:0;} .no-print{display:none !important;} }
   </style></head>
   <body>
-    <div class="no-print"><button onclick="window.close()" style="font:inherit;font-weight:700;background:#4f9d94;color:#fff;border:none;border-radius:999px;padding:8px 18px;cursor:pointer;">← Fermer cet onglet</button></div>
-    <h1>🩺 JD Factu — Planning ${escHtml(monthLabel)}</h1>
+    <div class="no-print"><button onclick="window.close()" style="font:inherit;font-family:Arial,sans-serif;font-weight:700;background:#4f9d94;color:#fff;border:none;border-radius:999px;padding:8px 18px;cursor:pointer;">← Fermer cet onglet</button></div>
+    <div class="top"><h1>Planning des passages — ${escHtml(data.monthLabel)}</h1><div class="legend">${legend}</div></div>
     <table>
-      <thead><tr><th class="patient-col">Patient</th>${headCells}</tr></thead>
-      <tbody>
-        <tr><td class="patient-col">🌐 Tournée du jour</td>${tourneeCells}</tr>
-        ${patientRows}
-      </tbody>
+      <thead><tr><th class="patient-h">PATIENT</th>${headCells}<th class="total-h">Total</th></tr></thead>
+      ${blocks || `<tbody><tr><td colspan="${data.days.length+2}" style="padding:14px;">Aucun patient actif ce mois-ci.</td></tr></tbody>`}
     </table>
-    <div class="legend">${legend}</div>
   </body></html>`;
 }
 function printPlanningPDF(month){
