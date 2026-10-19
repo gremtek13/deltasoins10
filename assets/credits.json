@@ -72,33 +72,6 @@
   "saved": "2026-10-17T21:40:38.420Z"
  },
  {
-  "file": "assets/huveaune-capelette-video.webm",
-  "media": "video",
-  "poster": "assets/huveaune-capelette-video-poster.jpg",
-  "ref": "commons:70169661",
-  "title": "L'Huveaune à Marseille",
-  "creator": "XDurang",
-  "creatorUrl": null,
-  "date": "2018-06-23",
-  "license": "CC BY-SA 4.0",
-  "licenseCode": "by-sa",
-  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-  "creditRequired": true,
-  "page": "https://commons.wikimedia.org/wiki/File:L%27Huveaune_%C3%A0_Marseille.ogv",
-  "via": "Wikimedia Commons",
-  "video": "https://upload.wikimedia.org/wikipedia/commons/transcoded/6/6e/L%27Huveaune_%C3%A0_Marseille.ogv/L%27Huveaune_%C3%A0_Marseille.ogv.480p.vp9.webm",
-  "width": 854,
-  "height": 480,
-  "duration": 101.2,
-  "bytes": 2709843,
-  "credit": "\"L'Huveaune à Marseille\" by XDurang, CC BY-SA 4.0, via Wikimedia Commons",
-  "notes": [
-   "Share-alike: an altered version (recoloured, combined with other pictures) must be shared under the same licence.",
-   "Long (1:41): a loop on a page wants 5 to 20 seconds. Prefer a shorter clip, or trim one with ffmpeg if it is installed."
-  ],
-  "saved": "2026-10-17T21:41:50.833Z"
- },
- {
   "file": "assets/calanque-port-pin.jpg",
   "media": "image",
   "ref": "commons:152933930",
