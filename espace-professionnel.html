@@ -6,6 +6,9 @@
 <title>Espace professionnel — Deltasoins 13010</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2248%22 fill=%22%234f9d94%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@700&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <!--
   Portail d'accès à usage interne : propose simplement le choix entre la version bureau et la version
@@ -17,46 +20,26 @@
     compte + copie locale hors connexion. Vérifier que la sécurité entre comptes (Row Level Security) est
     bien activée côté Supabase avant d'y saisir de vraies données patients.
 
-  Cette page n'est volontairement liée depuis aucun menu du site (ni .main-nav ni footer), n'apparaît pas
-  dans sitemap.xml, et est exclue de l'indexation via robots.txt + la balise meta robots ci-dessus.
+  Cette page n'apparaît pas dans sitemap.xml et est exclue de l'indexation via robots.txt + la balise
+  meta robots ci-dessus.
 -->
-<style>
-  body.gate-body{
-    display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;
-  }
-  .gate-card{
-    background:var(--color-white);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);
-    padding:44px 36px;max-width:400px;width:100%;text-align:center;
-  }
-  .gate-icon{
-    width:60px;height:60px;border-radius:var(--radius-md);background:var(--color-primary-light);
-    display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:26px;
-  }
-  .gate-card h1{font-size:1.35rem;margin-bottom:6px;}
-  .gate-sub{color:var(--color-text-light);font-size:0.9rem;margin-bottom:26px;}
-  .gate-choice-links{margin-top:4px;}
-  .gate-choice-links a.btn{
-    display:flex;width:100%;justify-content:center;margin-bottom:12px;
-  }
-  .gate-choice-links a.btn:last-of-type{margin-bottom:0;}
-  .gate-hint{color:var(--color-text-light);font-size:0.8rem;margin-top:18px;}
-  .gate-footer-note{margin-top:26px;color:var(--color-text-light);font-size:0.72rem;}
-  outline-pref{outline:2px solid var(--color-primary);}
-</style>
 </head>
-<body class="gate-body">
+<body>
 
-<div class="gate-card">
-  <div class="gate-icon">🩺</div>
-  <h1>Planning &amp; facturation</h1>
-  <div class="gate-sub">Choisissez votre version — connexion à votre compte requise ensuite</div>
-  <div class="gate-choice-links">
-    <a class="btn btn-outline" href="JD_Consult_Planning.html" id="linkDesktop">💻 Version bureau (grille du mois)</a>
-    <a class="btn btn-outline" href="JD_Consult_Planning_Mobile.html" id="linkMobile">📱 Version mobile (vue jour)</a>
+<main class="gate">
+  <div class="gate__delta" aria-hidden="true"></div>
+  <div class="gate__card">
+    <a href="index.html" class="wordmark" aria-label="Deltasoins, accueil"><span class="wordmark__delta" aria-hidden="true"></span>deltasoins</a>
+    <h1 style="margin-top:2rem">Planning et facturation</h1>
+    <p>Choisissez votre version. La connexion à votre compte est demandée ensuite.</p>
+    <div class="gate__choices">
+      <a class="button" href="JD_Consult_Planning.html" id="linkDesktop">Version bureau, grille du mois</a>
+      <a class="button" href="JD_Consult_Planning_Mobile.html" id="linkMobile">Version mobile, roulement</a>
+    </div>
+    <p class="gate__hint" id="autoHint"></p>
+    <p class="gate__hint">Outil interne, usage professionnel uniquement.</p>
   </div>
-  <div class="gate-hint" id="autoHint"></div>
-  <div class="gate-footer-note">Outil interne — usage professionnel uniquement.</div>
-</div>
+</main>
 
 <script>
   // Suggestion automatique selon la taille d'écran (téléphone -> mobile, sinon bureau), tout en
@@ -65,9 +48,7 @@
   document.getElementById('autoHint').textContent = isPhone
     ? 'Sur téléphone, la version mobile est recommandée.'
     : 'Sur ordinateur, la version bureau est recommandée.';
-  const preferred = document.getElementById(isPhone ? 'linkMobile' : 'linkDesktop');
-  preferred.classList.add('outline-pref');
-  preferred.style.outline = '2px solid var(--color-primary)';
+  document.getElementById(isPhone ? 'linkMobile' : 'linkDesktop').classList.add('is-pref');
 </script>
 
 </body>
