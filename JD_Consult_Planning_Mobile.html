@@ -1960,7 +1960,7 @@ function renderPatientCard(p){
   const isActive = !p.inactiveFromMonth;
   const expanded = expandedPatients.has(p.id);
   return `
-  <div class="panel patient-card" id="patient-${p.id}" style="background:#fafcff;${isActive?'':'opacity:.7;'}">
+  <div class="panel patient-card" id="patient-${p.id}" style="background:var(--panel);${isActive?'':'opacity:.7;'}">
     <div class="patient-card-header" onclick="togglePatientCard('${p.id}')">
       <span class="patient-toggle-arrow">${expanded?'▾':'▸'}</span>
       <span class="patient-card-name">${escHtml(p.name)}</span>

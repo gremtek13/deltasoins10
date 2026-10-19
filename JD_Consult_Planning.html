@@ -36,8 +36,7 @@
   }
   *{box-sizing:border-box;}
   body{margin:0;font-family:var(--font-body);color:var(--text);font-size:14px;line-height:1.45;transition:color .2s ease;
-    /* Léger halo vert en haut de page pour donner de la profondeur au fond, sans changer la teinte de base. */
-    background:radial-gradient(1200px 520px at 50% -220px, var(--accent-light), transparent 62%) no-repeat, var(--bg);}
+    background:var(--bg);}
   h1,h2,h3{font-family:var(--font-heading);}
   @keyframes tabIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
   .tab-content{animation:tabIn .22s ease-out;}
@@ -46,8 +45,6 @@
   ::-webkit-scrollbar-track{background:transparent;}
   ::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:10px;border:2.5px solid var(--bg);background-clip:padding-box;}
   ::-webkit-scrollbar-thumb:hover{background:var(--accent);background-clip:padding-box;}
-  /* En-tête en verre dépoli : le contenu qui défile dessous transparaît légèrement, filet fin en bas. */
-  .sticky-top{position:sticky;top:0;z-index:60;background:var(--panel-glass);-webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3);border-bottom:1px solid var(--border-soft);}
   header{background:transparent;padding:13px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
   .app-title-wrap{position:relative;cursor:pointer;border-radius:10px;}
   .app-title-wrap:hover h1{color:var(--accent-dark);}
@@ -83,12 +80,92 @@
   header h1{font-size:16px;margin:0;white-space:nowrap;font-weight:700;display:flex;align-items:center;gap:10px;}
   header .sub{color:var(--muted);font-size:12px;}
   .spacer{flex:1;}
-  nav.tabs{display:flex;gap:4px;background:transparent;border-top:1px solid var(--border-soft);padding:8px 16px;overflow-x:auto;}
-  nav.tabs button{background:none;border:none;padding:9px 16px;cursor:pointer;font-size:13px;color:var(--muted);border-radius:999px;white-space:nowrap;font-weight:700;font-family:var(--font-heading);transition:background .18s ease,color .18s ease,box-shadow .18s ease,transform .18s ease;}
-  nav.tabs button.active{color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-dark));box-shadow:var(--shadow-sm);}
-  nav.tabs button:hover:not(.active){color:var(--accent-dark);background:var(--accent-light);}
-  nav.tabs button:active{transform:scale(.97);}
-  main{padding:24px 20px 60px;max-width:1500px;margin:0 auto;}
+  main{padding:24px 28px 60px;max-width:1500px;margin:0 auto;width:100%;}
+  /* ================= Mise en page « façon Claude » : bandeau gauche + contenu + bandeau droit ================= */
+  :root{ --sidebar-bg: color-mix(in srgb, var(--bg) 92%, #3a4747); }
+  :root[data-theme="dark"]{ --sidebar-bg: color-mix(in srgb, var(--bg) 82%, black); }
+  .app-shell{display:flex;height:100vh;overflow:hidden;}
+  body.resizing{user-select:none;cursor:col-resize;}
+  body.resizing iframe{pointer-events:none;}
+  .sidebar{width:var(--sb-w,256px);flex:0 0 auto;display:flex;flex-direction:column;background:var(--sidebar-bg);border-right:1px solid var(--border-soft);overflow:hidden;transition:width .18s ease;}
+  body.resizing .sidebar, body.resizing .rightpanel{transition:none;}
+  .sb-head{display:flex;align-items:center;gap:6px;padding:12px 10px 6px;}
+  .sb-brand{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:none;border:none;cursor:pointer;padding:4px;border-radius:10px;font:inherit;font-family:var(--font-heading);font-weight:700;font-size:16px;color:var(--text);text-align:left;}
+  .sb-brand .logo-mark{width:30px;height:30px;font-size:15px;border-radius:9px;}
+  .sb-icon-btn{width:34px;height:34px;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;background:none;border:none;border-radius:9px;color:var(--muted);cursor:pointer;transition:background .15s ease,color .15s ease;}
+  .sb-icon-btn:hover{background:color-mix(in srgb, var(--text) 9%, transparent);color:var(--text);}
+  .sb-icon-btn svg{width:19px;height:19px;}
+  .sb-nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:4px 8px 10px;display:flex;flex-direction:column;gap:1px;}
+  .sb-section{font-size:11px;font-weight:700;color:var(--muted);padding:14px 10px 4px;white-space:nowrap;}
+  .sb-item{display:flex;align-items:center;gap:11px;width:100%;padding:8px 10px;border:none;background:none;border-radius:10px;cursor:pointer;font:inherit;font-size:13.5px;color:var(--text);text-align:left;white-space:nowrap;transition:background .12s ease;}
+  .sb-item svg{width:19px;height:19px;flex:0 0 auto;color:var(--muted);}
+  .sb-item:hover{background:color-mix(in srgb, var(--text) 7%, transparent);}
+  .sb-item.active{background:var(--panel);box-shadow:var(--shadow-sm);font-weight:700;color:var(--accent-dark);}
+  .sb-item.active svg{color:var(--accent);}
+  .sb-label{overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  .sb-foot{padding:8px;border-top:1px solid var(--border-soft);display:flex;flex-direction:column;gap:6px;}
+  .sb-status-wrap{display:flex;align-items:flex-start;gap:7px;padding:2px 6px 0;}
+  .sb-status-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;margin-top:4px;background:var(--muted);}
+  .sb-status-dot.ok{background:var(--ok);} .sb-status-dot.warn{background:var(--warn);} .sb-status-dot.bad{background:var(--bad);}
+  .sb-status{font-size:11px;color:var(--muted);line-height:1.35;white-space:normal;}
+  .sb-account{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:12px;cursor:pointer;position:relative;}
+  .sb-account:hover{background:color-mix(in srgb, var(--text) 7%, transparent);}
+  .sb-avatar{width:32px;height:32px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;font-weight:700;font-size:12.5px;font-family:var(--font-heading);letter-spacing:.02em;}
+  .sb-account-text{flex:1;display:flex;flex-direction:column;line-height:1.25;}
+  .sb-account-text b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sb-account-text .user-badge{font-size:11.5px;overflow:hidden;text-overflow:ellipsis;}
+  .sb-more{color:var(--muted);font-size:18px;line-height:1;}
+  .sb-account .app-menu{top:auto;bottom:calc(100% + 6px);left:0;margin-top:0;}
+  /* Bandeau gauche réduit : fin bandeau d'icônes (libellés en info-bulle). */
+  .app-shell.sb-collapsed .sidebar{width:62px;}
+  .app-shell.sb-collapsed .sb-label, .app-shell.sb-collapsed .sb-section{display:none;}
+  .app-shell.sb-collapsed .sb-head{flex-direction:column;padding:12px 0 6px;gap:8px;}
+  .app-shell.sb-collapsed .sb-brand{flex:0 0 auto;padding:2px;}
+  .app-shell.sb-collapsed .sb-nav{padding:6px 9px 10px;gap:3px;}
+  .app-shell.sb-collapsed .sb-item{justify-content:center;padding:9px 0;}
+  .app-shell.sb-collapsed .sb-status-wrap{justify-content:center;padding:4px 0 0;}
+  .app-shell.sb-collapsed .sb-account{justify-content:center;padding:6px 0;}
+  .app-shell.sb-collapsed .sb-account .app-menu{left:calc(100% + 10px);bottom:0;}
+  .app-shell.sb-collapsed #sbResizer{display:none;}
+  /* Poignées de redimensionnement (bord des bandeaux). */
+  .resizer{flex:0 0 7px;margin:0 -3px;cursor:col-resize;position:relative;z-index:25;}
+  .resizer::after{content:'';position:absolute;top:0;bottom:0;left:2px;width:3px;border-radius:3px;background:transparent;transition:background .15s ease;}
+  .resizer:hover::after, .resizer.dragging::after{background:var(--accent);}
+  /* Zone centrale : seule à défiler, avec sa barre de titre collante. */
+  .main-col{flex:1;min-width:0;display:flex;flex-direction:column;overflow-y:auto;background:radial-gradient(1100px 480px at 50% -220px, var(--accent-light), transparent 62%) no-repeat, var(--bg);}
+  .topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:10px;padding:9px 18px 9px 26px;min-height:54px;background:var(--panel-glass);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--border-soft);flex-wrap:nowrap;}
+  .topbar-title{font-size:15px;margin:0;font-weight:700;display:flex;align-items:center;gap:9px;white-space:nowrap;}
+  .topbar-title svg{width:18px;height:18px;color:var(--accent);}
+  .main-col footer{margin-top:auto;}
+  /* Bandeau de droite : aperçu de l'activité. */
+  .rightpanel{width:var(--rp-w,340px);flex:0 0 auto;display:flex;flex-direction:column;background:var(--panel);border-left:1px solid var(--border-soft);overflow:hidden;}
+  .app-shell:not(.rp-open) .rightpanel, .app-shell:not(.rp-open) #rpResizer{display:none;}
+  .app-shell.rp-overlay .rightpanel{position:fixed;top:0;right:0;bottom:0;z-index:120;box-shadow:var(--shadow-lg);}
+  .app-shell.rp-overlay #rpResizer{display:none;}
+  .app-shell.rp-open #rpToggle{color:var(--accent-dark);background:var(--accent-light);}
+  .rp-head{display:flex;align-items:center;gap:8px;padding:9px 10px 9px 16px;min-height:54px;border-bottom:1px solid var(--border-soft);font-family:var(--font-heading);font-size:14.5px;}
+  .rp-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;}
+  .rp-card{border:1px solid var(--border-soft);border-radius:16px;padding:12px 14px;background:color-mix(in srgb, var(--bg) 60%, var(--panel));}
+  .rp-card h4{margin:0 0 8px;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-family:var(--font-body);}
+  .rp-hero{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;border:none;box-shadow:var(--shadow-sm);}
+  .rp-hero h4{color:rgba(255,255,255,.85);}
+  .rp-big{font-family:var(--font-heading);font-size:27px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15;}
+  .rp-sub{font-size:12px;opacity:.88;margin-top:2px;}
+  .rp-row{display:flex;align-items:center;gap:8px;font-size:13px;padding:3px 0;}
+  .rp-row .rp-right{margin-left:auto;font-size:11.5px;color:var(--muted);white-space:nowrap;}
+  .rp-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;background:var(--muted);}
+  .rp-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:11px;}
+  .rp-week .d{border-radius:10px;padding:5px 0 6px;background:var(--panel);border:1px solid var(--border-soft);}
+  .rp-week .d.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
+  .rp-week .d b{display:block;font-size:12.5px;}
+  .rp-week .d .bar{height:5px;border-radius:3px;margin:4px 6px 0;background:var(--border);}
+  .rp-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .rp-stat{border-radius:12px;background:var(--accent-light);padding:9px 10px;text-align:center;}
+  .rp-stat b{display:block;font-family:var(--font-heading);font-size:19px;color:var(--accent-dark);}
+  .rp-stat span{font-size:11px;color:var(--muted);}
+  .rp-link{background:none;border:none;color:var(--accent-dark);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;padding:6px 0 0;}
+  .rp-link:hover{text-decoration:underline;}
+  .rp-hero .rp-link{color:#fff;}
   .panel{background:var(--panel);border:1px solid var(--border-soft);border-radius:20px;padding:20px;margin-bottom:18px;box-shadow:var(--shadow-sm);transition:box-shadow .2s ease;}
   .panel h2{margin:0 0 12px;font-size:16px;font-weight:700;letter-spacing:-.01em;}
   .panel h3{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:20px 0 8px;}
@@ -285,13 +362,24 @@
   </div>
 </div>
 
-<div id="appRoot" style="display:none;">
+<div id="appRoot" class="app-shell" style="display:none;">
 
-<div class="sticky-top">
-<header>
-  <div class="app-title-wrap" id="appTitleWrap">
-    <h1><span class="logo-mark">🩺</span> JD Factu — Planning & Contrôle facturation</h1>
-    <div class="app-menu" id="appMenu">
+<!-- Bandeau de gauche (navigation) : redimensionnable en glissant son bord, réductible en fin bandeau
+     d'icônes avec le bouton en haut. Largeur et état mémorisés dans ce navigateur. -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-head">
+    <button type="button" class="sb-brand" id="sbBrand" title="Accueil"><span class="logo-mark">🩺</span><span class="sb-label">JD Factu</span></button>
+    <button type="button" class="sb-icon-btn" id="sbToggle" title="Réduire le bandeau" aria-label="Réduire ou agrandir le bandeau de gauche"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M9.5 4.5v15"/></svg></button>
+  </div>
+  <nav class="sb-nav" id="sbNav" aria-label="Sections"></nav>
+  <div class="sb-foot">
+    <div class="sb-status-wrap"><span class="sb-status-dot" id="sbStatusDot"></span><span class="sb-status sb-label" id="autosaveStatus" title="Sauvegarde automatique dans ce navigateur et sur votre compte. Continuez d'utiliser « Exporter » régulièrement pour une sauvegarde portable/de secours."></span></div>
+    <button class="btn danger" id="btnForceCloudSave" style="display:none;padding:6px 10px;font-size:11px;">⚠️<span class="sb-label"> Forcer la sauvegarde en ligne</span></button>
+    <div class="app-title-wrap sb-account" id="appTitleWrap" title="Compte et réglages">
+      <span class="sb-avatar" id="sbAvatar">JD</span>
+      <span class="sb-account-text sb-label"><b id="sbAccountName">Mon compte</b><span class="user-badge" id="userBadge"></span></span>
+      <span class="sb-label sb-more" aria-hidden="true">⋯</span>
+      <div class="app-menu" id="appMenu">
       <div class="app-menu-label">Accueil</div>
       <div class="app-menu-field">
         <label for="accountNameInput">Nom affiché sur l'accueil</label>
@@ -309,29 +397,18 @@
       <hr class="app-menu-sep">
       <button class="app-menu-item" id="btnLogout" style="color:var(--bad);">🚪 Se déconnecter</button>
     </div>
+    </div>
+    <input type="file" id="fileImport" class="file-input-hidden" accept="application/json">
   </div>
-  <span class="sub">Version en vigueur des tarifs : à vérifier / ajuster (onglet Tarifs)</span>
-  <div class="spacer"></div>
-  <span class="user-badge" id="userBadge"></span>
-  <span class="small muted" id="autosaveStatus" title="Sauvegarde automatique dans ce navigateur et sur votre compte. Continuez d'utiliser « Exporter » régulièrement pour une sauvegarde portable/de secours."></span>
-  <button class="btn danger" id="btnForceCloudSave" style="display:none;padding:5px 10px;font-size:11px;">⚠️ Forcer la sauvegarde en ligne</button>
-  <input type="file" id="fileImport" class="file-input-hidden" accept="application/json">
-</header>
+</aside>
+<div class="resizer" id="sbResizer" title="Glisser pour redimensionner"></div>
 
-<nav class="tabs" style="display:none;">
-  <button data-tab="home" class="active">🏠 Accueil</button>
-  <button data-tab="roulement">🗓️ Roulement</button>
-  <button data-tab="planning">📅 Planning mensuel</button>
-  <button data-tab="billing">💶 Contrôle facturation</button>
-  <button data-tab="patients">🧑‍🤝‍🧑 Patients</button>
-  <button data-tab="ordonnances">💊 Ordonnances</button>
-  <button data-tab="prescriptions">🩹 Prescriptions DM</button>
-  <button data-tab="staff">👩‍⚕️ Personnel</button>
-  <button data-tab="caretypes">🗂️ Types de prise en charge</button>
-  <button data-tab="tariffs">⚙️ Tarifs</button>
-  <button data-tab="help">ℹ️ Aide</button>
-</nav>
-</div>
+<div class="main-col" id="mainCol">
+<header class="topbar">
+  <h1 class="topbar-title" id="topbarTitle">Accueil</h1>
+  <span class="spacer"></span>
+  <button type="button" class="sb-icon-btn" id="rpToggle" title="Afficher le bandeau de droite" aria-label="Afficher ou masquer le bandeau de droite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M14.5 4.5v15"/></svg></button>
+</header>
 
 <main>
 
@@ -682,6 +759,14 @@
 
 </main>
 <footer>JD Factu — outil interne de planning et de contrôle de facturation. Données sauvegardées sur votre compte + copie locale dans ce navigateur.</footer>
+</div><!-- /main-col -->
+
+<!-- Bandeau de droite (aperçu) : redimensionnable, se ferme avec × ou le bouton en haut à droite. -->
+<div class="resizer" id="rpResizer" title="Glisser pour redimensionner"></div>
+<aside class="rightpanel" id="rightPanel">
+  <div class="rp-head"><b>Aperçu</b><span class="spacer"></span><button type="button" class="sb-icon-btn" id="rpClose" title="Fermer le bandeau" aria-label="Fermer le bandeau de droite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="rp-body" id="rpBody"></div>
+</aside>
 
 <div class="modal-overlay" id="passageModalOverlay" style="display:none;">
   <div class="modal-box">
@@ -859,12 +944,11 @@ function currentMonthStr(){ const d=new Date(); return d.toISOString().slice(0,7
 function switchTab(tabName){
   // « bilans » est une sous-page de Prescriptions DM : on garde cet onglet surligné dans la barre.
   const navTab = (tabName==='bilans') ? 'prescriptions' : tabName;
-  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===navTab));
+  document.querySelectorAll('#sbNav .sb-item').forEach(b=>b.classList.toggle('active', b.dataset.tab===navTab));
   document.querySelectorAll('.tab-content').forEach(t=>t.style.display='none');
   document.getElementById('tab-'+tabName).style.display='block';
-  // Sur l'accueil, la grille d'icônes fait déjà office de navigation : la barre d'onglets classique juste
-  // en dessous ferait doublon. Elle ne réapparaît qu'une fois entré dans une section.
-  document.querySelector('nav.tabs').style.display = (tabName==='home') ? 'none' : '';
+  updateTopbarTitle(tabName);
+  const mainCol = document.getElementById('mainCol'); if(mainCol) mainCol.scrollTop = 0;
   if(tabName==='home') renderHomeGreeting();
   if(tabName==='roulement') renderRotaTab();
   if(tabName==='planning') renderPlanning();
@@ -875,9 +959,6 @@ function switchTab(tabName){
   if(tabName==='prescriptions') renderPrescriptionsTab();
   if(tabName==='bilans') renderBilanTab();
 }
-document.querySelectorAll('nav.tabs button').forEach(btn=>{
-  btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
-});
 // Icônes de l'accueil, façon écran d'accueil iOS : une seule couleur (la teinte de l'appli) pour toutes,
 // glyphes en traits simples plutôt qu'en emoji multicolores, pour un rendu sobre et pro plutôt que "pack
 // d'icônes IA". Générées en JS pour garder tous les tracés SVG au même endroit.
@@ -1750,7 +1831,7 @@ function renderPatientCard(p){
   const isActive = !p.inactiveFromMonth;
   const expanded = expandedPatients.has(p.id);
   return `
-  <div class="panel patient-card" id="patient-${p.id}" style="background:#fafcff;${isActive?'':'opacity:.7;'}">
+  <div class="panel patient-card" id="patient-${p.id}" style="background:var(--panel);${isActive?'':'opacity:.7;'}">
     <div class="patient-card-header" onclick="togglePatientCard('${p.id}')">
       <span class="patient-toggle-arrow">${expanded?'▾':'▸'}</span>
       <span class="patient-card-name">${escHtml(p.name)}</span>
@@ -2735,6 +2816,7 @@ let lastSavedJson = null;
 function scheduleAutosave(){
   clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(()=>{
+    if(typeof refreshChrome === 'function') refreshChrome();
     const json = JSON.stringify(state);
     saveToLocalStorage(json);
     if(json !== lastSavedJson) saveStateToCloud(false, json);
@@ -2838,6 +2920,7 @@ function updateAutosaveStatus(){
   if(!el) return;
   const btnForce = document.getElementById('btnForceCloudSave');
   const now = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  setSidebarStatusDot(el);
   if(cloudSaveBlocked){
     el.textContent = "⛔ Sauvegarde en ligne bloquée : cet appareil est sur le point d'effacer d'un coup tous les patients/infirmiers/types de prise en charge alors qu'il y en avait sur votre compte. Si c'est une erreur, RECHARGEZ LA PAGE sans rien modifier. Si c'est volontaire →";
     el.style.color = 'var(--bad)';
@@ -2928,7 +3011,8 @@ async function onAuthenticated(user){
   currentAutosaveKey = AUTOSAVE_KEY_PREFIX + user.id;
   document.getElementById('authOverlay').style.display = 'none';
   document.getElementById('appRoot').style.display = '';
-  document.getElementById('userBadge').textContent = '👤 ' + user.email;
+  document.getElementById('userBadge').textContent = user.email;
+  updateSidebarAccount();
   await loadStateFromCloudThenLocal();
   renderAll();
 }
@@ -3687,8 +3771,8 @@ document.getElementById('bbPresets').addEventListener('click', (e)=>{
   if(toFill) openBilanInfo(toFill);
 });
 document.getElementById('bbClear').addEventListener('click', ()=>{ bilanSelected.clear(); bilanInfo = {}; renderBilanTests(); });
-document.getElementById('btnOpenBilans').addEventListener('click', ()=>{ switchTab('bilans'); window.scrollTo(0,0); });
-document.getElementById('btnBackToPx').addEventListener('click', ()=>{ switchTab('prescriptions'); window.scrollTo(0,0); });
+document.getElementById('btnOpenBilans').addEventListener('click', ()=>{ switchTab('bilans'); });
+document.getElementById('btnBackToPx').addEventListener('click', ()=>{ switchTab('prescriptions'); });
 
 function resetBilanForm(){
   ['bbPatient','bbNaissance','bbHeure','bbPrescripteur','bbDateOrdo','bbAutres','bbClinique'].forEach(id=>{ document.getElementById(id).value = ''; });
@@ -3840,6 +3924,192 @@ function openBilanPrintWindow(b, prof){
   else setTimeout(doPrint, sig ? 200 : 150);
 }
 
+
+/* ============================= MISE EN PAGE : BANDEAUX GAUCHE / DROITE ============================= */
+// Navigation du bandeau de gauche, regroupée par thème (icônes reprises de l'accueil).
+const HOME_ICON_PATH = '<path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h5v-5.5h2V19h5v-9"/>';
+const SB_GROUPS = [
+  {title:'', tabs:['home']},
+  {title:'Activité', tabs:['roulement','planning','billing']},
+  {title:'Patients', tabs:['patients','ordonnances','prescriptions']},
+  {title:'Réglages', tabs:['staff','caretypes','tariffs','help']}
+];
+function sbSection(tab){
+  if(tab==='home') return {tab:'home', label:'Accueil', icon:HOME_ICON_PATH};
+  if(tab==='bilans') return {tab:'bilans', label:'Bilans biologiques', icon:'<path d="M6.5 3.5h8"/><path d="M8 3.5v12.5a2.5 2.5 0 0 0 5 0V3.5"/><path d="M8 11h5"/><path d="M18 6.5s2 2.2 2 3.6a2 2 0 0 1-4 0c0-1.4 2-3.6 2-3.6Z"/>'};
+  return HOME_SECTIONS.find(s=>s.tab===tab) || {tab, label:tab, icon:''};
+}
+const svgIcon = path => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+function renderSidebarNav(){
+  const nav = document.getElementById('sbNav');
+  if(!nav) return;
+  nav.innerHTML = SB_GROUPS.map(g=>(g.title ? `<div class="sb-section">${escHtml(g.title)}</div>` : '') + g.tabs.map(tab=>{
+    const s = sbSection(tab);
+    return `<button type="button" class="sb-item" data-tab="${s.tab}" title="${escAttr(s.label)}">${svgIcon(s.icon)}<span class="sb-label">${escHtml(s.label)}</span></button>`;
+  }).join('')).join('');
+}
+document.getElementById('sbNav').addEventListener('click', (e)=>{
+  const item = e.target.closest('.sb-item'); if(item) switchTab(item.dataset.tab);
+});
+document.getElementById('sbBrand').addEventListener('click', ()=> switchTab('home'));
+function updateTopbarTitle(tab){
+  const el = document.getElementById('topbarTitle'); if(!el) return;
+  const s = sbSection(tab);
+  el.innerHTML = `${svgIcon(s.icon)}<span>${escHtml(s.label)}</span>`;
+}
+// Bloc compte en bas du bandeau : initiales + nom affiché (menu ⋯ → Accueil), sinon nom du profil.
+function updateSidebarAccount(){
+  const nameEl = document.getElementById('sbAccountName'), avatar = document.getElementById('sbAvatar');
+  if(!nameEl || !avatar) return;
+  const prof = getActiveProfile();
+  const name = (state.accountDisplayName || '').trim() || (prof && prof.nom || '').trim() || 'Mon compte';
+  nameEl.textContent = name;
+  // Initiales des deux premiers mots qui commencent par une lettre (« Deltasoins 10 » → « D »).
+  const initials = name.split(/\s+/).filter(w=>/^\p{L}/u.test(w)).slice(0,2).map(w=>w[0].toUpperCase()).join('') || 'JD';
+  avatar.textContent = initials;
+  document.getElementById('appTitleWrap').title = name + ' — compte et réglages';
+}
+function setSidebarStatusDot(statusEl){
+  const dot = document.getElementById('sbStatusDot'); if(!dot) return;
+  dot.className = 'sb-status-dot ' + (cloudSaveBlocked ? 'bad' : (lastCloudSaveOk === false ? 'warn' : (lastCloudSaveOk === true ? 'ok' : '')));
+  // Info-bulle mise à jour juste après le texte du statut (utile quand le bandeau est réduit).
+  setTimeout(()=>{ dot.title = statusEl.textContent || ''; }, 0);
+}
+function refreshChrome(){ updateSidebarAccount(); renderRightPanel(); }
+
+// Largeurs et états des bandeaux, mémorisés dans ce navigateur (simple confort d'affichage).
+const LAYOUT_KEY = 'jdFactuLayout';
+const SB_MIN = 200, SB_MAX = 420, RP_MIN = 280, RP_MAX = 620;
+let layout = {sbW:256, sbCollapsed:false, rpW:340, rpOpen: window.innerWidth >= 1250};
+try{ Object.assign(layout, JSON.parse(localStorage.getItem(LAYOUT_KEY) || '{}')); }catch(err){}
+function saveLayout(){ try{ localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout)); }catch(err){} }
+function applyLayout(){
+  const shell = document.getElementById('appRoot');
+  layout.sbW = Math.min(SB_MAX, Math.max(SB_MIN, layout.sbW||256));
+  layout.rpW = Math.min(RP_MAX, Math.max(RP_MIN, layout.rpW||340));
+  // La zone centrale garde toujours au moins MAIN_MIN px : sur un écran étroit, le bandeau gauche se
+  // resserre, et le bandeau droit passe par-dessus le contenu au lieu de l'écraser.
+  const MAIN_MIN = 620, vw = window.innerWidth;
+  let rpW = layout.rpW, sbW = layout.sbW;
+  if(!layout.sbCollapsed) sbW = Math.max(SB_MIN, Math.min(sbW, vw - MAIN_MIN - (layout.rpOpen ? RP_MIN : 0)));
+  const sbEff = layout.sbCollapsed ? 62 : sbW;
+  const roomForRight = vw - sbEff - MAIN_MIN;
+  const overlay = layout.rpOpen && roomForRight < RP_MIN;
+  if(layout.rpOpen && !overlay) rpW = Math.min(rpW, roomForRight);
+  if(overlay) rpW = Math.min(layout.rpW, Math.max(RP_MIN, vw - 80));
+  shell.style.setProperty('--sb-w', sbW + 'px');
+  shell.style.setProperty('--rp-w', rpW + 'px');
+  shell.classList.toggle('sb-collapsed', !!layout.sbCollapsed);
+  shell.classList.toggle('rp-open', !!layout.rpOpen);
+  shell.classList.toggle('rp-overlay', overlay);
+  const t = document.getElementById('sbToggle');
+  t.title = layout.sbCollapsed ? 'Agrandir le bandeau' : 'Réduire le bandeau';
+  document.getElementById('rpToggle').title = layout.rpOpen ? 'Masquer le bandeau de droite' : 'Afficher le bandeau de droite';
+}
+document.getElementById('sbToggle').addEventListener('click', ()=>{ layout.sbCollapsed = !layout.sbCollapsed; applyLayout(); saveLayout(); });
+document.getElementById('rpToggle').addEventListener('click', ()=>{ layout.rpOpen = !layout.rpOpen; applyLayout(); saveLayout(); renderRightPanel(); });
+document.getElementById('rpClose').addEventListener('click', ()=>{ layout.rpOpen = false; applyLayout(); saveLayout(); });
+// Glisser le bord d'un bandeau pour le redimensionner. À gauche, le rétrécir sous la largeur minimale
+// le réduit en fin bandeau d'icônes ; à droite, le pousser au bord le ferme.
+function attachResizer(handleId, side){
+  const handle = document.getElementById(handleId);
+  handle.addEventListener('pointerdown', (e)=>{
+    e.preventDefault();
+    handle.setPointerCapture(e.pointerId);
+    handle.classList.add('dragging'); document.body.classList.add('resizing');
+    const startX = e.clientX, startW = side==='left' ? layout.sbW : layout.rpW;
+    const move = (ev)=>{
+      const dx = ev.clientX - startX;
+      if(side==='left'){
+        const w = startW + dx;
+        layout.sbCollapsed = w < SB_MIN - 50;
+        if(!layout.sbCollapsed) layout.sbW = w;
+      } else {
+        const w = startW - dx;
+        if(w < RP_MIN - 90){ layout.rpOpen = false; }
+        else { layout.rpOpen = true; layout.rpW = w; }
+      }
+      applyLayout();
+    };
+    const up = ()=>{
+      handle.removeEventListener('pointermove', move); handle.removeEventListener('pointerup', up); handle.removeEventListener('pointercancel', up);
+      handle.classList.remove('dragging'); document.body.classList.remove('resizing');
+      saveLayout(); renderRightPanel();
+    };
+    handle.addEventListener('pointermove', move); handle.addEventListener('pointerup', up); handle.addEventListener('pointercancel', up);
+  });
+  // Double-clic : revient à la largeur par défaut.
+  handle.addEventListener('dblclick', ()=>{ if(side==='left') layout.sbW = 256; else layout.rpW = 340; applyLayout(); saveLayout(); });
+}
+attachResizer('sbResizer', 'left');
+attachResizer('rpResizer', 'right');
+applyLayout();
+window.addEventListener('resize', applyLayout);
+
+// Contenu du bandeau de droite : un aperçu de l'activité, recalculé après chaque modification.
+let rpOrdRequested = false, rpOrdReady = false;
+function renderRightPanel(){
+  const shell = document.getElementById('appRoot');
+  const body = document.getElementById('rpBody');
+  if(!body || !shell.classList.contains('rp-open') || !currentUser) return;
+  const month = currentMonthStr();
+  const actifs = state.patients.filter(p=>isPatientActiveInMonth(p, month));
+  const avg = computeLast7DaysAverage();
+  const nurseOf = id => id ? state.nurses.find(n=>n.id===id) : null;
+  const today = todayISO();
+  const todayNurse = nurseOf(dayDefaultNurseId(today));
+  const LETTERS = ['D','L','M','M','J','V','S'];
+  const week = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(today+'T00:00:00'); d.setDate(d.getDate()+i);
+    const iso = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const n = nurseOf(dayDefaultNurseId(iso));
+    week.push(`<div class="d${i===0?' today':''}" title="${escAttr(d.toLocaleDateString('fr-FR',{weekday:'long', day:'numeric', month:'long'}) + ' : ' + (n ? n.name : 'personne'))}">${LETTERS[d.getDay()]}<b>${d.getDate()}</b><div class="bar" style="${n ? 'background:'+escAttr(n.color||'#4f9d94') : ''}"></div></div>`);
+  }
+  const weekNurses = [...new Set(state.nurses.filter(n=>n.color))].map(n=>`<span class="rp-row" style="padding:1px 0;font-size:12px;"><span class="rp-dot" style="background:${escAttr(n.color)}"></span>${escHtml(n.name)}</span>`).join('');
+  let ordHtml;
+  if(!rpOrdReady){
+    ordHtml = '<div class="rp-row muted">Chargement…</div>';
+    if(!rpOrdRequested){ rpOrdRequested = true; Promise.resolve(loadOrdonnances()).finally(()=>{ rpOrdReady = true; renderRightPanel(); }); }
+  } else {
+    const alerts = actifs.map(p=>({p, st:computeOrdonnanceStatus(p.id)})).filter(x=>x.st.color==='red' || x.st.color==='yellow')
+      .sort((a,b)=> (a.st.color==='red'?0:1) - (b.st.color==='red'?0:1));
+    ordHtml = alerts.length
+      ? alerts.slice(0,6).map(x=>`<div class="rp-row"><span class="rp-dot" style="background:${x.st.color==='red'?'var(--bad)':'var(--warn)'}"></span>${escHtml(x.p.name)}<span class="rp-right">${escHtml(x.st.label)}</span></div>`).join('') + (alerts.length>6 ? `<div class="rp-row muted small">+ ${alerts.length-6} autre(s)</div>` : '')
+      : '<div class="rp-row"><span class="rp-dot" style="background:var(--ok)"></span>Tout est à jour</div>';
+  }
+  body.innerHTML = `
+    <div class="rp-card rp-hero">
+      <h4>CA moyen / jour</h4>
+      <div class="rp-big">${avg.toFixed(2)} €</div>
+      <div class="rp-sub">Sur les 7 derniers jours · ${actifs.length} patient${actifs.length>1?'s':''} actif${actifs.length>1?'s':''}</div>
+      <button type="button" class="rp-link" data-goto="billing">Contrôle facturation →</button>
+    </div>
+    <div class="rp-card">
+      <h4>Aujourd'hui</h4>
+      <div class="rp-row" style="font-size:14px;font-weight:700;">${todayNurse ? `<span class="rp-dot" style="background:${escAttr(todayNurse.color||'#4f9d94')}"></span>${escHtml(todayNurse.name)}` : '<span class="muted">Personne n\'est affecté(e)</span>'}</div>
+      <button type="button" class="rp-link" data-goto="planning">Voir le planning →</button>
+    </div>
+    <div class="rp-card">
+      <h4>Roulement — 7 prochains jours</h4>
+      <div class="rp-week">${week.join('')}</div>
+      <div style="margin-top:8px;">${weekNurses}</div>
+      <button type="button" class="rp-link" data-goto="roulement">Modifier le roulement →</button>
+    </div>
+    <div class="rp-card">
+      <h4>Ordonnances à surveiller</h4>
+      ${ordHtml}
+      <button type="button" class="rp-link" data-goto="ordonnances">Ouvrir les ordonnances →</button>
+    </div>
+    <div class="rp-stats">
+      <div class="rp-stat"><b>${actifs.length}</b><span>Patients actifs</span></div>
+      <div class="rp-stat"><b>${state.nurses.length}</b><span>Infirmier(ère)s</span></div>
+    </div>`;
+}
+document.getElementById('rpBody').addEventListener('click', (e)=>{
+  const link = e.target.closest('[data-goto]'); if(link) switchTab(link.dataset.goto);
+});
+
 /* ============================= INIT ============================= */
 function renderAll(){
   migrateLegacyActiveFlags();
@@ -3850,6 +4120,7 @@ function renderAll(){
   renderRotaTab();
   renderPlanning(); renderBilling();
   renderHomeGrid(); renderHomeGreeting();
+  renderSidebarNav(); updateTopbarTitle('home'); updateSidebarAccount(); renderRightPanel();
   scheduleAutosave();
 }
 document.getElementById('planMonth').value = currentMonthStr();
