@@ -245,16 +245,32 @@
   .patient-toggle-arrow{color:var(--accent-dark);font-size:11px;width:10px;flex-shrink:0;}
   .patient-card-name{font-weight:700;font-family:var(--font-heading);}
   .patient-card-body{border-top:1px solid var(--border);padding:16px;}
-  .home-hero{text-align:center;padding:28px 18px 10px;}
-  .home-greeting{margin:0;font-size:36px;font-weight:800;font-family:var(--font-heading);}
-  .home-subgreeting{margin:6px 0 32px;color:var(--muted);font-size:14.5px;}
-  .home-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:32px 14px;justify-items:center;max-width:600px;margin:0 auto;}
-  .home-icon{background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:9px;padding:2px;font-family:inherit;width:100%;max-width:120px;}
-  .home-icon-glyph{width:76px;height:76px;border-radius:22px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg, var(--hue), color-mix(in srgb, var(--hue) 70%, black));box-shadow:0 4px 10px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.22);transition:transform .12s ease,box-shadow .12s ease;}
-  .home-icon-glyph svg{width:32px;height:32px;}
-  .home-icon:hover .home-icon-glyph{transform:translateY(-3px);box-shadow:0 10px 18px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.22);}
-  .home-icon:active .home-icon-glyph{transform:scale(.92);transition:transform .05s ease;}
-  .home-icon-label{font-size:12.5px;font-weight:600;color:var(--text);text-align:center;line-height:1.25;}
+  .home-head{padding:6px 2px 18px;}
+  .home-greeting{margin:0;font-size:30px;font-weight:700;font-family:var(--font-heading);letter-spacing:-.01em;}
+  .home-subgreeting{margin:4px 0 0;color:var(--muted);font-size:14px;}
+  .home-widgets{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}
+  .hw{position:relative;display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--panel);border:1px solid var(--border-soft);border-radius:18px;padding:15px 16px 14px;cursor:pointer;font:inherit;color:var(--text);box-shadow:var(--shadow-sm);min-height:132px;transition:transform .14s ease,box-shadow .14s ease,border-color .14s ease;}
+  .hw:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:color-mix(in srgb, var(--hue,var(--accent)) 45%, var(--border-soft));}
+  .hw:active{transform:scale(.985);}
+  .hw-top{display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:700;color:var(--muted);}
+  .hw-ico{width:28px;height:28px;border-radius:9px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg, var(--hue), color-mix(in srgb, var(--hue) 72%, black));}
+  .hw-ico svg{width:16px;height:16px;}
+  .hw-arrow{margin-left:auto;font-size:18px;line-height:1;color:var(--muted);opacity:.6;transition:transform .14s ease,opacity .14s ease;}
+  .hw:hover .hw-arrow{opacity:1;transform:translateX(2px);color:var(--hue,var(--accent));}
+  .hw-val{font-family:var(--font-heading);font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15;margin-top:4px;display:flex;align-items:center;gap:8px;}
+  .hw-val.small{font-size:17px;}
+  .hw-sub{font-size:12.5px;color:var(--muted);line-height:1.4;}
+  .hw-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;background:var(--muted);}
+  .hw-wide{grid-column:span 2;background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;border:none;}
+  .hw-wide .hw-top, .hw-wide .hw-sub, .hw-wide .hw-arrow{color:rgba(255,255,255,.88);}
+  .hw-wide .hw-ico{background:rgba(255,255,255,.2);}
+  .hw-wide .hw-val{font-size:32px;}
+  .hw-wide:hover .hw-arrow{color:#fff;}
+  .hw-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:6px;text-align:center;font-size:10.5px;color:var(--muted);}
+  .hw-week .bar{height:6px;border-radius:3px;margin-top:3px;background:var(--border);}
+  .hw-week .today{color:var(--text);font-weight:700;}
+  .hw-people{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:4px;font-size:13px;}
+  .hw-people span{display:inline-flex;align-items:center;gap:6px;}
   /* Encarts teintés via color-mix sur les jetons : lisibles aussi en mode sombre (plus de couleurs figées). */
   .note-box{background:color-mix(in srgb, var(--warn) 10%, var(--panel));border:1px solid color-mix(in srgb, var(--warn) 32%, var(--panel));border-radius:14px;padding:10px 12px;font-size:12.5px;color:var(--text);margin-bottom:14px;}
   .warn-box{background:color-mix(in srgb, var(--bad) 9%, var(--panel));border:1px solid color-mix(in srgb, var(--bad) 30%, var(--panel));border-radius:14px;padding:10px 12px;font-size:12.5px;color:var(--text);margin-bottom:14px;}
@@ -414,11 +430,12 @@
 
   <!-- HOME TAB (vue par défaut à la connexion) -->
   <div class="tab-content" id="tab-home">
-    <div class="panel home-hero">
-      <h1 class="home-greeting">Bonjour 👋</h1>
-      <p class="home-subgreeting" id="homeSubgreeting">Planning &amp; facturation infirmière</p>
-      <div class="home-grid" id="homeGrid"></div>
+    <div class="home-head">
+      <h1 class="home-greeting">Bonjour</h1>
+      <p class="home-subgreeting"><span id="homeSubgreeting">Planning &amp; facturation infirmière</span> · <span id="homeDate"></span></p>
     </div>
+    <!-- Widgets cliquables : un par section, avec le chiffre utile du moment (remplace la grille d'icônes). -->
+    <div class="home-widgets" id="homeGrid"></div>
   </div>
 
   <!-- ROULEMENT TAB -->
@@ -949,7 +966,7 @@ function switchTab(tabName){
   document.getElementById('tab-'+tabName).style.display='block';
   updateTopbarTitle(tabName);
   const mainCol = document.getElementById('mainCol'); if(mainCol) mainCol.scrollTop = 0;
-  if(tabName==='home') renderHomeGreeting();
+  if(tabName==='home'){ renderHomeGreeting(); renderHomeGrid(); }
   if(tabName==='roulement') renderRotaTab();
   if(tabName==='planning') renderPlanning();
   if(tabName==='billing') renderBilling();
@@ -977,12 +994,58 @@ const HOME_SECTIONS = [
 function renderHomeGrid(){
   const el = document.getElementById('homeGrid');
   if(!el) return;
-  el.innerHTML = HOME_SECTIONS.map(s=>`<button class="home-icon" data-tab="${s.tab}" style="--hue:${s.hue};">
-      <span class="home-icon-glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${s.icon}</svg></span>
-      <span class="home-icon-label">${escHtml(s.label)}</span>
-    </button>`).join('');
-  el.querySelectorAll('.home-icon').forEach(btn=> btn.addEventListener('click', ()=> switchTab(btn.dataset.tab)));
+  const sec = tab => HOME_SECTIONS.find(x=>x.tab===tab) || {hue:'#4f9d94', icon:'', label:tab};
+  const ico = tab => `<span class="hw-ico">${svgIcon(sec(tab).icon)}</span>`;
+  const card = (tab, inner, extraClass) => `<button type="button" class="hw${extraClass?' '+extraClass:''}" data-tab="${tab}" style="--hue:${sec(tab).hue};">
+      <span class="hw-top">${ico(tab)}${escHtml(sec(tab).label)}<span class="hw-arrow" aria-hidden="true">›</span></span>${inner}</button>`;
+  const eur = v => v.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €';
+  const plural = (n, word) => `${n} ${word}${n>1?'s':''}`;
+  const month = currentMonthStr(), today = todayISO();
+  const actifs = state.patients.filter(p=>isPatientActiveInMonth(p, month));
+  const inactifs = state.patients.length - actifs.length;
+  const nurseOf = id => id ? state.nurses.find(n=>n.id===id) : null;
+  const bd = computeBillingData(month);
+  const monthName = new Date(month+'-01T00:00:00').toLocaleDateString('fr-FR', {month:'long'});
+  const todayNurse = nurseOf(dayDefaultNurseId(today));
+  const todayCount = actifs.filter(p=>computeDayAmount(today, p).hasNurse).length;
+  const LETTERS = ['D','L','M','M','J','V','S'];
+  let week = '';
+  for(let i=0;i<7;i++){
+    const d = new Date(today+'T00:00:00'); d.setDate(d.getDate()+i);
+    const iso = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const n = nurseOf(dayDefaultNurseId(iso));
+    week += `<span class="${i===0?'today':''}" title="${escAttr(n ? n.name : 'Personne')}">${LETTERS[d.getDay()]}${d.getDate()}<span class="bar" style="display:block;${n ? 'background:'+escAttr(n.color||'#4f9d94') : ''}"></span></span>`;
+  }
+  let ordVal, ordSub;
+  if(!ensureOrdonnancesLoaded()){ ordVal = '<span class="hw-val small">…</span>'; ordSub = 'Chargement'; }
+  else {
+    let expired = 0, soon = 0;
+    actifs.forEach(p=>{ const c = computeOrdonnanceStatus(p.id).color; if(c==='red') expired++; else if(c==='yellow') soon++; });
+    const tot = expired + soon;
+    ordVal = tot ? `<span class="hw-val"><span class="hw-dot" style="background:${expired?'var(--bad)':'var(--warn)'}"></span>${tot} à surveiller</span>`
+                 : `<span class="hw-val small"><span class="hw-dot" style="background:var(--ok)"></span>Tout est à jour</span>`;
+    ordSub = tot ? [expired ? plural(expired,'expirée') : '', soon ? `${soon} bientôt` : ''].filter(Boolean).join(', ') : 'Aucune ordonnance à renouveler';
+  }
+  const t = state.tariffs || {};
+  const nbPx = (state.dmPrescriptions||[]).length;
+  el.innerHTML = [
+    card('billing', `<span class="hw-val">${eur(bd.grandTotal)}</span><span class="hw-sub">Total théorique de ${escHtml(monthName)} · CA moyen sur 7 jours : ${eur(computeLast7DaysAverage())} / jour</span>`, 'hw-wide'),
+    card('planning', `<span class="hw-val small">${todayNurse ? `<span class="hw-dot" style="background:${escAttr(todayNurse.color||'#4f9d94')}"></span>${escHtml(todayNurse.name)}` : 'Personne'}</span><span class="hw-sub">Aujourd'hui · ${plural(todayCount,'patient')} ${todayCount>1?'prévus':'prévu'}</span>`),
+    card('roulement', `<span class="hw-sub">7 prochains jours</span><span class="hw-week">${week}</span>`),
+    card('ordonnances', `${ordVal}<span class="hw-sub">${escHtml(ordSub)}</span>`),
+    card('patients', `<span class="hw-val">${actifs.length}</span><span class="hw-sub">${actifs.length>1?'actifs':'actif'} ce mois-ci${inactifs ? ' · '+plural(inactifs,'inactif') : ''}</span>`),
+    card('prescriptions', `<span class="hw-val">${nbPx}</span><span class="hw-sub">${nbPx>1?'prescriptions enregistrées':'prescription enregistrée'} · bilans biologiques</span>`),
+    card('staff', `<span class="hw-val">${state.nurses.length}</span><span class="hw-people">${state.nurses.slice(0,4).map(n=>`<span><span class="hw-dot" style="background:${escAttr(n.color||'#4f9d94')}"></span>${escHtml(n.name)}</span>`).join('')}</span>`),
+    card('caretypes', `<span class="hw-val">${state.careTypes.length}</span><span class="hw-sub">${state.careTypes.length>1?'types configurés':'type configuré'}</span>`),
+    card('tariffs', `<span class="hw-val small">AMI ${eur(t.AMI||0)}</span><span class="hw-sub">BSA ${eur(t.BSA||0)} · BSB ${eur(t.BSB||0)} · BSC ${eur(t.BSC||0)}</span>`),
+    card('help', `<span class="hw-val small">Guide</span><span class="hw-sub">Mode d'emploi et règles de cotation appliquées</span>`)
+  ].join('');
+  const dateEl = document.getElementById('homeDate');
+  if(dateEl){ const d = new Date().toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'}); dateEl.textContent = d.charAt(0).toUpperCase() + d.slice(1); }
 }
+document.getElementById('homeGrid').addEventListener('click', (e)=>{
+  const w = e.target.closest('.hw'); if(w) switchTab(w.dataset.tab);
+});
 // Sous-titre personnalisé façon "Ton espace pour DARNIS" : priorité au nom personnalisé dans le menu
 // (☰ en haut à gauche → Accueil), sinon repli sur le nom du profil professionnel actif (onglet
 // Prescriptions DM), sinon une phrase générique.
@@ -3975,7 +4038,22 @@ function setSidebarStatusDot(statusEl){
   // Info-bulle mise à jour juste après le texte du statut (utile quand le bandeau est réduit).
   setTimeout(()=>{ dot.title = statusEl.textContent || ''; }, 0);
 }
-function refreshChrome(){ updateSidebarAccount(); renderRightPanel(); }
+function refreshChrome(){
+  updateSidebarAccount(); renderRightPanel();
+  const home = document.getElementById('tab-home');
+  if(home && home.style.display !== 'none') renderHomeGrid();
+}
+// Les statuts d'ordonnance viennent d'une table à part : on la charge une fois pour l'accueil et
+// l'aperçu, puis on les redessine. Renvoie true quand les données sont prêtes.
+let rpOrdRequested = false, rpOrdReady = false;
+function ensureOrdonnancesLoaded(){
+  if(rpOrdReady) return true;
+  if(!rpOrdRequested && currentUser){
+    rpOrdRequested = true;
+    Promise.resolve(loadOrdonnances()).finally(()=>{ rpOrdReady = true; refreshChrome(); });
+  }
+  return false;
+}
 
 // Largeurs et états des bandeaux, mémorisés dans ce navigateur (simple confort d'affichage).
 const LAYOUT_KEY = 'jdFactuLayout';
@@ -4047,7 +4125,6 @@ applyLayout();
 window.addEventListener('resize', applyLayout);
 
 // Contenu du bandeau de droite : un aperçu de l'activité, recalculé après chaque modification.
-let rpOrdRequested = false, rpOrdReady = false;
 function renderRightPanel(){
   const shell = document.getElementById('appRoot');
   const body = document.getElementById('rpBody');
@@ -4068,9 +4145,8 @@ function renderRightPanel(){
   }
   const weekNurses = [...new Set(state.nurses.filter(n=>n.color))].map(n=>`<span class="rp-row" style="padding:1px 0;font-size:12px;"><span class="rp-dot" style="background:${escAttr(n.color)}"></span>${escHtml(n.name)}</span>`).join('');
   let ordHtml;
-  if(!rpOrdReady){
+  if(!ensureOrdonnancesLoaded()){
     ordHtml = '<div class="rp-row muted">Chargement…</div>';
-    if(!rpOrdRequested){ rpOrdRequested = true; Promise.resolve(loadOrdonnances()).finally(()=>{ rpOrdReady = true; renderRightPanel(); }); }
   } else {
     const alerts = actifs.map(p=>({p, st:computeOrdonnanceStatus(p.id)})).filter(x=>x.st.color==='red' || x.st.color==='yellow')
       .sort((a,b)=> (a.st.color==='red'?0:1) - (b.st.color==='red'?0:1));
@@ -4120,7 +4196,12 @@ function renderAll(){
   renderRotaTab();
   renderPlanning(); renderBilling();
   renderHomeGrid(); renderHomeGreeting();
-  renderSidebarNav(); updateTopbarTitle('home'); updateSidebarAccount(); renderRightPanel();
+  renderSidebarNav(); updateSidebarAccount(); renderRightPanel();
+  // Section affichée au démarrage (l'accueil) : surlignée dans le bandeau et nommée dans la barre de titre.
+  const shown = [...document.querySelectorAll('.tab-content')].find(t=>t.style.display !== 'none');
+  const shownTab = shown ? shown.id.replace('tab-','') : 'home';
+  updateTopbarTitle(shownTab);
+  document.querySelectorAll('#sbNav .sb-item').forEach(x=>x.classList.toggle('active', x.dataset.tab===(shownTab==='bilans'?'prescriptions':shownTab)));
   scheduleAutosave();
 }
 document.getElementById('planMonth').value = currentMonthStr();
