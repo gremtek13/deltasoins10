@@ -238,6 +238,109 @@
   .modal-box h2{margin-top:0;}
   .passage-block{border:1px solid var(--border-soft);border-radius:16px;padding:10px 12px;margin-bottom:12px;background:color-mix(in srgb, var(--accent-light) 40%, var(--panel));}
   .passage-block .row{margin-bottom:6px;}
+  /* ================= Planning mensuel : grille à pastilles + fenêtre d'édition ================= */
+  .pl-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+  .pl-month{display:inline-flex;align-items:center;gap:2px;background:var(--panel);border:1px solid var(--border-soft);border-radius:999px;padding:3px;box-shadow:var(--shadow-sm);}
+  .pl-month button{width:34px;height:34px;border:none;background:none;border-radius:50%;cursor:pointer;font-size:20px;line-height:1;color:var(--accent-dark);}
+  .pl-month button:hover{background:var(--accent-light);}
+  .pl-month input[type=month]{border:none !important;background:none !important;box-shadow:none !important;width:auto;font-weight:700;font-family:var(--font-heading);padding:4px 2px;color:var(--text);}
+  .pl-quick{display:inline-flex !important;align-items:center;gap:7px;font-size:13px !important;color:var(--text) !important;cursor:pointer;margin:0 !important;padding:6px 10px;border-radius:999px;border:1px solid var(--border-soft);background:var(--panel);}
+  .pl-quick input{width:16px;height:16px;margin:0;accent-color:var(--accent);}
+  .pl-legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:12px;color:var(--text);margin:0 0 10px;}
+  .pl-legend > span{display:inline-flex;align-items:center;gap:6px;}
+  .pl-panel{padding:0 !important;overflow:hidden;}
+  .pl-panel .planning-wrap{border:none;border-radius:0;}
+  .pl-help{margin:0;padding:9px 14px;font-size:12px;color:var(--muted);border-top:1px solid var(--border-soft);}
+  table.plan.plan2{border-collapse:separate;border-spacing:0;font-size:12px;width:max-content;min-width:100%;}
+  table.plan.plan2 th, table.plan.plan2 td{border:none;border-right:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft);padding:0;text-align:center;vertical-align:middle;min-width:40px;background:var(--panel);}
+  table.plan.plan2 tr:hover td{background:inherit;}
+  table.plan.plan2 thead th{position:sticky;top:0;z-index:7;height:46px;cursor:pointer;color:var(--text);box-shadow:inset 0 -1px 0 var(--border);}
+  table.plan.plan2 thead th:hover{background:var(--accent-light);}
+  .pl-dnum{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;font-size:12.5px;font-weight:700;border-radius:50%;}
+  .pl-dlet{display:block;font-size:9.5px;color:var(--muted);font-weight:600;margin-top:-1px;}
+  table.plan.plan2 .pl-off{background:color-mix(in srgb, var(--sunday) 70%, var(--panel));}
+  table.plan.plan2 thead th.pl-off .pl-dnum{color:var(--bad);}
+  table.plan.plan2 thead th.pl-today .pl-dnum{background:var(--accent);color:#fff;}
+  table.plan.plan2 td.pl-today{background:color-mix(in srgb, var(--accent-light) 75%, var(--panel));}
+  table.plan.plan2 .pl-name{position:sticky;left:0;z-index:6;text-align:left;min-width:178px;max-width:178px;padding:6px 10px;cursor:pointer;box-shadow:inset -1px 0 0 var(--border);}
+  table.plan.plan2 thead th.pl-name{z-index:9;cursor:default;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);vertical-align:middle;}
+  table.plan.plan2 td.pl-name:hover{background:var(--accent-light);}
+  table.plan.plan2 td.pl-tname{cursor:default;}
+  table.plan.plan2 td.pl-tname:hover{background:var(--panel);}
+  .pl-name b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .pl-name small{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35;}
+  .pl-name small.pl-tot{color:var(--accent-dark);font-weight:700;}
+  tr.pl-tournee td{height:36px;}
+  .pl-tchip{display:block;width:calc(100% - 6px);margin:0 3px;height:22px;border:none;border-radius:6px;font:inherit;font-size:10.5px;font-weight:800;cursor:pointer;color:#fff;background:var(--c);opacity:.92;}
+  .pl-tchip.manual{box-shadow:0 0 0 2px var(--panel) inset, 0 0 0 1px var(--c);}
+  .pl-tchip.empty{background:var(--border-soft);color:var(--muted);}
+  .pl-tchip:hover{opacity:1;filter:brightness(1.05);}
+  td.pl-cell{height:42px;}
+  .pc{width:32px;height:30px;margin:0 auto;display:inline-flex;align-items:center;justify-content:center;border-radius:9px;border:none;cursor:pointer;font:inherit;font-size:11.5px;font-weight:800;position:relative;transition:transform .1s ease;vertical-align:middle;-webkit-tap-highlight-color:transparent;}
+  .pc.on{background:color-mix(in srgb, var(--c) 24%, var(--panel));color:color-mix(in srgb, var(--c) 82%, var(--text));}
+  .pc.on.exc{box-shadow:inset 0 0 0 2px var(--c);}
+  .pc.off{background:transparent;}
+  .pc.off::after{content:'';width:6px;height:6px;border-radius:50%;background:var(--border);}
+  .pc.off:hover::after{content:'+';width:auto;height:auto;background:none;color:var(--muted);font-size:16px;font-weight:400;}
+  .pc.none{background:var(--border-soft);color:var(--muted);}
+  .pc:hover{transform:scale(1.08);}
+  .pc .fl{position:absolute;top:-4px;right:-5px;min-width:13px;height:13px;padding:0 3px;border-radius:7px;background:var(--warn);color:#fff;font-size:8px;line-height:13px;font-weight:800;}
+  .pc .dt{position:absolute;bottom:3px;right:4px;width:5px;height:5px;border-radius:50%;background:currentColor;}
+  .pc.mini{width:22px;height:20px;font-size:10px;border-radius:6px;cursor:default;}
+  .pc.mini:hover{transform:none;}
+  table.plan.plan2 tfoot td{position:sticky;bottom:0;z-index:5;height:28px;font-size:10.5px;font-weight:700;color:var(--accent-dark);box-shadow:inset 0 1px 0 var(--border);font-variant-numeric:tabular-nums;}
+  table.plan.plan2 tfoot td.pl-name{z-index:8;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);cursor:default;}
+  /* Fenêtre d'édition */
+  .pl-sheet .modal-box{max-width:470px;padding:18px 20px 20px;}
+  .pl-sh-head{display:flex;align-items:flex-start;gap:10px;}
+  .pl-sh-title{font-family:var(--font-heading);font-size:18px;font-weight:700;margin:0;line-height:1.25;}
+  .pl-sh-sub{color:var(--muted);font-size:12.5px;margin-top:2px;}
+  .pl-x{width:36px;height:36px;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;background:none;border:none;border-radius:10px;color:var(--muted);cursor:pointer;margin:-6px -8px 0 0;padding:0;}
+  .pl-x:hover{background:color-mix(in srgb, var(--text) 8%, transparent);color:var(--text);}
+  .pl-x svg{width:20px;height:20px;}
+  .pl-sh-nav{display:flex;align-items:center;gap:6px;margin:12px 0 14px;font-weight:700;font-family:var(--font-heading);}
+  .pl-sh-nav span{flex:1;text-align:center;}
+  .pl-sh-nav button{width:36px;height:36px;border-radius:50%;border:1px solid var(--border-soft);background:var(--panel);cursor:pointer;font-size:19px;line-height:1;color:var(--accent-dark);}
+  .pl-sh-nav button:hover{background:var(--accent-light);}
+  .pl-seg{display:grid;grid-template-columns:1fr 1fr;background:color-mix(in srgb, var(--bg) 70%, var(--border-soft));border-radius:12px;padding:3px;gap:3px;}
+  .pl-seg button{border:none;background:none;padding:10px;border-radius:9px;font:inherit;font-weight:700;cursor:pointer;color:var(--muted);}
+  .pl-seg button.on{background:var(--panel);color:var(--accent-dark);box-shadow:var(--shadow-sm);}
+  .pl-seg button.on.absent{color:var(--bad);}
+  .pl-lbl{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:16px 0 7px;}
+  .pl-chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .pl-chip{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--border);background:var(--panel);border-radius:999px;padding:7px 12px;font:inherit;font-size:13px;cursor:pointer;color:var(--text);min-height:36px;-webkit-tap-highlight-color:transparent;}
+  .pl-chip .dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;}
+  .pl-chip:hover{border-color:var(--accent);}
+  .pl-chip.on{border-color:var(--accent);background:var(--accent-light);font-weight:700;color:var(--accent-dark);}
+  .pl-sh-amount{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:16px;padding:11px 14px;border-radius:14px;background:var(--accent-light);font-size:13px;}
+  .pl-sh-amount b{font-family:var(--font-heading);font-size:20px;color:var(--accent-dark);white-space:nowrap;}
+  .pl-sh-acts{list-style:none;margin:8px 0 0;padding:0;font-size:12px;color:var(--muted);}
+  .pl-sh-acts li{display:flex;justify-content:space-between;gap:10px;padding:2px 2px;}
+  .pl-sh-acts li span:last-child{white-space:nowrap;}
+  .pl-sh-foot{display:flex;gap:8px;margin-top:16px;}
+  .pl-sh-foot .btn{flex:1;}
+  .pl-actions{display:flex;flex-direction:column;gap:8px;}
+  .pl-daylist{max-height:46vh;overflow-y:auto;border:1px solid var(--border-soft);border-radius:14px;padding:2px 10px;}
+  .pl-dp{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border-soft);}
+  .pl-dp:last-child{border-bottom:none;}
+  .pl-dp-name{flex:1;min-width:0;text-align:left;background:none;border:none;font:inherit;font-weight:600;color:var(--text);cursor:pointer;padding:4px 0;display:flex;align-items:center;gap:6px;}
+  .pl-dp-name:hover{color:var(--accent-dark);}
+  .pl-dp-amt{font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .pl-sw{width:42px;height:25px;border-radius:999px;border:none;background:var(--border);position:relative;cursor:pointer;flex:0 0 auto;transition:background .15s ease;padding:0;}
+  .pl-sw span{position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s ease;}
+  .pl-sw.on{background:var(--accent);}
+  .pl-sw.on span{left:20px;}
+  /* Téléphone : grille plus compacte, fenêtre d'édition qui s'ouvre par le bas de l'écran */
+  table.plan.plan2 th, table.plan.plan2 td{min-width:36px;}
+  table.plan.plan2 .pl-name{min-width:114px;max-width:114px;padding:5px 8px;}
+  .pl-name b{font-size:12.5px;}
+  .pc{width:30px;height:28px;}
+  .pl-panel .planning-wrap{max-height:66vh;overflow:auto;}
+  .pl-quick{padding:7px 12px;}
+  .pl-sheet.modal-overlay{align-items:flex-end;padding:0;}
+  .pl-sheet .modal-box{max-width:100%;width:100%;border-radius:22px 22px 0 0;max-height:88vh;overflow-y:auto;padding:12px 16px calc(18px + env(safe-area-inset-bottom,0px));animation:plSheetUp .22s ease-out;}
+  .pl-sheet .modal-box::before{content:'';display:block;width:40px;height:5px;border-radius:3px;background:var(--border);margin:0 auto 10px;}
+  @keyframes plSheetUp{from{transform:translateY(60px);opacity:.5;}to{transform:none;opacity:1;}}
   .detail-btn{border:1px solid var(--border);background:var(--panel);border-radius:6px;font-size:9px;padding:0 4px;cursor:pointer;color:var(--accent-dark);margin-left:2px;}
   .detail-btn.has-detail{background:var(--accent-light);border-color:var(--accent);}
 
@@ -507,14 +610,21 @@
 
     <!-- Vue MOIS : la grille complète (identique à la version bureau), pour une vision d'ensemble. Vue par défaut. -->
     <div id="monthView">
-      <div class="toolbar">
-        <label style="margin:0;">Mois :</label>
-        <input type="month" id="planMonth" style="max-width:160px;">
+      <div class="pl-toolbar">
+        <div class="pl-month"><button type="button" id="plPrevMonth" aria-label="Mois précédent">‹</button><input type="month" id="planMonth"><button type="button" id="plNextMonth" aria-label="Mois suivant">›</button></div>
+        <button type="button" class="btn secondary" id="plTodayBtn">Aujourd'hui</button>
+        <label class="pl-quick" title="Un clic sur une case coche ou décoche directement la présence, sans ouvrir la fenêtre"><input type="checkbox" id="plQuick"> Saisie rapide</label>
       </div>
-      <div class="panel">
-        <div class="planning-wrap"><table class="plan" id="planningTable"></table></div>
+      <div class="pl-legend" id="plLegend"></div>
+      <div class="panel pl-panel">
+        <div class="planning-wrap"><table class="plan plan2" id="planningTable"></table></div>
+        <p class="pl-help">Touchez sur une case pour régler ce jour (présence, infirmier(ère), majorations, soins) · sur un jour en haut pour la tournée du jour · sur un nom pour tout le mois.</p>
       </div>
     </div>
+  <!-- Fenêtre d'édition du planning (case, tournée du jour, ou tout le mois d'un patient) -->
+  <div class="modal-overlay pl-sheet" id="plSheet" style="display:none;">
+    <div class="modal-box" id="plSheetBox" role="dialog" aria-modal="true"></div>
+  </div>
 
     <button class="btn secondary" id="btnExportExcel" style="width:100%;margin-top:12px;">📊 Exporter en Excel</button>
     <button class="btn secondary" id="btnExportPdf" style="width:100%;margin-top:8px;">🖨️ Exporter en PDF</button>
@@ -2434,6 +2544,42 @@ function getPlanMonth(){
 }
 document.getElementById('planMonth').addEventListener('change', renderPlanning);
 
+// Grille du planning mensuel, version simplifiée : une case = une pastille aux initiales de l'infirmier(ère)
+// (vide = absent). Tout le détail se règle dans une fenêtre qui s'ouvre au clic : sur une case (ce patient
+// ce jour-là), sur un jour de l'en-tête (la tournée du jour) ou sur un nom (tout le mois de ce patient).
+// Aucun champ de formulaire dans la grille : beaucoup plus lisible, et bien plus léger sur téléphone.
+let plQuick = false;
+try{ plQuick = localStorage.getItem('jdFactuPlQuick') === '1'; }catch(err){}
+let plSheetCtx = null;      // {type:'cell', d, pid} | {type:'day', d} | {type:'patient', pid}
+let plLastMonth = null;     // pour ne recentrer la grille sur aujourd'hui qu'à l'ouverture / au changement de mois
+const PL_FLAGS = [
+  {key:'nuit', short:'N', label:'Nuit'},
+  {key:'mci', short:'C', label:'Coordination (MCI)'},
+  {key:'mau', short:'U', label:'Acte unique (MAU)'},
+  {key:'mie', short:'E', label:'Enfant < 7 ans (MIE)'}
+];
+const PL_LETTERS = ['D','L','M','M','J','V','S'];
+function plNurse(id){ return id ? state.nurses.find(n=>n.id===id) || null : null; }
+function plColor(n){ return (n && n.color) || '#4f9d94'; }
+// Initiales : « Jérémy » → J, « Thomas Rosado (remplaçant) » → TR.
+function plInitials(n){
+  if(!n) return '?';
+  const words = String(n.name||'').replace(/\(.*?\)/g,'').split(/\s+/).filter(w=>/^\p{L}/u.test(w));
+  if(!words.length) return '?';
+  return (words.length>1 ? words[0][0]+words[1][0] : words[0][0]).toUpperCase();
+}
+function plEur(v){ return (v||0).toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €'; }
+function plLongDate(d){
+  const s = new Date(d+'T00:00:00').toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'});
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+function plShiftDay(d, delta){
+  const x = new Date(d+'T00:00:00'); x.setDate(x.getDate()+delta);
+  return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+}
+function plRerender(){ if(typeof refreshPlanningViews === 'function') refreshPlanningViews(); else renderPlanning(); }
+function plCareNames(p){ return patientCareTypeIds(p).map(id=>(state.careTypes.find(c=>c.id===id)||{}).name).filter(Boolean); }
+
 function renderPlanning(){
   scheduleAutosave();
   const month = getPlanMonth();
@@ -2441,66 +2587,249 @@ function renderPlanning(){
   const table = document.getElementById('planningTable');
   const today = todayISO();
   state.dayNurse = state.dayNurse || {};
+  const fresh = !table.firstChild;
+  const off = d => isSunday(d) || isHoliday(d);
+  const cls = d => (off(d) ? ' pl-off' : '') + (d===today ? ' pl-today' : '');
+  const patients = state.patients.filter(p=>isPatientActiveInMonth(p, month));
+  const dayTotals = days.map(()=>0);
 
-  let head = '<tr><th class="patient-col">Patient</th>' + days.map(d=>{
-    const dayNum = d.slice(8,10);
-    const cls = [isSunday(d)?'sunday':'', d===today?'today':''].filter(Boolean).join(' ');
-    return `<th class="${cls}" title="${d}">${dayNum}</th>`;
+  const head = '<thead><tr><th class="pl-name pl-corner">Patient</th>' + days.map(d=>{
+    const dt = new Date(d+'T00:00:00');
+    return `<th class="pl-day${cls(d)}" data-day="${d}" title="${escAttr(plLongDate(d))} — tournée du jour"><span class="pl-dnum">${dt.getDate()}</span><span class="pl-dlet">${PL_LETTERS[dt.getDay()]}</span></th>`;
+  }).join('') + '</tr></thead>';
+
+  const tournee = '<tr class="pl-tournee"><td class="pl-name pl-tname" data-tournee="1"><b>Tournée du jour</b><small>Infirmier(ère) par défaut</small></td>' + days.map(d=>{
+    const n = plNurse(dayDefaultNurseId(d));
+    const manual = !!state.dayNurse[d];
+    return `<td class="${cls(d).trim()}"><button type="button" class="pl-tchip${n?'':' empty'}${manual?' manual':''}" data-day="${d}" style="${n?'--c:'+escAttr(plColor(n)):''}" title="${escAttr(plLongDate(d) + ' : ' + (n ? n.name : 'personne') + (manual ? ' (choisi pour ce jour)' : ' (selon le roulement)'))}">${n ? escHtml(plInitials(n)) : '—'}</button></td>`;
   }).join('') + '</tr>';
 
-  // Ligne d'affectation globale : s'applique par défaut à tous les patients de ce jour.
-  let defaultRow = '<tr><td class="patient-col" style="font-weight:600;">🌐 Tous les patients (par défaut)</td>' + days.map(d=>{
-    const cls = [isSunday(d)?'sunday':'', d===today?'today':''].filter(Boolean).join(' ');
-    const val = state.dayNurse[d] || '';
-    return `<td class="${cls}">
-        <select onchange="setDayDefaultNurse('${d}',this.value)">
-          <option value="">—</option>
-          ${state.nurses.map(n=>`<option value="${n.id}" ${val===n.id?'selected':''}>${escAttr(n.name)}</option>`).join('')}
-        </select>
-      </td>`;
-  }).join('') + '</tr>';
-
-  // Seuls les patients actifs CE MOIS-CI (case cochée dans l'onglet Patients) apparaissent dans la
-  // grille : un patient désactivé disparaît à partir du mois de désactivation, mais reste visible sur
-  // tous les mois antérieurs (historique préservé).
-  let rows = state.patients.filter(p=>isPatientActiveInMonth(p, month)).map(p=>{
-    let cells = days.map(d=>{
-      const cls = [isSunday(d)?'sunday':'', d===today?'today':''].filter(Boolean).join(' ');
-      const eff = getEffectiveNurse(d,p.id);
+  const rows = patients.map(p=>{
+    let rowTotal = 0, presentDays = 0;
+    const cells = days.map((d,i)=>{
+      const eff = getEffectiveNurse(d, p.id);
+      if(eff.excluded){
+        return `<td class="pl-cell${cls(d)}"><button type="button" class="pc off" data-day="${d}" data-pid="${p.id}" title="${escAttr(p.name+' — '+plLongDate(d)+' : absent(e)')}" aria-label="Absent"></button></td>`;
+      }
+      if(!eff.nurseId){
+        return `<td class="pl-cell${cls(d)}"><button type="button" class="pc none" data-day="${d}" data-pid="${p.id}" title="${escAttr(p.name+' — '+plLongDate(d)+' : aucun(e) infirmier(ère) affecté(e)')}">?</button></td>`;
+      }
+      const n = plNurse(eff.nurseId);
+      const calc = computeDayAmount(d, p);
+      rowTotal += calc.amount; dayTotals[i] += calc.amount; presentDays++;
+      const flags = getEffectiveFlags(d, p);
+      const fl = PL_FLAGS.filter(f=>flags[f.key]).map(f=>f.short).join('');
       const entry = eff.raw;
-      const present = !eff.excluded;
-      const calc = computeDayAmount(d,p);
-      const flags = getEffectiveFlags(d,p);
-      const flagsBtns = `<div class="day-flags">
-          <button class="${flags.nuit?'on':''}" title="Majoration de nuit (coché par défaut sur ce patient : ${p.defaultFlags&&p.defaultFlags.nuit?'oui':'non'})" onclick="toggleFlag('${d}','${p.id}','nuit')">N</button>
-          <button class="${flags.mci?'on':''}" title="MCI coordination (coché par défaut sur ce patient : ${p.defaultFlags&&p.defaultFlags.mci?'oui':'non'})" onclick="toggleFlag('${d}','${p.id}','mci')">C</button>
-          <button class="${flags.mau?'on':''}" title="MAU acte unique (coché par défaut sur ce patient : ${p.defaultFlags&&p.defaultFlags.mau?'oui':'non'})" onclick="toggleFlag('${d}','${p.id}','mau')">U</button>
-          <button class="${flags.mie?'on':''}" title="MIE enfant < 7 ans (coché par défaut sur ce patient : ${p.defaultFlags&&p.defaultFlags.mie?'oui':'non'})" onclick="toggleFlag('${d}','${p.id}','mie')">E</button>
-        </div>`;
-      const presenceBox = `<input type="checkbox" title="Présent(e) ce jour" ${present?'checked':''} onchange="togglePresence('${d}','${p.id}',this.checked)">`;
-      const nurseSelect = present ? `<select title="Laisser sur « (jour) » pour suivre l'affectation globale" onchange="setNurseForCell('${d}','${p.id}',this.value)">
-          <option value="">(jour)</option>
-          ${state.nurses.map(n=>`<option value="${n.id}" ${entry&&entry.nurseId===n.id?'selected':''}>${escAttr(n.name)}</option>`).join('')}
-        </select>` : '';
-      const hasCustomPassages = !!(entry && entry.overridePassages && entry.overridePassages.length);
-      const detailBtn = present ? `<button class="detail-btn${hasCustomPassages?' has-detail':''}" title="Détail des soins de ce jour (plusieurs passages, heures, actes)" onclick="openPassageModal('${d}','${p.id}')">🕐</button>` : '';
-      return `<td class="${cls}${present?'':' '}" style="${present?'':'opacity:.45;'}">
-          <div class="cell-detail">
-            <div style="display:flex;align-items:center;gap:2px;">${presenceBox}${nurseSelect}${detailBtn}</div>
-            ${present && eff.nurseId ? `<span class="cell-amount">${calc.amount.toFixed(2)}€</span>${flagsBtns}` : ''}
-          </div>
-        </td>`;
+      const custom = !!(entry && entry.overridePassages && entry.overridePassages.length);
+      const exc = !eff.fromDefault;
+      const tip = `${p.name} — ${plLongDate(d)} : ${n ? n.name : '?'}${exc ? ' (changé ce jour)' : ''} · ${calc.amount.toFixed(2)} €${fl ? ' · majorations '+fl : ''}${custom ? ' · soins modifiés' : ''}`;
+      return `<td class="pl-cell${cls(d)}"><button type="button" class="pc on${exc?' exc':''}" data-day="${d}" data-pid="${p.id}" style="--c:${escAttr(plColor(n))}" title="${escAttr(tip)}">${escHtml(plInitials(n))}${fl?`<span class="fl">${fl}</span>`:''}${custom?'<span class="dt"></span>':''}</button></td>`;
     }).join('');
-    const ctNames = patientCareTypeIds(p).map(id=>(state.careTypes.find(c=>c.id===id)||{}).name).filter(Boolean);
-    const ctTag = ctNames.length ? ` <span class="pill">${escHtml(ctNames.join(', '))}</span>` : '';
-    const cancerTag = p.hasCancer ? ` <span class="pill" title="Cancer / immunodéprimé (article 4 ch. II)">🎗️</span>` : '';
-    const nameLink = `<a href="#" title="Voir/modifier la fiche de ce patient" style="color:var(--accent-dark);text-decoration:none;cursor:pointer;" onclick="goToPatient('${p.id}');return false;">${escHtml(p.name)}</a>`;
-    const validateBtn = `<button class="validate-btn" title="Basculer présent(e)/absent(e) sur tous les jours du mois affiché pour ce patient" onclick="validateMonthForPatient('${p.id}')">✅</button>`;
-    return `<tr><td class="patient-col">${nameLink}${validateBtn}${cancerTag}${ctTag}</td>${cells}</tr>`;
+    const ct = plCareNames(p);
+    return `<tr><td class="pl-name" data-pid="${p.id}" title="${escAttr(p.name)} — tout le mois"><b>${escHtml(p.name)}${p.hasCancer?' 🎗️':''}</b>${ct.length?`<small>${escHtml(ct.join(', '))}</small>`:''}<small class="pl-tot">${presentDays} j · ${plEur(rowTotal)}</small></td>${cells}</tr>`;
   }).join('');
 
-  table.innerHTML = head + defaultRow + rows;
+  const foot = '<tfoot><tr><td class="pl-name pl-foot-name">Total du jour</td>' + dayTotals.map((v,i)=>`<td class="${cls(days[i]).trim()}" title="${escAttr(plLongDate(days[i])+' : '+plEur(v))}">${v ? Math.round(v) : ''}</td>`).join('') + '</tr></tfoot>';
+
+  table.innerHTML = head + '<tbody>' + tournee + (rows || `<tr><td class="pl-name">Aucun patient actif ce mois-ci.</td><td colspan="${days.length}"></td></tr>`) + '</tbody>' + foot;
+  renderPlanningLegend();
+  // À l'ouverture (ou au changement de mois), on fait défiler la grille jusqu'à aujourd'hui.
+  const wrap = table.closest('.planning-wrap');
+  if(wrap && wrap.offsetParent !== null && (fresh || plLastMonth !== month)){
+    plLastMonth = month;
+    const th = table.querySelector('thead th.pl-today');
+    const nameCol = table.querySelector('thead th.pl-name');
+    wrap.scrollLeft = th ? Math.max(0, th.offsetLeft - (nameCol ? nameCol.offsetWidth : 0) - th.offsetWidth*2) : 0;
+  }
+  const quick = document.getElementById('plQuick'); if(quick) quick.checked = plQuick;
+  if(plSheetCtx) renderPlSheet();
 }
+function renderPlanningLegend(){
+  const el = document.getElementById('plLegend'); if(!el) return;
+  el.innerHTML = state.nurses.map(n=>`<span><span class="pc on mini" style="--c:${escAttr(plColor(n))}">${escHtml(plInitials(n))}</span>${escHtml(n.name)}</span>`).join('')
+    + '<span><span class="pc off mini"></span>Absent</span>'
+    + '<span><span class="pc on exc mini" style="--c:var(--muted)">A</span>Changé ce jour</span>'
+    + '<span class="muted">N C U E = majorations · point = soins modifiés</span>';
+}
+
+// --- Fenêtre d'édition (bas de l'écran sur téléphone, au centre sur ordinateur) ---
+function openPlSheet(ctx){
+  plSheetCtx = ctx;
+  renderPlSheet();
+  document.getElementById('plSheet').style.display = 'flex';
+}
+function closePlSheet(){
+  plSheetCtx = null;
+  document.getElementById('plSheet').style.display = 'none';
+}
+function renderPlSheet(){
+  const c = plSheetCtx, box = document.getElementById('plSheetBox');
+  if(!c || !box) return;
+  if(c.type==='cell') box.innerHTML = plCellSheetHtml(c.d, c.pid);
+  else if(c.type==='day') box.innerHTML = plDaySheetHtml(c.d);
+  else if(c.type==='patient') box.innerHTML = plPatientSheetHtml(c.pid);
+}
+const PL_CLOSE = '<button type="button" class="sb-icon-btn pl-x" data-act="close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>';
+function plDateNav(d){
+  return `<div class="pl-sh-nav"><button type="button" data-act="prev" aria-label="Jour précédent">‹</button><span>${escHtml(plLongDate(d))}</span><button type="button" data-act="next" aria-label="Jour suivant">›</button></div>`;
+}
+function plCellSheetHtml(d, pid){
+  const p = state.patients.find(x=>x.id===pid);
+  if(!p) return PL_CLOSE;
+  const eff = getEffectiveNurse(d, pid);
+  const present = !eff.excluded;
+  const dayN = plNurse(dayDefaultNurseId(d));
+  let html = `<div class="pl-sh-head"><div style="flex:1;min-width:0;"><h3 class="pl-sh-title">${escHtml(p.name)}</h3><div class="pl-sh-sub">${escHtml(plCareNames(p).join(', ') || 'Aucun type de prise en charge')}</div></div>${PL_CLOSE}</div>`;
+  html += plDateNav(d);
+  html += `<div class="pl-seg"><button type="button" data-act="present" class="${present?'on':''}">Présent(e)</button><button type="button" data-act="absent" class="${!present?'on absent':''}">Absent(e)</button></div>`;
+  if(present){
+    html += `<div class="pl-lbl">Infirmier(ère)</div><div class="pl-chips">`;
+    html += `<button type="button" class="pl-chip${eff.fromDefault || !eff.nurseId ? ' on' : ''}" data-act="nurse" data-nurse="">${dayN ? `<span class="dot" style="background:${escAttr(plColor(dayN))}"></span>` : ''}Tournée du jour${dayN ? ' · '+escHtml(dayN.name) : ' (personne)'}</button>`;
+    html += state.nurses.map(n=>`<button type="button" class="pl-chip${!eff.fromDefault && eff.nurseId===n.id ? ' on' : ''}" data-act="nurse" data-nurse="${n.id}"><span class="dot" style="background:${escAttr(plColor(n))}"></span>${escHtml(n.name)}</button>`).join('');
+    html += `</div>`;
+    if(eff.nurseId){
+      const flags = getEffectiveFlags(d, p);
+      html += `<div class="pl-lbl">Majorations ce jour</div><div class="pl-chips">` + PL_FLAGS.map(f=>`<button type="button" class="pl-chip${flags[f.key]?' on':''}" data-act="flag" data-flag="${f.key}">${flags[f.key]?'✓ ':''}${escHtml(f.label)}</button>`).join('') + `</div>`;
+      const calc = computeDayAmount(d, p);
+      const entry = eff.raw;
+      const custom = !!(entry && entry.overridePassages && entry.overridePassages.length);
+      html += `<div class="pl-sh-amount"><span>Montant du jour</span><b>${plEur(calc.amount)}</b></div>`;
+      if(calc.breakdown && calc.breakdown.length){
+        html += `<ul class="pl-sh-acts">${calc.breakdown.slice(0,6).map(b=>`<li><span>${escHtml(b.label)}</span><span>${b.amount ? plEur(b.amount) : ''}</span></li>`).join('')}${calc.breakdown.length>6?`<li><span>+ ${calc.breakdown.length-6} autre(s) ligne(s)</span><span></span></li>`:''}</ul>`;
+      }
+      html += `<div class="pl-sh-foot"><button type="button" class="btn secondary" data-act="detail">🕐 Détail des soins${custom?' (modifié)':''}</button><button type="button" class="btn" data-act="close">OK</button></div>`;
+    } else {
+      html += `<p class="muted small" style="margin:14px 0 0;">Aucun(e) infirmier(ère) n'est affecté(e) à ce jour : choisissez-en un(e) ci-dessus, ou réglez la tournée du jour.</p><div class="pl-sh-foot"><button type="button" class="btn" data-act="close">OK</button></div>`;
+    }
+  } else {
+    html += `<p class="muted small" style="margin:14px 0 0;">Pas de passage chez ce patient ce jour-là.</p><div class="pl-sh-foot"><button type="button" class="btn" data-act="close">OK</button></div>`;
+  }
+  return html;
+}
+function plDaySheetHtml(d){
+  const month = d.slice(0,7);
+  const manualId = (state.dayNurse||{})[d] || '';
+  const rota = plNurse(computeRotationNurse(d));
+  let html = `<div class="pl-sh-head"><div style="flex:1;min-width:0;"><h3 class="pl-sh-title">Tournée du jour</h3><div class="pl-sh-sub">S'applique à tous les patients présents, sauf changement ponctuel</div></div>${PL_CLOSE}</div>`;
+  html += plDateNav(d);
+  html += `<div class="pl-lbl">Infirmier(ère) de la tournée</div><div class="pl-chips">`;
+  html += `<button type="button" class="pl-chip${!manualId?' on':''}" data-act="daynurse" data-nurse="">${rota ? `<span class="dot" style="background:${escAttr(plColor(rota))}"></span>` : ''}Selon le roulement${rota ? ' · '+escHtml(rota.name) : ''}</button>`;
+  html += state.nurses.map(n=>`<button type="button" class="pl-chip${manualId===n.id?' on':''}" data-act="daynurse" data-nurse="${n.id}"><span class="dot" style="background:${escAttr(plColor(n))}"></span>${escHtml(n.name)}</button>`).join('');
+  html += `</div>`;
+  const patients = state.patients.filter(p=>isPatientActiveInMonth(p, month));
+  let total = 0;
+  html += `<div class="pl-lbl">Patients ce jour</div><div class="pl-daylist">` + patients.map(p=>{
+    const eff = getEffectiveNurse(d, p.id);
+    const present = !eff.excluded;
+    const n = plNurse(eff.nurseId);
+    const amount = present && eff.nurseId ? computeDayAmount(d, p).amount : 0;
+    total += amount;
+    return `<div class="pl-dp"><button type="button" class="pl-sw${present?' on':''}" data-act="dp-toggle" data-pid="${p.id}" role="switch" aria-checked="${present}" aria-label="${escAttr(p.name)} présent(e)"><span></span></button>
+      <button type="button" class="pl-dp-name" data-act="dp-open" data-pid="${p.id}">${escHtml(p.name)}${present && n && !eff.fromDefault ? ` <span class="pc on exc mini" style="--c:${escAttr(plColor(n))}">${escHtml(plInitials(n))}</span>` : ''}</button>
+      <span class="pl-dp-amt">${present && eff.nurseId ? plEur(amount) : (present ? '—' : 'absent(e)')}</span></div>`;
+  }).join('') + `</div>`;
+  html += `<div class="pl-sh-amount"><span>Total du jour</span><b>${plEur(total)}</b></div>`;
+  html += `<div class="pl-sh-foot"><button type="button" class="btn" data-act="close">OK</button></div>`;
+  return html;
+}
+function plPatientSheetHtml(pid){
+  const p = state.patients.find(x=>x.id===pid);
+  if(!p) return PL_CLOSE;
+  const month = getPlanMonth();
+  const days = daysInMonth(month);
+  let presentDays = 0, total = 0;
+  days.forEach(d=>{ const calc = computeDayAmount(d, p); if(calc.hasNurse){ presentDays++; total += calc.amount; } });
+  const monthLabel = new Date(month+'-01T00:00:00').toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+  let html = `<div class="pl-sh-head"><div style="flex:1;min-width:0;"><h3 class="pl-sh-title">${escHtml(p.name)}</h3><div class="pl-sh-sub">${escHtml(plCareNames(p).join(', ') || 'Aucun type de prise en charge')}</div></div>${PL_CLOSE}</div>`;
+  html += `<div class="pl-sh-amount" style="margin-top:12px;"><span>${escHtml(monthLabel.charAt(0).toUpperCase()+monthLabel.slice(1))} · ${presentDays} jour${presentDays>1?'s':''}</span><b>${plEur(total)}</b></div>`;
+  html += `<div class="pl-lbl">Tout le mois</div><div class="pl-actions">
+    <button type="button" class="btn secondary" data-act="month-present">✓ Présent(e) tous les jours</button>
+    <button type="button" class="btn danger" data-act="month-absent">Absent(e) tout le mois</button>
+    <button type="button" class="btn secondary" data-act="open-patient">Ouvrir la fiche patient</button>
+  </div>`;
+  return html;
+}
+function plSetMonthPresence(pid, present){
+  const days = daysInMonth(getPlanMonth());
+  days.forEach(d=>{
+    const entry = getPlanningEntry(d, pid) || {};
+    entry.excluded = !present;
+    if(!present) entry.nurseId = null;
+    setPlanningEntry(d, pid, entry);
+  });
+  plRerender();
+}
+function plMoveSheetDay(delta){
+  const c = plSheetCtx; if(!c || !c.d) return;
+  c.d = plShiftDay(c.d, delta);
+  const inp = document.getElementById('planMonth');
+  if(c.d.slice(0,7) !== inp.value){ inp.value = c.d.slice(0,7); plRerender(); }
+  renderPlSheet();
+}
+document.getElementById('plSheet').addEventListener('click', (e)=>{
+  if(e.target.id === 'plSheet'){ closePlSheet(); return; }
+  const btn = e.target.closest('[data-act]'); if(!btn) return;
+  const c = plSheetCtx; if(!c) return;
+  const act = btn.dataset.act;
+  if(act==='close') return closePlSheet();
+  if(act==='prev') return plMoveSheetDay(-1);
+  if(act==='next') return plMoveSheetDay(1);
+  if(c.type==='cell'){
+    if(act==='present') togglePresence(c.d, c.pid, true);
+    else if(act==='absent') togglePresence(c.d, c.pid, false);
+    else if(act==='nurse') setNurseForCell(c.d, c.pid, btn.dataset.nurse);
+    else if(act==='flag') toggleFlag(c.d, c.pid, btn.dataset.flag);
+    else if(act==='detail'){ const d = c.d, pid = c.pid; closePlSheet(); openPassageModal(d, pid); return; }
+  } else if(c.type==='day'){
+    if(act==='daynurse') setDayDefaultNurse(c.d, btn.dataset.nurse);
+    else if(act==='dp-toggle'){ const eff = getEffectiveNurse(c.d, btn.dataset.pid); togglePresence(c.d, btn.dataset.pid, !!eff.excluded); }
+    else if(act==='dp-open'){ openPlSheet({type:'cell', d:c.d, pid:btn.dataset.pid}); return; }
+  } else if(c.type==='patient'){
+    const p = state.patients.find(x=>x.id===c.pid);
+    if(act==='month-present') plSetMonthPresence(c.pid, true);
+    else if(act==='month-absent'){ if(p && confirm(`Marquer ${p.name} absent(e) tous les jours du mois affiché ?`)) plSetMonthPresence(c.pid, false); }
+    else if(act==='open-patient'){ closePlSheet(); goToPatient(c.pid); return; }
+  }
+  renderPlSheet();
+});
+document.addEventListener('keydown', (e)=>{
+  if(!plSheetCtx) return;
+  if(e.key==='Escape') closePlSheet();
+  else if((e.key==='ArrowLeft' || e.key==='ArrowRight') && plSheetCtx.d && !/^(INPUT|SELECT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'')){
+    plMoveSheetDay(e.key==='ArrowLeft' ? -1 : 1);
+  }
+});
+document.getElementById('planningTable').addEventListener('click', (e)=>{
+  const cell = e.target.closest('.pc[data-pid]');
+  if(cell){
+    const d = cell.dataset.day, pid = cell.dataset.pid;
+    if(plQuick){ const eff = getEffectiveNurse(d, pid); togglePresence(d, pid, !!eff.excluded); }
+    else openPlSheet({type:'cell', d, pid});
+    return;
+  }
+  const day = e.target.closest('[data-day]');
+  if(day){ openPlSheet({type:'day', d:day.dataset.day}); return; }
+  const name = e.target.closest('td.pl-name[data-pid]');
+  if(name){ openPlSheet({type:'patient', pid:name.dataset.pid}); return; }
+});
+function plShiftMonth(delta){
+  const inp = document.getElementById('planMonth');
+  const [y, m] = (inp.value || currentMonthStr()).split('-').map(Number);
+  const x = new Date(y, m-1+delta, 1);
+  inp.value = x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0');
+  plRerender();
+}
+document.getElementById('plPrevMonth').addEventListener('click', ()=> plShiftMonth(-1));
+document.getElementById('plNextMonth').addEventListener('click', ()=> plShiftMonth(1));
+document.getElementById('plTodayBtn').addEventListener('click', ()=>{
+  document.getElementById('planMonth').value = currentMonthStr();
+  plLastMonth = null;
+  plRerender();
+});
+document.getElementById('plQuick').addEventListener('change', (e)=>{
+  plQuick = e.target.checked;
+  try{ localStorage.setItem('jdFactuPlQuick', plQuick ? '1' : '0'); }catch(err){}
+});
 
 /* ============================= VUE JOUR (mobile) ============================= */
 // Rafraîchit les DEUX vues du planning (grille du mois + liste du jour) à chaque changement — mais
