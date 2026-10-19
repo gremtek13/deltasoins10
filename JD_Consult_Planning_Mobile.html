@@ -463,6 +463,126 @@
   .ord-dot.gray{background:var(--muted);}
   .ord-legend{display:flex;flex-wrap:wrap;gap:10px 14px;margin:8px 0 12px;font-size:11.5px;color:var(--muted);}
   .ord-legend span{display:inline-flex;align-items:center;gap:5px;}
+
+  /* ================= Mise en page façon Claude (téléphone) : barre du haut + tiroirs ================= */
+  :root{ --sidebar-bg: color-mix(in srgb, var(--bg) 92%, #3a4747); }
+  :root[data-theme="dark"]{ --sidebar-bg: color-mix(in srgb, var(--bg) 82%, black); }
+  .sb-head{display:flex;align-items:center;gap:6px;padding:12px 10px 6px;}
+  .sb-brand{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:none;border:none;cursor:pointer;padding:4px;border-radius:10px;font:inherit;font-family:var(--font-heading);font-weight:700;font-size:16px;color:var(--text);text-align:left;}
+  .sb-brand .logo-mark{width:30px;height:30px;font-size:15px;border-radius:9px;}
+  .sb-icon-btn{width:34px;height:34px;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;background:none;border:none;border-radius:9px;color:var(--muted);cursor:pointer;transition:background .15s ease,color .15s ease;}
+  .sb-icon-btn:hover{background:color-mix(in srgb, var(--text) 9%, transparent);color:var(--text);}
+  .sb-icon-btn svg{width:19px;height:19px;}
+  .sb-nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:4px 8px 10px;display:flex;flex-direction:column;gap:1px;}
+  .sb-section{font-size:11px;font-weight:700;color:var(--muted);padding:14px 10px 4px;white-space:nowrap;}
+  .sb-item{display:flex;align-items:center;gap:11px;width:100%;padding:8px 10px;border:none;background:none;border-radius:10px;cursor:pointer;font:inherit;font-size:13.5px;color:var(--text);text-align:left;white-space:nowrap;transition:background .12s ease;}
+  .sb-item svg{width:19px;height:19px;flex:0 0 auto;color:var(--muted);}
+  .sb-item:hover{background:color-mix(in srgb, var(--text) 7%, transparent);}
+  .sb-item.active{background:var(--panel);box-shadow:var(--shadow-sm);font-weight:700;color:var(--accent-dark);}
+  .sb-item.active svg{color:var(--accent);}
+  .sb-label{overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  .sb-foot{padding:8px;border-top:1px solid var(--border-soft);display:flex;flex-direction:column;gap:6px;}
+  .sb-status-wrap{display:flex;align-items:flex-start;gap:7px;padding:2px 6px 0;}
+  .sb-status-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;margin-top:4px;background:var(--muted);}
+  .sb-status-dot.ok{background:var(--ok);} .sb-status-dot.warn{background:var(--warn);} .sb-status-dot.bad{background:var(--bad);}
+  .sb-status{font-size:11px;color:var(--muted);line-height:1.35;white-space:normal;}
+  .sb-account{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:12px;cursor:pointer;position:relative;}
+  .sb-account:hover{background:color-mix(in srgb, var(--text) 7%, transparent);}
+  .sb-avatar{width:32px;height:32px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;font-weight:700;font-size:12.5px;font-family:var(--font-heading);letter-spacing:.02em;}
+  .sb-account-text{flex:1;display:flex;flex-direction:column;line-height:1.25;}
+  .sb-account-text b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sb-account-text .user-badge{font-size:11.5px;overflow:hidden;text-overflow:ellipsis;}
+  .sb-more{color:var(--muted);font-size:18px;line-height:1;}
+  .sb-account .app-menu{top:auto;bottom:calc(100% + 6px);left:0;margin-top:0;}
+  .rp-head{display:flex;align-items:center;gap:8px;padding:9px 10px 9px 16px;min-height:54px;border-bottom:1px solid var(--border-soft);font-family:var(--font-heading);font-size:14.5px;}
+  .rp-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;}
+  .rp-card{border:1px solid var(--border-soft);border-radius:16px;padding:12px 14px;background:color-mix(in srgb, var(--bg) 60%, var(--panel));}
+  .rp-card h4{margin:0 0 8px;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-family:var(--font-body);}
+  .rp-hero{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;border:none;box-shadow:var(--shadow-sm);}
+  .rp-hero h4{color:rgba(255,255,255,.85);}
+  .rp-big{font-family:var(--font-heading);font-size:27px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15;}
+  .rp-sub{font-size:12px;opacity:.88;margin-top:2px;}
+  .rp-row{display:flex;align-items:center;gap:8px;font-size:13px;padding:3px 0;}
+  .rp-row .rp-right{margin-left:auto;font-size:11.5px;color:var(--muted);white-space:nowrap;}
+  .rp-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;background:var(--muted);}
+  .rp-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:11px;}
+  .rp-week .d{border-radius:10px;padding:5px 0 6px;background:var(--panel);border:1px solid var(--border-soft);}
+  .rp-week .d.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
+  .rp-week .d b{display:block;font-size:12.5px;}
+  .rp-week .d .bar{height:5px;border-radius:3px;margin:4px 6px 0;background:var(--border);}
+  .rp-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .rp-stat{border-radius:12px;background:var(--accent-light);padding:9px 10px;text-align:center;}
+  .rp-stat b{display:block;font-family:var(--font-heading);font-size:19px;color:var(--accent-dark);}
+  .rp-stat span{font-size:11px;color:var(--muted);}
+  .rp-link{background:none;border:none;color:var(--accent-dark);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;padding:6px 0 0;}
+  .rp-link:hover{text-decoration:underline;}
+  .rp-hero .rp-link{color:#fff;}
+  .home-head{padding:6px 2px 18px;}
+  .home-greeting{margin:0;font-size:30px;font-weight:700;font-family:var(--font-heading);letter-spacing:-.01em;}
+  .home-subgreeting{margin:4px 0 0;color:var(--muted);font-size:14px;}
+  .home-widgets{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}
+  .hw{position:relative;display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--panel);border:1px solid var(--border-soft);border-radius:18px;padding:15px 16px 14px;cursor:pointer;font:inherit;color:var(--text);box-shadow:var(--shadow-sm);min-height:132px;transition:transform .14s ease,box-shadow .14s ease,border-color .14s ease;}
+  .hw:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:color-mix(in srgb, var(--hue,var(--accent)) 45%, var(--border-soft));}
+  .hw:active{transform:scale(.985);}
+  .hw-top{display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:700;color:var(--muted);}
+  .hw-ico{width:28px;height:28px;border-radius:9px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg, var(--hue), color-mix(in srgb, var(--hue) 72%, black));}
+  .hw-ico svg{width:16px;height:16px;}
+  .hw-arrow{margin-left:auto;font-size:18px;line-height:1;color:var(--muted);opacity:.6;transition:transform .14s ease,opacity .14s ease;}
+  .hw:hover .hw-arrow{opacity:1;transform:translateX(2px);color:var(--hue,var(--accent));}
+  .hw-val{font-family:var(--font-heading);font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15;margin-top:4px;display:flex;align-items:center;gap:8px;}
+  .hw-val.small{font-size:17px;}
+  .hw-sub{font-size:12.5px;color:var(--muted);line-height:1.4;}
+  .hw-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;background:var(--muted);}
+  .hw-wide{grid-column:span 2;background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;border:none;}
+  .hw-wide .hw-top, .hw-wide .hw-sub, .hw-wide .hw-arrow{color:rgba(255,255,255,.88);}
+  .hw-wide .hw-ico{background:rgba(255,255,255,.2);}
+  .hw-wide .hw-val{font-size:32px;}
+  .hw-wide:hover .hw-arrow{color:#fff;}
+  .hw-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:6px;text-align:center;font-size:10.5px;color:var(--muted);}
+  .hw-week .bar{height:6px;border-radius:3px;margin-top:3px;background:var(--border);}
+  .hw-week .today{color:var(--text);font-weight:700;}
+  .hw-people{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:4px;font-size:13px;}
+  .hw-people span{display:inline-flex;align-items:center;gap:6px;}
+  header.m-topbar{display:flex;align-items:center;gap:4px;padding:6px 6px;padding-top:calc(6px + env(safe-area-inset-top));flex-wrap:nowrap;}
+  .m-icon-btn{width:44px;height:44px;flex:0 0 auto;border:none;background:none;border-radius:12px;color:var(--text);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:0;}
+  .m-icon-btn:active{background:color-mix(in srgb, var(--text) 9%, transparent);}
+  .m-icon-btn svg{width:24px;height:24px;}
+  .m-title{flex:1;min-width:0;text-align:center;font-size:16px !important;margin:0;font-weight:700;display:flex !important;align-items:center;justify-content:center;gap:7px;white-space:nowrap;overflow:hidden;}
+  .m-title span{overflow:hidden;text-overflow:ellipsis;}
+  .m-title svg{width:18px;height:18px;color:var(--accent);flex:0 0 auto;}
+  .m-scrim{position:fixed;inset:0;background:rgba(18,28,26,.45);z-index:180;opacity:0;pointer-events:none;transition:opacity .22s ease;}
+  .m-scrim.show{opacity:1;pointer-events:auto;}
+  .m-drawer{position:fixed;top:0;bottom:0;left:0;width:min(84vw,320px);z-index:190;background:var(--sidebar-bg);display:flex;flex-direction:column;transform:translateX(-104%);transition:transform .26s cubic-bezier(.2,.8,.2,1);box-shadow:var(--shadow-lg);padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);visibility:hidden;}
+  .m-drawer.right{left:auto;right:0;width:min(90vw,370px);background:var(--panel);transform:translateX(104%);}
+  .m-drawer.open{transform:none;visibility:visible;}
+  body.drawer-open{overflow:hidden;}
+  .m-drawer .sb-head{padding:10px 8px 6px 12px;}
+  .m-drawer .sb-item{padding:12px 12px;font-size:15px;}
+  .m-drawer .sb-item svg{width:21px;height:21px;}
+  .m-drawer .sb-section{padding:16px 12px 4px;font-size:12px;}
+  .m-drawer .sb-foot{padding:10px;}
+  .m-drawer .sb-status{font-size:12px;}
+  .m-drawer .sb-account{padding:9px 10px;}
+  .m-drawer .user-badge{width:auto;text-align:left;padding:0;white-space:nowrap;}
+  .m-drawer .sb-account .app-menu{top:auto;bottom:calc(100% + 6px);left:0;right:auto;margin-top:0;max-height:70vh;overflow-y:auto;}
+  .m-drawer .rp-head{min-height:56px;}
+  .m-drawer .rp-body{padding:12px;}
+  /* Accueil : widgets sur deux colonnes */
+  .home-head{padding:6px 4px 14px;}
+  .home-greeting{font-size:26px;}
+  .home-subgreeting{font-size:13px;}
+  .home-widgets{grid-template-columns:1fr 1fr;gap:10px;}
+  .hw{min-height:118px;padding:12px 12px 11px;border-radius:16px;gap:4px;-webkit-tap-highlight-color:transparent;}
+  .hw:hover{transform:none;}
+  .hw-top{font-size:11.5px;gap:7px;}
+  .hw-ico{width:24px;height:24px;border-radius:8px;}
+  .hw-ico svg{width:14px;height:14px;}
+  .hw-val{font-size:20px;}
+  .hw-val.small{font-size:15px;}
+  .hw-sub{font-size:11.5px;}
+  .hw-wide .hw-val{font-size:26px;}
+  .hw-week{gap:2px;font-size:9.5px;}
+  .hw-people{font-size:12px;gap:3px 10px;}
 </style>
 </head>
 <body>
@@ -485,19 +605,30 @@
 <div id="appRoot" style="display:none;">
 
 <div class="sticky-top">
-<header>
-  <h1><span class="logo-mark">🩺</span> JD Factu</h1>
-  <div class="spacer"></div>
-  <div class="app-title-wrap" id="appTitleWrap">
-    <button class="menu-dots-btn" id="menuDotsBtn" aria-label="Menu">
-      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2.1"/><circle cx="12" cy="12" r="2.1"/><circle cx="19" cy="12" r="2.1"/></svg>
-    </button>
-    <div class="app-menu" id="appMenu">
-      <div class="app-menu-label">Compte</div>
-      <div class="app-menu-info" id="userBadge"></div>
-      <div class="app-menu-info" id="autosaveStatus"></div>
-      <button class="app-menu-item" id="btnForceCloudSave" style="display:none;color:var(--bad);">⚠️ Forcer la sauvegarde en ligne</button>
-      <hr class="app-menu-sep">
+<header class="m-topbar">
+  <button type="button" class="m-icon-btn" id="mMenuBtn" aria-label="Ouvrir le menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
+  <h1 class="m-title" id="topbarTitle">Accueil</h1>
+  <button type="button" class="m-icon-btn" id="mOverviewBtn" aria-label="Ouvrir l'aperçu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M14.5 4.5v15"/></svg></button>
+  <input type="file" id="fileImport" class="file-input-hidden" accept="application/json">
+</header>
+</div><!-- /sticky-top -->
+
+<!-- Tiroirs façon Claude : menu de navigation à gauche, aperçu de l'activité à droite. -->
+<div class="m-scrim" id="mScrim"></div>
+<aside class="m-drawer" id="mDrawer" aria-label="Menu">
+  <div class="sb-head">
+    <button type="button" class="sb-brand" id="sbBrand"><span class="logo-mark">🩺</span><span class="sb-label">JD Factu</span></button>
+    <button type="button" class="m-icon-btn" id="sbClose" aria-label="Fermer le menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <nav class="sb-nav" id="sbNav" aria-label="Sections"></nav>
+  <div class="sb-foot">
+    <div class="sb-status-wrap"><span class="sb-status-dot" id="sbStatusDot"></span><span class="sb-status" id="autosaveStatus"></span></div>
+    <button class="btn danger" id="btnForceCloudSave" style="display:none;font-size:13px;">⚠️ Forcer la sauvegarde en ligne</button>
+    <div class="app-title-wrap sb-account" id="appTitleWrap">
+      <span class="sb-avatar" id="sbAvatar">JD</span>
+      <span class="sb-account-text"><b id="sbAccountName">Mon compte</b><span class="user-badge" id="userBadge"></span></span>
+      <span class="sb-more" aria-hidden="true">⋯</span>
+      <div class="app-menu" id="appMenu">
       <div class="app-menu-label">Accueil</div>
       <div class="app-menu-field">
         <label for="accountNameInput">Nom affiché sur l'accueil</label>
@@ -515,49 +646,24 @@
       <hr class="app-menu-sep">
       <button class="app-menu-item" id="btnLogout" style="color:var(--bad);">🚪 Se déconnecter</button>
     </div>
+    </div>
   </div>
-  <input type="file" id="fileImport" class="file-input-hidden" accept="application/json">
-</header>
-</div><!-- /sticky-top -->
+</aside>
+<aside class="m-drawer right" id="mOverview" aria-label="Aperçu">
+  <div class="rp-head"><b>Aperçu</b><span class="spacer"></span><button type="button" class="m-icon-btn" id="rpClose" aria-label="Fermer l'aperçu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="rp-body" id="rpBody"></div>
+</aside>
 
 <main>
 
   <!-- HOME TAB (vue par défaut à la connexion) -->
   <div class="tab-content" id="tab-home">
-    <div class="panel home-hero">
+    <div class="home-head">
       <h1 class="home-greeting">Bonjour</h1>
-      <p class="home-subgreeting" id="homeSubgreeting">Planning &amp; facturation infirmière</p>
-
-      <!-- Chaque widget est cliquable et ouvre la section correspondante (data-goto = onglet cible). -->
-      <div class="hero-card home-link" data-goto="billing" role="button" tabindex="0" aria-label="Ouvrir le contrôle facturation">
-        <div class="hero-label">CA moyen / jour (7 derniers jours)</div>
-        <div class="hero-value" id="homeHeroValue">— €</div>
-        <div class="hero-sub" id="homeHeroSub"></div>
-        <span class="home-link-arrow" aria-hidden="true">›</span>
-      </div>
-
-      <div class="widget-row">
-        <div class="widget-card home-link" data-goto="today" role="button" tabindex="0" aria-label="Ouvrir le planning du jour">
-          <div class="widget-title">Aujourd'hui</div>
-          <div class="widget-main" id="homeTodayNurse">—</div>
-          <span class="home-link-arrow" aria-hidden="true">›</span>
-        </div>
-        <div class="widget-card home-link" data-goto="ordonnances" role="button" tabindex="0" aria-label="Ouvrir les ordonnances">
-          <div class="widget-title">Ordonnances</div>
-          <div class="widget-main" id="homeOrdAlert">—</div>
-          <div class="widget-foot" id="homeOrdFoot"></div>
-          <span class="home-link-arrow" aria-hidden="true">›</span>
-        </div>
-      </div>
-
-      <div class="counters-row">
-        <div class="counter home-link" data-goto="patients" role="button" tabindex="0" aria-label="Ouvrir les patients"><b id="homeCountPatients">0</b><span>Patients actifs</span></div>
-        <div class="counter home-link" data-goto="staff" role="button" tabindex="0" aria-label="Ouvrir le personnel"><b id="homeCountNurses">0</b><span>Infirmier(ère)s</span></div>
-      </div>
-
-      <p class="quick-title">Plus</p>
-      <div class="home-grid quick-grid" id="homeQuickGrid"></div>
+      <p class="home-subgreeting"><span id="homeSubgreeting">Planning &amp; facturation infirmière</span> · <span id="homeDate"></span></p>
     </div>
+    <!-- Widgets cliquables : un par section, avec le chiffre utile du moment. -->
+    <div class="home-widgets" id="homeGrid"></div>
   </div>
 
   <!-- ROULEMENT TAB -->
@@ -1077,9 +1183,14 @@ function currentMonthStr(){ const d=new Date(); return d.toISOString().slice(0,7
 
 /* ============================= TAB SWITCHING ============================= */
 function switchTab(tabName){
-  document.querySelectorAll('.bottom-nav button[data-tab]').forEach(b=>b.classList.toggle('active', b.dataset.tab===tabName));
+  const navTab = (tabName==='bilans') ? 'prescriptions' : tabName;
+  document.querySelectorAll('.bottom-nav button[data-tab]').forEach(b=>b.classList.toggle('active', b.dataset.tab===navTab));
+  document.querySelectorAll('#sbNav .sb-item').forEach(b=>b.classList.toggle('active', b.dataset.tab===navTab));
   document.querySelectorAll('.tab-content').forEach(t=>t.style.display='none');
   document.getElementById('tab-'+tabName).style.display='block';
+  if(typeof closeDrawers === 'function' && document.getElementById('mScrim')) closeDrawers();
+  if(typeof updateTopbarTitle === 'function') updateTopbarTitle(tabName);
+  window.scrollTo(0,0);
   if(tabName==='home'){ renderHomeGreeting(); renderHomeWidgets(); }
   if(tabName==='roulement') renderRotaTab();
   if(tabName==='planning') refreshPlanningViews(); else clearPlanningDom(); // grille lourde : générée seulement quand elle est à l'écran
@@ -1166,64 +1277,6 @@ function animateNumber(el, target, decimals, suffix){
   el._animRaf = requestAnimationFrame(step);
 }
 
-// Widgets du tableau de bord d'accueil : CA moyen/jour glissant, infirmier(ère) du jour (roulement),
-// nombre de patients dont l'ordonnance est à surveiller (rouge/jaune), et deux compteurs simples.
-async function renderHomeWidgets(){
-  const heroVal = document.getElementById('homeHeroValue');
-  const heroSub = document.getElementById('homeHeroSub');
-  if(heroVal){
-    const avg = computeLast7DaysAverage();
-    animateNumber(heroVal, avg, 2, ' €');
-  }
-  if(heroSub){
-    const month = currentMonthStr();
-    const nbActifs = state.patients.filter(p=>isPatientActiveInMonth(p, month)).length;
-    heroSub.textContent = `Sur ${nbActifs} patient${nbActifs>1?'s':''} actif${nbActifs>1?'s':''}`;
-  }
-
-  const todayEl = document.getElementById('homeTodayNurse');
-  if(todayEl){
-    const nurseId = dayDefaultNurseId(todayISO());
-    const nurse = nurseId ? state.nurses.find(n=>n.id===nurseId) : null;
-    todayEl.innerHTML = nurse
-      ? `<span class="dot" style="background:${escAttr(nurse.color||'#2563eb')};"></span>${escHtml(nurse.name)}`
-      : '<span class="muted small">Personne affecté(e)</span>';
-  }
-
-  const month = currentMonthStr();
-  animateNumber(document.getElementById('homeCountPatients'), state.patients.filter(p=>isPatientActiveInMonth(p, month)).length, 0);
-  animateNumber(document.getElementById('homeCountNurses'), state.nurses.length, 0);
-
-  const ordAlertEl = document.getElementById('homeOrdAlert');
-  const ordFootEl = document.getElementById('homeOrdFoot');
-  if(ordAlertEl){
-    try{
-      await loadOrdonnances();
-      const activePatients = state.patients.filter(p=>isPatientActiveInMonth(p, month));
-      let expired = 0, soon = 0;
-      activePatients.forEach(p=>{
-        const st = computeOrdonnanceStatus(p.id);
-        if(st.color==='red') expired++;
-        else if(st.color==='yellow') soon++;
-      });
-      const total = expired + soon;
-      if(total === 0){
-        ordAlertEl.innerHTML = '<span class="dot ok"></span>Tout est à jour';
-        if(ordFootEl) ordFootEl.textContent = '';
-      } else {
-        ordAlertEl.innerHTML = `<span class="dot warn"></span>${total} à surveiller`;
-        if(ordFootEl){
-          const parts = [];
-          if(expired) parts.push(`${expired} expirée${expired>1?'s':''}`);
-          if(soon) parts.push(`${soon} bientôt`);
-          ordFootEl.textContent = parts.join(', ');
-        }
-      }
-    }catch(err){
-      ordAlertEl.innerHTML = '<span class="muted small">Indisponible</span>';
-    }
-  }
-}
 // Sous-titre personnalisé façon "Ton espace pour DARNIS" : priorité au nom personnalisé dans le menu
 // (☰ en haut à gauche → Accueil), sinon repli sur le nom du profil professionnel actif (onglet
 // Prescriptions DM), sinon une phrase générique.
@@ -3392,6 +3445,7 @@ let lastSavedJson = null;
 function scheduleAutosave(){
   clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(()=>{
+    if(typeof refreshChrome === 'function') refreshChrome();
     const json = JSON.stringify(state);
     saveToLocalStorage(json);
     if(json !== lastSavedJson) saveStateToCloud(false, json);
@@ -3494,6 +3548,7 @@ function updateAutosaveStatus(){
   if(!el) return;
   const btnForce = document.getElementById('btnForceCloudSave');
   const now = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  setSidebarStatusDot(el);
   if(cloudSaveBlocked){
     el.textContent = "⛔ Sauvegarde bloquée : cet appareil est sur le point d'effacer tous vos patients/infirmiers en ligne. Si erreur → RECHARGEZ sans rien modifier. Si volontaire →";
     el.style.color = 'var(--bad)';
@@ -3584,7 +3639,8 @@ async function onAuthenticated(user){
   currentAutosaveKey = AUTOSAVE_KEY_PREFIX + user.id;
   document.getElementById('authOverlay').style.display = 'none';
   document.getElementById('appRoot').style.display = '';
-  document.getElementById('userBadge').textContent = '👤 ' + user.email;
+  document.getElementById('userBadge').textContent = user.email;
+  updateSidebarAccount();
   await loadStateFromCloudThenLocal();
   renderAll();
 }
@@ -4491,6 +4547,227 @@ function openBilanPrintWindow(b, prof){
   else setTimeout(doPrint, sig ? 200 : 150);
 }
 
+
+/* ============================= MISE EN PAGE FAÇON CLAUDE (TÉLÉPHONE) ============================= */
+const SB_GROUPS = [
+  {title:'', tabs:['home']},
+  {title:'Activité', tabs:['roulement','planning','billing']},
+  {title:'Patients', tabs:['patients','ordonnances','prescriptions']},
+  {title:'Réglages', tabs:['staff','caretypes','tariffs','help']}
+];
+function sbSection(tab){
+  if(tab==='home') return {tab:'home', label:'Accueil', icon:HOME_ICON_PATH};
+  if(tab==='bilans') return {tab:'bilans', label:'Bilans biologiques', icon:'<path d="M6.5 3.5h8"/><path d="M8 3.5v12.5a2.5 2.5 0 0 0 5 0V3.5"/><path d="M8 11h5"/><path d="M18 6.5s2 2.2 2 3.6a2 2 0 0 1-4 0c0-1.4 2-3.6 2-3.6Z"/>'};
+  return HOME_SECTIONS.find(s=>s.tab===tab) || {tab, label:tab, icon:''};
+}
+const svgIcon = path => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+function renderSidebarNav(){
+  const nav = document.getElementById('sbNav');
+  if(!nav) return;
+  nav.innerHTML = SB_GROUPS.map(g=>(g.title ? `<div class="sb-section">${escHtml(g.title)}</div>` : '') + g.tabs.map(tab=>{
+    const s = sbSection(tab);
+    return `<button type="button" class="sb-item" data-tab="${s.tab}" title="${escAttr(s.label)}">${svgIcon(s.icon)}<span class="sb-label">${escHtml(s.label)}</span></button>`;
+  }).join('')).join('');
+}
+document.getElementById('sbNav').addEventListener('click', (e)=>{
+  const item = e.target.closest('.sb-item'); if(item) switchTab(item.dataset.tab);
+});
+document.getElementById('sbBrand').addEventListener('click', ()=> switchTab('home'));
+document.getElementById('sbClose').addEventListener('click', closeDrawers);
+function updateTopbarTitle(tab){
+  const el = document.getElementById('topbarTitle'); if(!el) return;
+  const s = sbSection(tab);
+  el.innerHTML = `${svgIcon(s.icon)}<span>${escHtml(s.label)}</span>`;
+}
+// Bloc compte en bas du bandeau : initiales + nom affiché (menu ⋯ → Accueil), sinon nom du profil.
+function updateSidebarAccount(){
+  const nameEl = document.getElementById('sbAccountName'), avatar = document.getElementById('sbAvatar');
+  if(!nameEl || !avatar) return;
+  const prof = getActiveProfile();
+  const name = (state.accountDisplayName || '').trim() || (prof && prof.nom || '').trim() || 'Mon compte';
+  nameEl.textContent = name;
+  // Initiales des deux premiers mots qui commencent par une lettre (« Deltasoins 10 » → « D »).
+  const initials = name.split(/\s+/).filter(w=>/^\p{L}/u.test(w)).slice(0,2).map(w=>w[0].toUpperCase()).join('') || 'JD';
+  avatar.textContent = initials;
+  document.getElementById('appTitleWrap').title = name + ' — compte et réglages';
+}
+function setSidebarStatusDot(statusEl){
+  const dot = document.getElementById('sbStatusDot'); if(!dot) return;
+  dot.className = 'sb-status-dot ' + (cloudSaveBlocked ? 'bad' : (lastCloudSaveOk === false ? 'warn' : (lastCloudSaveOk === true ? 'ok' : '')));
+  // Info-bulle mise à jour juste après le texte du statut (utile quand le bandeau est réduit).
+  setTimeout(()=>{ dot.title = statusEl.textContent || ''; }, 0);
+}
+function refreshChrome(){
+  updateSidebarAccount(); renderRightPanel();
+  const home = document.getElementById('tab-home');
+  if(home && home.style.display !== 'none') renderHomeWidgets();
+}
+// Les statuts d'ordonnance viennent d'une table à part : on la charge une fois pour l'accueil et
+// l'aperçu, puis on les redessine. Renvoie true quand les données sont prêtes.
+let rpOrdRequested = false, rpOrdReady = false;
+function ensureOrdonnancesLoaded(){
+  if(rpOrdReady) return true;
+  if(!rpOrdRequested && currentUser){
+    rpOrdRequested = true;
+    Promise.resolve(loadOrdonnances()).finally(()=>{ rpOrdReady = true; refreshChrome(); });
+  }
+  return false;
+}
+
+
+// Tiroirs du téléphone : bandeau de gauche (navigation, compte) et bandeau de droite (aperçu), qui
+// glissent depuis les bords, avec un voile derrière. Fermeture : voile, croix, ou glisser vers le bord.
+function openDrawer(id){
+  closeDrawers();
+  document.getElementById(id).classList.add('open');
+  document.getElementById('mScrim').classList.add('show');
+  document.body.classList.add('drawer-open');
+  if(id==='mOverview') renderRightPanel();
+}
+function closeDrawers(){
+  ['mDrawer','mOverview'].forEach(id=>document.getElementById(id).classList.remove('open'));
+  document.getElementById('mScrim').classList.remove('show');
+  document.body.classList.remove('drawer-open');
+  document.getElementById('appMenu').classList.remove('open');
+}
+document.getElementById('mMenuBtn').addEventListener('click', (e)=>{ e.stopPropagation(); openDrawer('mDrawer'); });
+document.getElementById('mOverviewBtn').addEventListener('click', (e)=>{ e.stopPropagation(); openDrawer('mOverview'); });
+document.getElementById('mScrim').addEventListener('click', closeDrawers);
+document.getElementById('rpClose').addEventListener('click', closeDrawers);
+function attachSwipeClose(id, direction){
+  const el = document.getElementById(id);
+  let x0 = null, y0 = null;
+  el.addEventListener('touchstart', (e)=>{ x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, {passive:true});
+  el.addEventListener('touchend', (e)=>{
+    if(x0===null) return;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    if(Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy)*1.5 && Math.sign(dx)===direction) closeDrawers();
+    x0 = null;
+  }, {passive:true});
+}
+attachSwipeClose('mDrawer', -1);
+attachSwipeClose('mOverview', 1);
+document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeDrawers(); });
+
+// Contenu du bandeau de droite : un aperçu de l'activité, recalculé après chaque modification.
+function renderRightPanel(){
+  const body = document.getElementById('rpBody');
+  if(!body || !document.getElementById('mOverview').classList.contains('open') || !currentUser) return;
+  const month = currentMonthStr();
+  const actifs = state.patients.filter(p=>isPatientActiveInMonth(p, month));
+  const avg = computeLast7DaysAverage();
+  const nurseOf = id => id ? state.nurses.find(n=>n.id===id) : null;
+  const today = todayISO();
+  const todayNurse = nurseOf(dayDefaultNurseId(today));
+  const LETTERS = ['D','L','M','M','J','V','S'];
+  const week = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(today+'T00:00:00'); d.setDate(d.getDate()+i);
+    const iso = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const n = nurseOf(dayDefaultNurseId(iso));
+    week.push(`<div class="d${i===0?' today':''}" title="${escAttr(d.toLocaleDateString('fr-FR',{weekday:'long', day:'numeric', month:'long'}) + ' : ' + (n ? n.name : 'personne'))}">${LETTERS[d.getDay()]}<b>${d.getDate()}</b><div class="bar" style="${n ? 'background:'+escAttr(n.color||'#4f9d94') : ''}"></div></div>`);
+  }
+  const weekNurses = [...new Set(state.nurses.filter(n=>n.color))].map(n=>`<span class="rp-row" style="padding:1px 0;font-size:12px;"><span class="rp-dot" style="background:${escAttr(n.color)}"></span>${escHtml(n.name)}</span>`).join('');
+  let ordHtml;
+  if(!ensureOrdonnancesLoaded()){
+    ordHtml = '<div class="rp-row muted">Chargement…</div>';
+  } else {
+    const alerts = actifs.map(p=>({p, st:computeOrdonnanceStatus(p.id)})).filter(x=>x.st.color==='red' || x.st.color==='yellow')
+      .sort((a,b)=> (a.st.color==='red'?0:1) - (b.st.color==='red'?0:1));
+    ordHtml = alerts.length
+      ? alerts.slice(0,6).map(x=>`<div class="rp-row"><span class="rp-dot" style="background:${x.st.color==='red'?'var(--bad)':'var(--warn)'}"></span>${escHtml(x.p.name)}<span class="rp-right">${escHtml(x.st.label)}</span></div>`).join('') + (alerts.length>6 ? `<div class="rp-row muted small">+ ${alerts.length-6} autre(s)</div>` : '')
+      : '<div class="rp-row"><span class="rp-dot" style="background:var(--ok)"></span>Tout est à jour</div>';
+  }
+  body.innerHTML = `
+    <div class="rp-card rp-hero">
+      <h4>CA moyen / jour</h4>
+      <div class="rp-big">${avg.toFixed(2)} €</div>
+      <div class="rp-sub">Sur les 7 derniers jours · ${actifs.length} patient${actifs.length>1?'s':''} actif${actifs.length>1?'s':''}</div>
+      <button type="button" class="rp-link" data-goto="billing">Contrôle facturation →</button>
+    </div>
+    <div class="rp-card">
+      <h4>Aujourd'hui</h4>
+      <div class="rp-row" style="font-size:14px;font-weight:700;">${todayNurse ? `<span class="rp-dot" style="background:${escAttr(todayNurse.color||'#4f9d94')}"></span>${escHtml(todayNurse.name)}` : '<span class="muted">Personne n\'est affecté(e)</span>'}</div>
+      <button type="button" class="rp-link" data-goto="planning">Voir le planning →</button>
+    </div>
+    <div class="rp-card">
+      <h4>Roulement — 7 prochains jours</h4>
+      <div class="rp-week">${week.join('')}</div>
+      <div style="margin-top:8px;">${weekNurses}</div>
+      <button type="button" class="rp-link" data-goto="roulement">Modifier le roulement →</button>
+    </div>
+    <div class="rp-card">
+      <h4>Ordonnances à surveiller</h4>
+      ${ordHtml}
+      <button type="button" class="rp-link" data-goto="ordonnances">Ouvrir les ordonnances →</button>
+    </div>
+    <div class="rp-stats">
+      <div class="rp-stat"><b>${actifs.length}</b><span>Patients actifs</span></div>
+      <div class="rp-stat"><b>${state.nurses.length}</b><span>Infirmier(ère)s</span></div>
+    </div>`;
+}
+document.getElementById('rpBody').addEventListener('click', (e)=>{
+  const link = e.target.closest('[data-goto]'); if(link) switchTab(link.dataset.goto);
+});
+
+
+// Accueil : widgets cliquables (mêmes que la version bureau, sur deux colonnes).
+function renderHomeWidgets(){
+  const el = document.getElementById('homeGrid');
+  if(!el) return;
+  const sec = tab => HOME_SECTIONS.find(x=>x.tab===tab) || {hue:'#4f9d94', icon:'', label:tab};
+  const ico = tab => `<span class="hw-ico">${svgIcon(sec(tab).icon)}</span>`;
+  const card = (tab, inner, extraClass) => `<button type="button" class="hw${extraClass?' '+extraClass:''}" data-tab="${tab}" style="--hue:${sec(tab).hue};">
+      <span class="hw-top">${ico(tab)}${escHtml(sec(tab).label)}<span class="hw-arrow" aria-hidden="true">›</span></span>${inner}</button>`;
+  const eur = v => v.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €';
+  const plural = (n, word) => `${n} ${word}${n>1?'s':''}`;
+  const month = currentMonthStr(), today = todayISO();
+  const actifs = state.patients.filter(p=>isPatientActiveInMonth(p, month));
+  const inactifs = state.patients.length - actifs.length;
+  const nurseOf = id => id ? state.nurses.find(n=>n.id===id) : null;
+  const bd = computeBillingData(month);
+  const monthName = new Date(month+'-01T00:00:00').toLocaleDateString('fr-FR', {month:'long'});
+  const todayNurse = nurseOf(dayDefaultNurseId(today));
+  const todayCount = actifs.filter(p=>computeDayAmount(today, p).hasNurse).length;
+  const LETTERS = ['D','L','M','M','J','V','S'];
+  let week = '';
+  for(let i=0;i<7;i++){
+    const d = new Date(today+'T00:00:00'); d.setDate(d.getDate()+i);
+    const iso = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const n = nurseOf(dayDefaultNurseId(iso));
+    week += `<span class="${i===0?'today':''}" title="${escAttr(n ? n.name : 'Personne')}">${LETTERS[d.getDay()]}${d.getDate()}<span class="bar" style="display:block;${n ? 'background:'+escAttr(n.color||'#4f9d94') : ''}"></span></span>`;
+  }
+  let ordVal, ordSub;
+  if(!ensureOrdonnancesLoaded()){ ordVal = '<span class="hw-val small">…</span>'; ordSub = 'Chargement'; }
+  else {
+    let expired = 0, soon = 0;
+    actifs.forEach(p=>{ const c = computeOrdonnanceStatus(p.id).color; if(c==='red') expired++; else if(c==='yellow') soon++; });
+    const tot = expired + soon;
+    ordVal = tot ? `<span class="hw-val"><span class="hw-dot" style="background:${expired?'var(--bad)':'var(--warn)'}"></span>${tot} à surveiller</span>`
+                 : `<span class="hw-val small"><span class="hw-dot" style="background:var(--ok)"></span>Tout est à jour</span>`;
+    ordSub = tot ? [expired ? plural(expired,'expirée') : '', soon ? `${soon} bientôt` : ''].filter(Boolean).join(', ') : 'Aucune ordonnance à renouveler';
+  }
+  const t = state.tariffs || {};
+  const nbPx = (state.dmPrescriptions||[]).length;
+  el.innerHTML = [
+    card('billing', `<span class="hw-val">${eur(bd.grandTotal)}</span><span class="hw-sub">Total théorique de ${escHtml(monthName)} · CA moyen sur 7 jours : ${eur(computeLast7DaysAverage())} / jour</span>`, 'hw-wide'),
+    card('planning', `<span class="hw-val small">${todayNurse ? `<span class="hw-dot" style="background:${escAttr(todayNurse.color||'#4f9d94')}"></span>${escHtml(todayNurse.name)}` : 'Personne'}</span><span class="hw-sub">Aujourd'hui · ${plural(todayCount,'patient')} ${todayCount>1?'prévus':'prévu'}</span>`),
+    card('roulement', `<span class="hw-sub">7 prochains jours</span><span class="hw-week">${week}</span>`),
+    card('ordonnances', `${ordVal}<span class="hw-sub">${escHtml(ordSub)}</span>`),
+    card('patients', `<span class="hw-val">${actifs.length}</span><span class="hw-sub">${actifs.length>1?'actifs':'actif'} ce mois-ci${inactifs ? ' · '+plural(inactifs,'inactif') : ''}</span>`),
+    card('prescriptions', `<span class="hw-val">${nbPx}</span><span class="hw-sub">${nbPx>1?'prescriptions enregistrées':'prescription enregistrée'} · bilans biologiques</span>`),
+    card('staff', `<span class="hw-val">${state.nurses.length}</span><span class="hw-people">${state.nurses.slice(0,4).map(n=>`<span><span class="hw-dot" style="background:${escAttr(n.color||'#4f9d94')}"></span>${escHtml(n.name)}</span>`).join('')}</span>`),
+    card('caretypes', `<span class="hw-val">${state.careTypes.length}</span><span class="hw-sub">${state.careTypes.length>1?'types configurés':'type configuré'}</span>`),
+    card('tariffs', `<span class="hw-val small">AMI ${eur(t.AMI||0)}</span><span class="hw-sub">BSA ${eur(t.BSA||0)} · BSB ${eur(t.BSB||0)} · BSC ${eur(t.BSC||0)}</span>`),
+    card('help', `<span class="hw-val small">Guide</span><span class="hw-sub">Mode d'emploi et règles de cotation appliquées</span>`)
+  ].join('');
+  const dateEl = document.getElementById('homeDate');
+  if(dateEl){ const d = new Date().toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'}); dateEl.textContent = d.charAt(0).toUpperCase() + d.slice(1); }
+}
+document.getElementById('homeGrid').addEventListener('click', (e)=>{
+  const w = e.target.closest('.hw'); if(w) switchTab(w.dataset.tab);
+});
+
 /* ============================= INIT ============================= */
 function renderAll(){
   migrateLegacyActiveFlags();
@@ -4500,7 +4777,9 @@ function renderAll(){
   renderStaff(); renderCareTypes(); renderPatients(); renderTariffs();
   renderRotaTab();
   refreshPlanningViews(); renderBilling();
-  renderBottomNav(); renderHomeQuickGrid(); renderHomeGreeting(); renderHomeWidgets();
+  renderBottomNav(); renderHomeGreeting(); renderHomeWidgets();
+  renderSidebarNav(); updateSidebarAccount(); updateTopbarTitle('home');
+  document.querySelectorAll('#sbNav .sb-item').forEach(x=>x.classList.toggle('active', x.dataset.tab==='home'));
   scheduleAutosave();
 }
 document.getElementById('planMonth').value = currentMonthStr();
