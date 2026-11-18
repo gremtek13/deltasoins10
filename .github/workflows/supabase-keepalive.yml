@@ -1,0 +1,61 @@
+# Garde la base Supabase de JD Factu active.
+#
+# Avec l'offre gratuite, Supabase met un projet en pause s'il reçoit trop peu
+# de requêtes pendant 7 jours. Cette tâche interroge la base deux fois par jour
+# (lecture seule, aucune donnée affichée ni modifiée) pour qu'elle reste éveillée.
+#
+# Si la base ne répond pas (par exemple parce qu'elle est déjà en pause), la
+# tâche échoue : elle apparaît en rouge dans l'onglet « Actions » du dépôt et
+# GitHub envoie normalement un e-mail. Il faut alors aller sur supabase.com,
+# ouvrir le projet JD Factu et cliquer sur « Resume project ».
+#
+# L'adresse et la clé publique (anon) sont lues dans JD_Consult_Planning.html,
+# là où l'application les utilise déjà : rien à mettre à jour ici si elles changent.
+
+name: Garder Supabase JD Factu actif
+
+on:
+  schedule:
+    - cron: '17 6,18 * * *'   # tous les jours vers 7 h et 19 h (heure de Paris)
+  workflow_dispatch:           # bouton « Run workflow » pour lancer à la main
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: JD_Consult_Planning.html
+          sparse-checkout-cone-mode: false
+
+      - name: Interroger la base Supabase
+        run: |
+          FILE=JD_Consult_Planning.html
+          URL=$(sed -n "s/^const SUPABASE_URL = '\([^']*\)'.*/\1/p" "$FILE" | head -1)
+          KEY=$(sed -n "s/^const SUPABASE_ANON_KEY = '\([^']*\)'.*/\1/p" "$FILE" | head -1)
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then
+            echo "::error::Adresse ou clé Supabase introuvable dans $FILE"
+            exit 1
+          fi
+
+          fail=0
+          for query in "app_state?select=user_id&limit=1" "ordonnances?select=*&limit=1"; do
+            table=${query%%\?*}
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 \
+                     --retry 2 --retry-delay 15 --retry-all-errors \
+                     -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+                     "$URL/rest/v1/$query") || true
+            [ -n "$code" ] || code=000
+            echo "$table : réponse HTTP $code"
+            [ "$code" = "200" ] || fail=1
+          done
+
+          if [ "$fail" -ne 0 ]; then
+            echo "::error::La base Supabase JD Factu ne répond pas normalement. Elle est peut-être en pause : connecte-toi sur supabase.com avec le compte propriétaire du projet, ouvre JD Factu et clique sur « Resume project »."
+            exit 1
+          fi
+          echo "Base Supabase active."
