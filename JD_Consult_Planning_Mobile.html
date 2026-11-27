@@ -2209,7 +2209,7 @@ function renderPatientCardBody(p, isActive, cotation){
           <input type="checkbox" style="width:auto;" ${p.defaultFlags&&p.defaultFlags.mci?'checked':''} onchange="updatePatientFlag('${p.id}','mci',this.checked)"> MCI (coordination)
         </label>
         <label style="display:inline-flex;align-items:center;gap:4px;width:auto;font-size:12px;">
-          <input type="checkbox" style="width:auto;" ${p.defaultFlags&&p.defaultFlags.mau?'checked':''} onchange="updatePatientFlag('${p.id}','mau',this.checked)"> MAU (acte unique)
+          <input type="checkbox" style="width:auto;" ${p.defaultFlags&&p.defaultFlags.mau?'checked':''} onchange="updatePatientFlag('${p.id}','mau',this.checked)"> MAU (acte unique, 1 par passage)
         </label>
         <label style="display:inline-flex;align-items:center;gap:4px;width:auto;font-size:12px;">
           <input type="checkbox" style="width:auto;" ${p.defaultFlags&&p.defaultFlags.mie?'checked':''} onchange="updatePatientFlag('${p.id}','mie',this.checked)"> MIE (enfant &lt; 7 ans)
@@ -2485,7 +2485,9 @@ function computePassageActsAmount(acts, tariffs, hasForfait){
 // Calcule le montant des passages (séances) d'une liste, actes + déplacement, pour un patient donné.
 // Factorisé pour être réutilisé par le calcul d'un jour précis (computeDayAmount) et par l'estimation
 // « cotation type » affichée sur la fiche patient (computePatientTypicalDayAmount).
-function computePassagesAmount(passagesList, patient, forfaitCt, t){
+// flags (optionnel) : majorations du jour ; seule la MAU est comptée ici, une fois PAR PASSAGE (séance)
+// ne comportant qu'un seul acte — les autres majorations restent gérées par addFlagMajorations.
+function computePassagesAmount(passagesList, patient, forfaitCt, t, flags){
   const breakdown = []; let total = 0;
   const list = requalifyDuplicatePerfusionLongue(applyCancerVariant(clonePassages(passagesList), patient));
   list.forEach((passage,i)=>{
@@ -2494,6 +2496,11 @@ function computePassagesAmount(passagesList, patient, forfaitCt, t){
       const r = computePassageActsAmount(passage.acts, t, !!forfaitCt);
       r.breakdown.forEach(b=>breakdown.push({label:`${b.label}${timeLabel}`, amount:b.amount}));
       total += r.amount;
+      const nbActs = passage.acts.reduce((n,a)=>n + (a.qty||1), 0);
+      if(flags && flags.mau && nbActs===1){
+        breakdown.push({label:`MAU — acte unique${timeLabel}`, amount:t.MAU});
+        total += t.MAU;
+      }
     }
     if(passage.deplacement!==false){
       const isKmType = patient.deplacementType==='ik' || patient.deplacementType==='iks';
@@ -2512,13 +2519,13 @@ function computePassagesAmount(passagesList, patient, forfaitCt, t){
   });
   return {amount: total, breakdown};
 }
-// Ajoute les majorations liées aux "flags" (nuit / nuit profonde / MCI / MAU / MIE) au breakdown fourni.
+// Ajoute les majorations liées aux "flags" (nuit / nuit profonde / MCI / MIE) au breakdown fourni, une fois
+// par jour. La MAU n'est pas ici : elle se compte par passage, dans computePassagesAmount.
 function addFlagMajorations(flags, t, breakdown){
   let total = 0;
   if(flags.nuit){ breakdown.push({label:'Majoration de nuit', amount:t.majNuit}); total += t.majNuit; }
   if(flags.nuitProfonde){ breakdown.push({label:'Majoration de nuit profonde', amount:t.majNuitProfonde}); total += t.majNuitProfonde; }
   if(flags.mci){ breakdown.push({label:'MCI — coordination', amount:t.MCI}); total += t.MCI; }
-  if(flags.mau){ breakdown.push({label:'MAU — acte unique', amount:t.MAU}); total += t.MAU; }
   if(flags.mie){ breakdown.push({label:'MIE — majoration enfant < 7 ans', amount:t.MIE}); total += t.MIE; }
   return total;
 }
@@ -2541,7 +2548,8 @@ function computeDayAmount(dateStr, patient){
     total += val;
   }
 
-  const passagesRes = computePassagesAmount(getDayPassages(dateStr, patient), patient, forfaitCt, t);
+  const flags = getEffectiveFlags(dateStr, patient);
+  const passagesRes = computePassagesAmount(getDayPassages(dateStr, patient), patient, forfaitCt, t, flags);
   breakdown.push(...passagesRes.breakdown);
   total += passagesRes.amount;
 
@@ -2551,7 +2559,6 @@ function computeDayAmount(dateStr, patient){
     breakdown.push({label: sunday?'Majoration dimanche':'Majoration jour férié', amount:t.majDimancheFerie});
     total += t.majDimancheFerie;
   }
-  const flags = getEffectiveFlags(dateStr, patient);
   total += addFlagMajorations(flags, t, breakdown);
 
   return {amount: total, breakdown, hasNurse:true, nurseId: eff.nurseId};
@@ -2570,10 +2577,10 @@ function computePatientTypicalDayAmount(patient){
     breakdown.push({label:`Forfait ${forfaitCt.forfaitLevel} (${forfaitCt.name}) — 1x/jour`, amount:val});
     total += val;
   }
-  const passagesRes = computePassagesAmount(getPatientDefaultPassages(patient), patient, forfaitCt, t);
+  const flags = patient.defaultFlags || {};
+  const passagesRes = computePassagesAmount(getPatientDefaultPassages(patient), patient, forfaitCt, t, flags);
   breakdown.push(...passagesRes.breakdown);
   total += passagesRes.amount;
-  const flags = patient.defaultFlags || {};
   total += addFlagMajorations(flags, t, breakdown);
   return {amount: total, breakdown};
 }
